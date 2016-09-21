@@ -28,6 +28,10 @@ type UserController struct {
     mail MailInterface
 }
 
+func NewUserController(userStore UserStoreInterface, mail MailInterface) UserController {
+    return UserController{userStore, mail}
+}
+
 func (userController *UserController) CreateUser(email string, pass string) (user *User, err error){
 
     // Generate password hash

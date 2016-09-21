@@ -8,15 +8,12 @@ import "net/http"
 
 import "github.com/gocraft/web"
 
-import "github.com/jinzhu/gorm"
-import _ "github.com/jinzhu/gorm/dialects/postgres"
-
 import "github.com/asaskevich/govalidator"
 
 type AuthPlzCtx struct {
-    port int
+    port string
     address string
-    userController UserController
+    userController *UserController
 }
 
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -50,29 +47,38 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
     rw.WriteHeader(501)
 }
 
+func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+    rw.WriteHeader(501)
+}
+
+func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
+    rw.WriteHeader(501)
+}
+
 func main() {
     var port string = "9000"
+    var address string = "loalhost"
     var dbString string = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
-    // Create router
-    router := web.New(AuthPlzCtx{}).
-        Middleware(web.LoggerMiddleware).
-        Middleware(web.ShowErrorsMiddleware).
-        Post("/login", (*AuthPlzCtx).Login).
-        Post("/create", (*AuthPlzCtx).Create)
-
+    // Parse environmental variables
     if os.Getenv("PORT") != "" {
         port = os.Getenv("PORT")
     }
 
-    db, err := gorm.Open("postgres", dbString)
-    if err != nil {
-        fmt.Println("failed to connect database: " + dbString)
-        panic(err)
-    }
-    defer db.Close()
+    // Attempt database connection
+    ds := NewDataStore(dbString)
 
-    db.AutoMigrate(&User{})
+    // Create controllers
+    uc := NewUserController(&ds, nil)
+
+    // Create router
+    router := web.New(AuthPlzCtx{port, address, &uc}).
+        Middleware(web.LoggerMiddleware).
+        Middleware(web.ShowErrorsMiddleware).
+        Post("/login", (*AuthPlzCtx).Login).
+        Post("/create", (*AuthPlzCtx).Create).
+        Get("/logout", (*AuthPlzCtx).Logout).
+        Get("/status", (*AuthPlzCtx).Status)
 
     // Start listening
     fmt.Println("Listening at: " + port)
