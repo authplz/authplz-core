@@ -1,0 +1,243 @@
+# AuthPlz Swagger API specification
+swagger: '2.0'
+info:
+  title: AuthPlz API
+  description: User Auth(entication | orization) and management microservice API
+  version: "1.0.0"
+# the domain of the service
+host: test.authplz.com
+# array of all schemes that your API supports
+schemes:
+  - https
+# will be prefixed to all paths
+basePath: /v1
+produces:
+  - application/json
+paths:
+
+  /login:
+    post:
+      summary: Local login Endpoint
+      description: Endpoint for local account login.
+      responses:
+        200:
+          description: Login success
+          schema:
+            $ref: '#/definitions/User'
+        401:
+          description: Further Authorization Required
+          schema:
+            $ref: '#/definitions/SecondFactorReq'
+              
+        404:
+          description: Unauthorized or user not found
+        429:
+          description: Rate Limited
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /login/github:
+    post:
+      summary: Github login endpoint
+      description: Endpoint to initiate Github federated login
+      responses:
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /login/google:
+    post:
+      summary: Google login endpoint
+      description: Endpoint to initiate Google federated login
+      responses:
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+        
+  /reset:
+    post:
+      summary: Password Reset endpoint
+      description: Endpoint to initiate a password reset
+      responses:
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /logout:
+    post:
+      summary: Logout Endpoint
+      description: Endpoint for local account login.
+      responses:
+        200:
+          description: Logout success
+        401:
+          description: Unauthorized
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /me:
+    get:
+      summary: User Profile
+      description: The User Profile endpoint returns information about the Uber user that has authorized with the application.
+      responses:
+        200:
+          description: Profile information for a user
+          schema:
+            $ref: '#/definitions/User'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /history:
+    get:
+      summary: User Activity
+      description: Fetch previous account activity for a user
+      parameters:
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/limit'
+      responses:
+        200:
+          description: History information for the given user
+          schema:
+            $ref: '#/definitions/UserEvents'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+        
+  /me/tokens:
+    get:
+      summary: User 2fa tokens
+      description: Fetch listing of regstered tokens for a given user
+      responses:
+        200:
+          description: List of tokens
+          schema:
+            $ref: '#/definitions/SecondFactors'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /me/oauth:
+    get:
+      summary: User OAuth connections
+      description: Fetch delegate accounts for the logged in user
+      responses:
+        200:
+          description: List of active oauth connections
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+         
+  /me/apppw:
+    get:
+      summary: User Applicaton Passwords
+      description: Fetch listing of existing application passwords for a given user
+      responses:
+        200:
+          description: List of active apps with app specific passwords
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+        
+parameters:
+
+  offset:
+    name: offset
+    in: query
+    type: integer
+    format: int32
+    description: Offset the list of returned results by this amount. Default is zero.
+    
+  limit:
+    name: limit
+    in: query
+    type: integer
+    format: int32
+    description: Number of items to retrieve. Default is 5, maximum is 100.
+    
+            
+definitions:
+
+  User:
+    type: object
+    properties:
+      email:
+        type: string
+        description: User email address.
+      display_name: 
+        type: string
+        description: User display name.
+      last_login:
+        type: string
+        description: Last name of the Uber user.
+        
+  SecondFactor:
+    type: object
+    description: Second Factor Token
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+        enum:
+          - totp
+          - hotp
+          - u2f
+          - sms
+          - email
+  
+  SecondFactors:
+    type: array
+    items:
+      $ref: '#/definitions/SecondFactor' 
+        
+  SecondFactorReq:
+    type: object
+    properties:
+      available:
+        type: array
+        description: Available 2fa methods 
+        items:
+           $ref: '#/definitions/SecondFactor'
+        
+  UserEvent:
+    type: object
+    properties:
+      event_id:
+        type: string
+        description: Unique identifier for the user event.
+      event_type:
+        type: string
+        description: Type of user event
+      description:
+        type: string
+        description: Description of the user event.
+        
+  UserEvents:
+    type: array
+    items:
+      $ref: '#/definitions/UserEvent'
+      
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
+
