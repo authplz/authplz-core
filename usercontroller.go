@@ -3,8 +3,11 @@ package main
 
 //import "strings"
 import "fmt"
+import "errors"
 
 import "golang.org/x/crypto/bcrypt"
+
+var ErrLoginFail = errors.New("crypto/bcrypt: hashedSecret too short to be a bcrypted password")
 
 type UserStoreInterface interface {
     AddUser(email string, pass string) (user *User, err error)
@@ -87,15 +90,20 @@ func (userController *UserController) Login(email string, pass string) (err erro
     hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
     if hashErr != nil {
         fmt.Println(hashErr)
-        return fmt.Errorf("user account not found or password invalid")
+        return ErrLoginFail
+    }
+
+    if u.second_factors == true {
+        //TODO: prompt for second factor login
     }
 
     // Login if user exists and passwords match
     if((u != nil) && (hashErr == nil)) {
+        //TODO: update login time etc.
         return nil
     }
 
-    return fmt.Errorf("user account not found or password invalid")
+    return ErrLoginFail
 }
 
 

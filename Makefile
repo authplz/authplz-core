@@ -1,5 +1,11 @@
 # Helpers for AuthPlz development
 
+build:
+	go build
+
+run: build
+	./authplz
+
 validate:
 	swagger validate swagger.yml
 
@@ -8,12 +14,6 @@ bootstrap:
 
 install-deps:
 	go get ./...
-
-build:
-	go build
-
-run: build
-	./authplz
 
 # Build containerized development environment
 build-env:
