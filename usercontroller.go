@@ -65,6 +65,7 @@ func (userController *UserController) CreateUser(email string, pass string) (use
     return u, nil
 }
 
+//TODO: differentiate between login states and internal errors
 func (userController *UserController) Login(email string, pass string) (err error) {
 
     // Fetch user account
@@ -86,7 +87,7 @@ func (userController *UserController) Login(email string, pass string) (err erro
     hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
     if hashErr != nil {
         fmt.Println(hashErr)
-        return fmt.Errorf("password hash to short")
+        return fmt.Errorf("user account not found or password invalid")
     }
 
     // Login if user exists and passwords match
@@ -94,7 +95,7 @@ func (userController *UserController) Login(email string, pass string) (err erro
         return nil
     }
 
-    return fmt.Errorf("login failed")
+    return fmt.Errorf("user account not found or password invalid")
 }
 
 
