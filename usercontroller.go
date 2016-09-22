@@ -9,10 +9,12 @@ import "net/http"
 
 import "golang.org/x/crypto/bcrypt"
 
+import "github.com/ryankurte/authplz/ds"
+
 type UserStoreInterface interface {
-    AddUser(email string, pass string) (user *User, err error)
-    GetUserByUUID(uuid string) (user *User, err error)
-    GetUserByEmail(email string) (user *User, err error)
+    AddUser(email string, pass string) (user *ds.User, err error)
+    GetUserByUUID(uuid string) (user *ds.User, err error)
+    GetUserByEmail(email string) (user *ds.User, err error)
 }
 
 type TokenStoreInterface interface {
@@ -37,7 +39,7 @@ func NewUserController(userStore UserStoreInterface, mail MailInterface) UserCon
     return UserController{userStore, mail}
 }
 
-func (userController *UserController) CreateUser(email string, pass string) (user *User, err error){
+func (userController *UserController) CreateUser(email string, pass string) (user *ds.User, err error){
 
     // Generate password hash
     hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), 14)

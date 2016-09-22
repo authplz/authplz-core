@@ -1,7 +1,7 @@
 
-package main
+package ds
 
-//import "fmt"
+import "fmt"
 import "testing"
 
 func TestDatastore(t *testing.T) {
@@ -14,6 +14,12 @@ func TestDatastore(t *testing.T) {
 
     ds.db.DropTableIfExists(&User{})
     ds.db.AutoMigrate(&User{})
+    ds.db.DropTableIfExists(&FidoToken{})
+    ds.db.AutoMigrate(&FidoToken{})
+    ds.db.DropTableIfExists(&TotpToken{})
+    ds.db.AutoMigrate(&TotpToken{})
+    ds.db.DropTableIfExists(&AuditEvent{})
+    ds.db.AutoMigrate(&AuditEvent{})
 
     var fakeEmail = "test1@abc.com"
     var fakePass = "abcDEF123@"
@@ -108,6 +114,42 @@ func TestDatastore(t *testing.T) {
 
         if u.Password != newPassword {
             t.Error("Initial password mismatch")
+            return
+        }
+
+    })
+
+    t.Run("Add U2F tokens", func(t *testing.T) { 
+        // Create user
+        u, err := ds.GetUserByEmail(fakeEmail)
+        if err != nil {
+            t.Error(err)
+            return
+        }
+        if u == nil {
+            t.Error("User find by email failed")
+            return
+        }
+
+        fidoToken := FidoToken{}
+        u.FidoTokens = append(u.FidoTokens, fidoToken)
+
+        u, err = ds.UpdateUser(u);
+        if err != nil {
+            t.Error(err)
+            return
+        }
+
+        u, err = ds.GetUserByEmail(fakeEmail)
+        if err != nil {
+            t.Error(err)
+            return
+        }
+
+        fmt.Printf("%+v", u);
+
+        if u.SecondFactors() == false {
+            t.Error("No second factors found")
             return
         }
 

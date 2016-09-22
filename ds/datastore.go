@@ -1,5 +1,5 @@
 
-package main
+package ds
 
 import "fmt"
 
@@ -12,12 +12,12 @@ import _ "github.com/jinzhu/gorm/dialects/postgres"
 // User object
 type User struct {
   gorm.Model
-  UUID string               // UUID for external referencing
-  Email string              // User email address
-  Password string           // User (HASHED) password
-  FidoTokens []FidoToken    // Attached U2F tokens
-  TotpTokens []TotpToken    // Attached TOTP tokens
-  LoginRetries uint64       // Number of login attempts (used to track/block brute forcing attacks)
+  UUID string               `gorm:"not null;unique"`
+  Email string              `gorm:"not null;unique"`
+  Password string           `gorm:"not null"`
+  FidoTokens []FidoToken    
+  TotpTokens []TotpToken    
+  LoginRetries uint       
 }
 
 func (u *User) SecondFactors() bool {
@@ -27,23 +27,27 @@ func (u *User) SecondFactors() bool {
 // Fido/U2F token object
 type FidoToken struct {
   gorm.Model
+  UserID  uint
   Name string
   KeyHandle string
   PublicKey string
   Certificate string
-  UsageCount uint64
+  UsageCount uint
 }
 
 // Time based One Time Password Token object
 type TotpToken struct {
   gorm.Model
+  UserID  uint
   Name string
   Secret string
+  UsageCount uint
 }
 
 // Audit events for a login account
 type AuditEvent struct {
   gorm.Model
+  UserID  uint
   EventType string
   OriginIP string
 }
@@ -59,7 +63,12 @@ func NewDataStore(dbString string) (dataStore DataStore) {
       panic(err)
   }
 
+  //db.LogMode(true)
+
   db.AutoMigrate(&User{})
+  db.AutoMigrate(&TotpToken{})
+  db.AutoMigrate(&FidoToken{})
+  db.AutoMigrate(&AuditEvent{})
 
   return DataStore{db}
 }
@@ -87,7 +96,6 @@ func (dataStore* DataStore) AddUser(email string, pass string) (*User, error) {
 func (dataStore* DataStore) GetUserByEmail(email string) (*User, error) {
 
   var user User
-
   err := dataStore.db.Where(&User{Email: email}).First(&user).Error
   if (err != nil) && (err != gorm.ErrRecordNotFound) {
     return nil, err
@@ -101,7 +109,6 @@ func (dataStore* DataStore) GetUserByEmail(email string) (*User, error) {
 func (dataStore* DataStore) GetUserByUUID(uuid string) (*User, error) {
 
   var user User
-
   err := dataStore.db.Where(&User{UUID: uuid}).First(user).Error
   if (err != nil) && (err != gorm.ErrRecordNotFound) {
     return nil, err
@@ -120,6 +127,14 @@ func (dataStore* DataStore) UpdateUser(user *User) (*User, error) {
   }
 
   return user, nil
+}
+
+func (dataStore* DataStore) GetFidoTokens(u *User) ([]FidoToken, error) {
+  var fidoTokens []FidoToken
+
+  err := dataStore.db.Model(u).Related(&fidoTokens).Error
+
+  return fidoTokens, err
 }
 
 

@@ -10,6 +10,8 @@ import "github.com/gocraft/web"
 
 import "github.com/asaskevich/govalidator"
 
+import "github.com/ryankurte/authplz/ds"
+
 type AuthPlzCtx struct {
     port string
     address string
@@ -66,11 +68,11 @@ func main() {
     }
 
     // Attempt database connection
-    ds := NewDataStore(dbString)
-    defer ds.Close()
+    dataStore := ds.NewDataStore(dbString)
+    defer dataStore.Close()
 
     // Create controllers
-    uc := NewUserController(&ds, nil)
+    uc := NewUserController(&dataStore, nil)
 
     // Create router
     router := web.New(AuthPlzCtx{port, address, &uc}).
