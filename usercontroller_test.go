@@ -16,7 +16,7 @@ func TestUserController(t *testing.T) {
     uc := NewUserController(&ds, nil)
 
     // Run tests
-    t.Skip("Create user", func(t *testing.T) { 
+    t.Run("Create user", func(t *testing.T) { 
         u, err := uc.CreateUser(fakeEmail, fakePass)
         if err != nil {
             t.Error(err)
