@@ -29,6 +29,9 @@ format:
 validate:
 	swagger validate swagger.yml
 
+coverage:
+	go test -cover
+	
 
 # Container control
 

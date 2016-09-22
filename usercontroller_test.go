@@ -2,6 +2,8 @@ package main
 
 import "testing"
 
+import "github.com/ryankurte/authplz/datastore"
+
 func TestUserController(t *testing.T) {
 	// Setup user controller for testing
 	var fakeEmail = "test@abc.com"
@@ -9,7 +11,9 @@ func TestUserController(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := NewDataStore(dbString)
+	ds := datastore.NewDataStore(dbString)
+
+	ds.ForceSync()
 
 	// Create controllers
 	uc := NewUserController(&ds, nil)

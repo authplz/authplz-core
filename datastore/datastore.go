@@ -1,4 +1,4 @@
-package ds
+package datastore
 
 import "fmt"
 
@@ -74,6 +74,17 @@ func NewDataStore(dbString string) (dataStore DataStore) {
 
 func (dataStore *DataStore) Close() {
 	dataStore.db.Close()
+}
+
+func (ds *DataStore) ForceSync() {
+	ds.db.DropTableIfExists(&User{})
+	ds.db.AutoMigrate(&User{})
+	ds.db.DropTableIfExists(&FidoToken{})
+	ds.db.AutoMigrate(&FidoToken{})
+	ds.db.DropTableIfExists(&TotpToken{})
+	ds.db.AutoMigrate(&TotpToken{})
+	ds.db.DropTableIfExists(&AuditEvent{})
+	ds.db.AutoMigrate(&AuditEvent{})
 }
 
 func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {

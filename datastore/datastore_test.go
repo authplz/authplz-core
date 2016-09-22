@@ -1,4 +1,4 @@
-package ds
+package datastore
 
 import "fmt"
 import "testing"
@@ -8,17 +8,10 @@ func TestDatastore(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := NewDataStore(dbString)
+	ds := datastore.NewDataStore(dbString)
 	defer ds.Close()
 
-	ds.db.DropTableIfExists(&User{})
-	ds.db.AutoMigrate(&User{})
-	ds.db.DropTableIfExists(&FidoToken{})
-	ds.db.AutoMigrate(&FidoToken{})
-	ds.db.DropTableIfExists(&TotpToken{})
-	ds.db.AutoMigrate(&TotpToken{})
-	ds.db.DropTableIfExists(&AuditEvent{})
-	ds.db.AutoMigrate(&AuditEvent{})
+	ds.ForceSync()
 
 	var fakeEmail = "test1@abc.com"
 	var fakePass = "abcDEF123@"
