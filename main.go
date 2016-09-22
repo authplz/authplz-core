@@ -67,6 +67,7 @@ func main() {
 
     // Attempt database connection
     ds := NewDataStore(dbString)
+    defer ds.Close()
 
     // Create controllers
     uc := NewUserController(&ds, nil)

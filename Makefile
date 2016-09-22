@@ -6,13 +6,16 @@ build:
 run: build
 	./authplz
 
+test:
+	go test
+
 validate:
 	swagger validate swagger.yml
 
 bootstrap:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 
-install-deps:
+install:
 	go get ./...
 
 # Build containerized development environment
