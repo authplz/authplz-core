@@ -15,15 +15,29 @@ type User struct {
   UUID string
   Email string
   Password string
-  SecondFactors bool
+  FidoTokens []FidoToken
+  TotpTokens []TotpToken
 }
 
 type Token struct {
   gorm.Model
-  user User
-  userID int
-  password string
-  second_factors bool
+  type string
+
+}
+
+type FidoToken struct {
+  gorm.Model
+  Name string
+  KeyHandle string
+  PublicKey string
+  Certificate string
+  UsageCount uint64
+}
+
+type TotpToken struct {
+  gorm.Model
+  Name string
+  Secret string
 }
 
 type DataStore struct {
