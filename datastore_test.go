@@ -1,7 +1,7 @@
 
 package main
 
-import "fmt"
+//import "fmt"
 import "testing"
 
 func TestDatastore(t *testing.T) {
@@ -31,8 +31,6 @@ func TestDatastore(t *testing.T) {
             return
         }
 
-        fmt.Printf("Created: %+v\n", u)
-
         u2, err2:= ds.GetUserByEmail(fakeEmail)
         if err2 != nil {
             t.Error(err2)
@@ -47,7 +45,6 @@ func TestDatastore(t *testing.T) {
             t.Error("Email address mismatch")
             return
         }
-        fmt.Printf("Found: %+v\n", u2)
 
     })
 
@@ -71,12 +68,49 @@ func TestDatastore(t *testing.T) {
             return
         }
 
-        fmt.Printf("Found: %+v\n", u)
-
         if u.Email != fakeEmail {
             t.Error("Email address mismatch")
             return
         }
+    })
+
+    t.Run("Update users", func(t *testing.T) { 
+        // Create user
+        u, err := ds.GetUserByEmail(fakeEmail)
+        if err != nil {
+            t.Error(err)
+            return
+        }
+        if u == nil {
+            t.Error("User find by email failed")
+            return
+        }
+
+        if u.Password != fakePass {
+            t.Error("Initial password mismatch")
+            return
+        }
+
+        newPassword := "NewPassword"
+        u.Password = newPassword
+
+        u, err = ds.UpdateUser(u);
+        if err != nil {
+            t.Error(err)
+            return
+        }
+
+        u, err = ds.GetUserByEmail(fakeEmail)
+        if err != nil {
+            t.Error(err)
+            return
+        }
+
+        if u.Password != newPassword {
+            t.Error("Initial password mismatch")
+            return
+        }
+
     })
 
     // Tear down user controller

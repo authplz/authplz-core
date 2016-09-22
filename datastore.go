@@ -9,22 +9,22 @@ import "github.com/asaskevich/govalidator"
 import "github.com/jinzhu/gorm"
 import _ "github.com/jinzhu/gorm/dialects/postgres"
 
-
+// User object
 type User struct {
   gorm.Model
-  UUID string
-  Email string
-  Password string
-  FidoTokens []FidoToken
-  TotpTokens []TotpToken
+  UUID string               // UUID for external referencing
+  Email string              // User email address
+  Password string           // 
+  FidoTokens []FidoToken    // Attached U2F tokens
+  TotpTokens []TotpToken    // Attached TOTP tokens
+  LoginRetries uint64       // Number of login attempts (used to track/block brute forcing attacks)
 }
 
-type Token struct {
-  gorm.Model
-  type string
-
+func (u *User) SecondFactors() bool {
+  return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
 
+// Fido/U2F token object
 type FidoToken struct {
   gorm.Model
   Name string
@@ -34,10 +34,18 @@ type FidoToken struct {
   UsageCount uint64
 }
 
+// Time based One Time Password Token object
 type TotpToken struct {
   gorm.Model
   Name string
   Secret string
+}
+
+// Audit events for a login account
+type AuditEvent struct {
+  gorm.Model
+  EventType string
+  OriginIP string
 }
 
 type DataStore struct {
@@ -98,6 +106,16 @@ func (dataStore* DataStore) GetUserByUUID(uuid string) (*User, error) {
   }
 
   return &user, nil
+}
+
+func (dataStore* DataStore) UpdateUser(user *User) (*User, error) {
+
+  err := dataStore.db.Save(&user).Error
+  if err != nil {
+    return nil, err
+  }
+
+  return user, nil
 }
 
 

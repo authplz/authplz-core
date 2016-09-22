@@ -107,7 +107,7 @@ func (userController *UserController) Login(email string, pass string) (status *
         return nil, loginError
     }
 
-    if u.SecondFactors == true {
+    if u.SecondFactors() == true {
         //TODO: prompt for second factor login
     }
 
