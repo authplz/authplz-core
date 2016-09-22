@@ -1,4 +1,3 @@
-
 package ds
 
 import "fmt"
@@ -11,130 +10,128 @@ import _ "github.com/jinzhu/gorm/dialects/postgres"
 
 // User object
 type User struct {
-  gorm.Model
-  UUID string               `gorm:"not null;unique"`
-  Email string              `gorm:"not null;unique"`
-  Password string           `gorm:"not null"`
-  FidoTokens []FidoToken    
-  TotpTokens []TotpToken    
-  LoginRetries uint       
+	gorm.Model
+	UUID         string `gorm:"not null;unique"`
+	Email        string `gorm:"not null;unique"`
+	Password     string `gorm:"not null"`
+	FidoTokens   []FidoToken
+	TotpTokens   []TotpToken
+	LoginRetries uint
 }
 
 func (u *User) SecondFactors() bool {
-  return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
+	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
 
 // Fido/U2F token object
 type FidoToken struct {
-  gorm.Model
-  UserID  uint
-  Name string
-  KeyHandle string
-  PublicKey string
-  Certificate string
-  UsageCount uint
+	gorm.Model
+	UserID      uint
+	Name        string
+	KeyHandle   string
+	PublicKey   string
+	Certificate string
+	UsageCount  uint
 }
 
 // Time based One Time Password Token object
 type TotpToken struct {
-  gorm.Model
-  UserID  uint
-  Name string
-  Secret string
-  UsageCount uint
+	gorm.Model
+	UserID     uint
+	Name       string
+	Secret     string
+	UsageCount uint
 }
 
 // Audit events for a login account
 type AuditEvent struct {
-  gorm.Model
-  UserID  uint
-  EventType string
-  OriginIP string
+	gorm.Model
+	UserID    uint
+	EventType string
+	OriginIP  string
 }
 
 type DataStore struct {
-  db *gorm.DB
+	db *gorm.DB
 }
 
 func NewDataStore(dbString string) (dataStore DataStore) {
-  db, err := gorm.Open("postgres", dbString)
-  if err != nil {
-      fmt.Println("failed to connect database: " + dbString)
-      panic(err)
-  }
+	db, err := gorm.Open("postgres", dbString)
+	if err != nil {
+		fmt.Println("failed to connect database: " + dbString)
+		panic(err)
+	}
 
-  //db.LogMode(true)
+	//db.LogMode(true)
 
-  db.AutoMigrate(&User{})
-  db.AutoMigrate(&TotpToken{})
-  db.AutoMigrate(&FidoToken{})
-  db.AutoMigrate(&AuditEvent{})
+	db.AutoMigrate(&User{})
+	db.AutoMigrate(&TotpToken{})
+	db.AutoMigrate(&FidoToken{})
+	db.AutoMigrate(&AuditEvent{})
 
-  return DataStore{db}
+	return DataStore{db}
 }
 
-func (dataStore* DataStore) Close() {
-  dataStore.db.Close()  
+func (dataStore *DataStore) Close() {
+	dataStore.db.Close()
 }
 
-func (dataStore* DataStore) AddUser(email string, pass string) (*User, error) {
+func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 
-  if !govalidator.IsEmail(email) {
-    return nil, fmt.Errorf("invalid email address %s", email)
-  }
+	if !govalidator.IsEmail(email) {
+		return nil, fmt.Errorf("invalid email address %s", email)
+	}
 
-  user := &User{Email: email, Password: pass, UUID: uuid.NewV4().String()}
+	user := &User{Email: email, Password: pass, UUID: uuid.NewV4().String()}
 
-  err := dataStore.db.Create(user).Error
-  if err != nil {
-    return nil, err
-  }
+	err := dataStore.db.Create(user).Error
+	if err != nil {
+		return nil, err
+	}
 
-  return user, nil
+	return user, nil
 }
 
-func (dataStore* DataStore) GetUserByEmail(email string) (*User, error) {
+func (dataStore *DataStore) GetUserByEmail(email string) (*User, error) {
 
-  var user User
-  err := dataStore.db.Where(&User{Email: email}).First(&user).Error
-  if (err != nil) && (err != gorm.ErrRecordNotFound) {
-    return nil, err
-  } else if (err != nil) && (err == gorm.ErrRecordNotFound) {
-    return nil, nil
-  }
+	var user User
+	err := dataStore.db.Where(&User{Email: email}).First(&user).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
 
-  return &user, nil
+	return &user, nil
 }
 
-func (dataStore* DataStore) GetUserByUUID(uuid string) (*User, error) {
+func (dataStore *DataStore) GetUserByUUID(uuid string) (*User, error) {
 
-  var user User
-  err := dataStore.db.Where(&User{UUID: uuid}).First(user).Error
-  if (err != nil) && (err != gorm.ErrRecordNotFound) {
-    return nil, err
-  } else if (err != nil) && (err == gorm.ErrRecordNotFound) {
-    return nil, nil
-  }
+	var user User
+	err := dataStore.db.Where(&User{UUID: uuid}).First(user).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
 
-  return &user, nil
+	return &user, nil
 }
 
-func (dataStore* DataStore) UpdateUser(user *User) (*User, error) {
+func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
 
-  err := dataStore.db.Save(&user).Error
-  if err != nil {
-    return nil, err
-  }
+	err := dataStore.db.Save(&user).Error
+	if err != nil {
+		return nil, err
+	}
 
-  return user, nil
+	return user, nil
 }
 
-func (dataStore* DataStore) GetFidoTokens(u *User) ([]FidoToken, error) {
-  var fidoTokens []FidoToken
+func (dataStore *DataStore) GetFidoTokens(u *User) ([]FidoToken, error) {
+	var fidoTokens []FidoToken
 
-  err := dataStore.db.Model(u).Related(&fidoTokens).Error
+	err := dataStore.db.Model(u).Related(&fidoTokens).Error
 
-  return fidoTokens, err
+	return fidoTokens, err
 }
-
-
