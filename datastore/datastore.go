@@ -14,10 +14,13 @@ type User struct {
 	UUID         string `gorm:"not null;unique"`
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`
-	Status 		 UserStatus `sql:"not null;type:ENUM('disabled', 'pending', 'enabled', 'blocked')"`
+	Activated    bool   `gorm:"not null; default:false"`
+	Enabled		 bool   `gorm:"not null; default:false"`
+	Locked		 bool   `gorm:"not null; default:false"`
+	Admin		 bool   `gorm:"not null; default:false"`	
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
-	LoginRetries uint
+	LoginRetries uint   `gorm:"not null; default:0"`
 }
 
 func (u *User) SecondFactors() bool {
@@ -94,7 +97,14 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 		return nil, fmt.Errorf("invalid email address %s", email)
 	}
 
-	user := &User{Email: email, Password: pass, UUID: uuid.NewV4().String()}
+	user := &User{
+		Email: email, 
+		Password: pass, 
+		UUID: uuid.NewV4().String(),
+		Enabled: true,
+		Activated: false,
+		Locked: false,
+		Admin: false}
 
 	err := dataStore.db.Create(user).Error
 	if err != nil {
