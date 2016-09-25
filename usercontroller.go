@@ -16,17 +16,50 @@ type UserStoreInterface interface {
 }
 
 type TokenStoreInterface interface {
-	AddToken(uuid string)
+	AddFidoToken(u *datastore.User, token* datastore.FidoToken) (user *datastore.User, err error)
+	AddTotpToken(u *datastore.User, token* datastore.TotpToken) (user *datastore.User, err error)
+	GetFidoTokens(u *datastore.User) ([]datastore.FidoToken, error)
+	GetTotpTokens(u *datastore.User) ([]datastore.TotpToken, error)
 }
+
 
 type MailInterface interface {
 	Send(email string, subject string, body string)
 }
 
+// Login status return objects
 type LoginStatus struct {
 	code    uint64
 	message string
 }
+
+// User controller status enumerations
+const (
+    LoginSuccess = iota  // Login complete
+    LoginFailure = iota  // Login failed
+    LoginPartial = iota  // Further credentials required
+)
+
+
+type UserStatus string
+const (
+	UserStateDisabled UserStatus = "disabled"
+    UserStatePending UserStatus  = "pending"
+    UserStateEnabled UserStatus  = "enabled"
+    UserStateBlocked UserStatus  = "blocked"
+)
+
+func (u *UserStatus) Scan(value interface{}) error { *u = UserStatus(value.([]byte)); return nil }
+func (u UserStatus) Value() (driver.Value, error)  { return string(u), nil }
+
+
+// Login return object instances
+var loginSuccess  = LoginStatus{LoginSuccess, "Login successful"}
+var loginFailure  = LoginStatus{LoginFailure, "Invalid username or password"}
+var loginRequired = LoginStatus{LoginFailure, "Login required"}
+var loginPartial  = LoginStatus{LoginFailure, "Second factor required"}
+var loginError    = errors.New("internal server error")
+
 
 type UserController struct {
 	userStore UserStoreInterface
@@ -76,10 +109,6 @@ func (userController *UserController) CreateUser(email string, pass string) (use
 	return u, nil
 }
 
-var loginSuccess = LoginStatus{http.StatusOK, "Login successful"}
-var loginFailure = LoginStatus{http.StatusUnauthorized, "Invalid username or password"}
-var loginRequired = LoginStatus{http.StatusUnauthorized, "Invalid username or password"}
-var loginError = errors.New("internal server error")
 
 //TODO: differentiate between login states and internal errors
 func (userController *UserController) Login(email string, pass string) (status *LoginStatus, err error) {
@@ -108,6 +137,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 	if u.SecondFactors() == true {
 		//TODO: prompt for second factor login
+		return &loginPartial;
 	}
 
 	// Login if user exists and passwords match

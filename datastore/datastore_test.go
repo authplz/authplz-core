@@ -144,7 +144,41 @@ func TestDatastore(t *testing.T) {
 			t.Error("No second factors found")
 			return
 		}
+	})
 
+	t.Run("Add TOTP tokens", func(t *testing.T) {
+		// Create user
+		u, err := ds.GetUserByEmail(fakeEmail)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if u == nil {
+			t.Error("User find by email failed")
+			return
+		}
+
+		totpToken := FidoToken{}
+		u.TotpTokens = append(u.TotpTokens, totpToken)
+
+		u, err = ds.UpdateUser(u)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		u, err = ds.GetUserByEmail(fakeEmail)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		fmt.Printf("%+v", u)
+
+		if u.SecondFactors() == false {
+			t.Error("No second factors found")
+			return
+		}
 	})
 
 	// Tear down user controller

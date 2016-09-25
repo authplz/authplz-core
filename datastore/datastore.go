@@ -14,6 +14,7 @@ type User struct {
 	UUID         string `gorm:"not null;unique"`
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`
+	Status 		 UserStatus `sql:"not null;type:ENUM('disabled', 'pending', 'enabled', 'blocked')"`
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
 	LoginRetries uint
@@ -139,10 +140,30 @@ func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
 	return user, nil
 }
 
+func (ds *DataStore) AddFidoToken(u *User, fidoToken* FidoToken) (user *User, err error) {
+	u.FidoTokens = append(u.FidoTokens, *fidoToken)
+	u, err = ds.UpdateUser(u)
+	return u, err
+}
+
+func (ds *DataStore) AddTotpToken(u *User, totpToken* TotpToken) (user *User, err error) {
+	u.TotpTokens = append(u.TotpTokens, *totpToken)
+	u, err = ds.UpdateUser(u)
+	return u, err
+}
+
 func (dataStore *DataStore) GetFidoTokens(u *User) ([]FidoToken, error) {
 	var fidoTokens []FidoToken
 
 	err := dataStore.db.Model(u).Related(&fidoTokens).Error
 
 	return fidoTokens, err
+}
+
+func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
+	var totpTokens []TotpToken
+
+	err := dataStore.db.Model(u).Related(&totpTokens).Error
+
+	return totpTokens, err
 }

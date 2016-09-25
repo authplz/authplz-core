@@ -29,6 +29,16 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
+	t.Run("Login user", func(t *testing.T) {
+		u, err := uc.Login(fakeEmail, fakePass)
+		if err != nil {
+			t.Error(err)
+		}
+		if u == nil {
+			t.Error("User login failed")
+		}
+	})
+
 	// Tear down user controller
 
 }
