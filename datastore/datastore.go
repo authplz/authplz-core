@@ -15,9 +15,9 @@ type User struct {
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`
 	Activated    bool   `gorm:"not null; default:false"`
-	Enabled		 bool   `gorm:"not null; default:false"`
-	Locked		 bool   `gorm:"not null; default:false"`
-	Admin		 bool   `gorm:"not null; default:false"`	
+	Enabled      bool   `gorm:"not null; default:false"`
+	Locked       bool   `gorm:"not null; default:false"`
+	Admin        bool   `gorm:"not null; default:false"`
 	LoginRetries uint   `gorm:"not null; default:0"`
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
@@ -96,13 +96,13 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 	}
 
 	user := &User{
-		Email: email, 
-		Password: pass, 
-		UUID: uuid.NewV4().String(),
-		Enabled: true,
+		Email:     email,
+		Password:  pass,
+		UUID:      uuid.NewV4().String(),
+		Enabled:   true,
 		Activated: false,
-		Locked: false,
-		Admin: false}
+		Locked:    false,
+		Admin:     false}
 
 	dataStore.db = dataStore.db.Create(user)
 	err := dataStore.db.Error
@@ -149,13 +149,13 @@ func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
 	return user, nil
 }
 
-func (ds *DataStore) AddFidoToken(u *User, fidoToken* FidoToken) (user *User, err error) {
+func (ds *DataStore) AddFidoToken(u *User, fidoToken *FidoToken) (user *User, err error) {
 	u.FidoTokens = append(u.FidoTokens, *fidoToken)
 	u, err = ds.UpdateUser(u)
 	return u, err
 }
 
-func (ds *DataStore) AddTotpToken(u *User, totpToken* TotpToken) (user *User, err error) {
+func (ds *DataStore) AddTotpToken(u *User, totpToken *TotpToken) (user *User, err error) {
 	u.TotpTokens = append(u.TotpTokens, *totpToken)
 	u, err = ds.UpdateUser(u)
 	return u, err
@@ -178,12 +178,10 @@ func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
 }
 
 func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
-	var err error;
+	var err error
 
-	u.FidoTokens, err= dataStore.GetFidoTokens(u);
-	u.TotpTokens, err= dataStore.GetTotpTokens(u);
+	u.FidoTokens, err = dataStore.GetFidoTokens(u)
+	u.TotpTokens, err = dataStore.GetTotpTokens(u)
 
 	return u, err
 }
-
-

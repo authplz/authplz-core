@@ -16,8 +16,8 @@ type UserStoreInterface interface {
 }
 
 type TokenStoreInterface interface {
-	AddFidoToken(u *datastore.User, token* datastore.FidoToken) (user *datastore.User, err error)
-	AddTotpToken(u *datastore.User, token* datastore.TotpToken) (user *datastore.User, err error)
+	AddFidoToken(u *datastore.User, token *datastore.FidoToken) (user *datastore.User, err error)
+	AddTotpToken(u *datastore.User, token *datastore.TotpToken) (user *datastore.User, err error)
 	GetFidoTokens(u *datastore.User) ([]datastore.FidoToken, error)
 	GetTotpTokens(u *datastore.User) ([]datastore.TotpToken, error)
 }
@@ -34,24 +34,23 @@ type LoginStatus struct {
 
 // User controller status enumerations
 const (
-    LoginSuccess = iota  	// Login complete
-    LoginFailure = iota  	// Login failed
-    LoginPartial = iota  	// Further credentials required
-    LoginLocked = iota   	// Account locked
-    LoginUnactivated = iota // Account not yet activated
-    LoginDisabled = iota 	// Account disabled
+	LoginSuccess     = iota // Login complete
+	LoginFailure     = iota // Login failed
+	LoginPartial     = iota // Further credentials required
+	LoginLocked      = iota // Account locked
+	LoginUnactivated = iota // Account not yet activated
+	LoginDisabled    = iota // Account disabled
 )
 
 // Login return object instances
-var loginSuccess  = LoginStatus{LoginSuccess, "Login successful"}
-var loginFailure  = LoginStatus{LoginFailure, "Invalid username or password"}
+var loginSuccess = LoginStatus{LoginSuccess, "Login successful"}
+var loginFailure = LoginStatus{LoginFailure, "Invalid username or password"}
 var loginRequired = LoginStatus{LoginFailure, "Login required"}
-var loginPartial  = LoginStatus{LoginFailure, "Second factor required"}
-var loginLocked   = LoginStatus{LoginLocked, "User account locked"}
-var loginUnactivated  = LoginStatus{LoginUnactivated, "User account not activated"}
+var loginPartial = LoginStatus{LoginFailure, "Second factor required"}
+var loginLocked = LoginStatus{LoginLocked, "User account locked"}
+var loginUnactivated = LoginStatus{LoginUnactivated, "User account not activated"}
 var loginDisabled = LoginStatus{LoginDisabled, "User account disabled"}
-var loginError    = errors.New("internal server error")
-
+var loginError = errors.New("internal server error")
 
 type UserController struct {
 	userStore UserStoreInterface
@@ -111,16 +110,16 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		return nil, loginError
 	}
 
-	u.Activated = true;
+	u.Activated = true
 
-	u, err = userController.userStore.UpdateUser(u);
+	u, err = userController.userStore.UpdateUser(u)
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
 		return nil, loginError
 	}
 
-	return u, nil;
+	return u, nil
 }
 
 //TODO: differentiate between login states and internal errors
@@ -146,14 +145,14 @@ func (userController *UserController) Login(email string, pass string) (status *
 	if hashErr != nil {
 
 		if u != nil {
-			u.LoginRetries ++;
+			u.LoginRetries++
 
-			if(u.LoginRetries > 5) {
+			if u.LoginRetries > 5 {
 				fmt.Println("Locking user %s", email)
 				u.Locked = true
 			}
 
-			u, err = userController.userStore.UpdateUser(u);
+			u, err = userController.userStore.UpdateUser(u)
 			if err != nil {
 				// Userstore error, wrap
 				fmt.Println(err)
@@ -168,24 +167,24 @@ func (userController *UserController) Login(email string, pass string) (status *
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
 
-		if (u.Enabled == false) {
+		if u.Enabled == false {
 			//TODO: handle disabled error
 			return &loginDisabled, nil
 		}
 
-		if (u.Activated == false) {
+		if u.Activated == false {
 			//TODO: handle un-activated error
 			return &loginUnactivated, nil
 		}
 
-		if (u.Locked == true) {
+		if u.Locked == true {
 			//TODO: handle locked error
 			return &loginLocked, nil
 		}
 
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
-			return &loginPartial, nil;
+			return &loginPartial, nil
 		}
 
 		//TODO: update login time etc.
@@ -194,5 +193,3 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 	return &loginFailure, nil
 }
-
-

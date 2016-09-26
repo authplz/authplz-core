@@ -106,8 +106,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u.Enabled = false;
-		uc.userStore.UpdateUser(u);
+		u.Enabled = false
+		uc.userStore.UpdateUser(u)
 
 		res, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
@@ -122,8 +122,8 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		u.Enabled = true;
-		uc.userStore.UpdateUser(u);
+		u.Enabled = true
+		uc.userStore.UpdateUser(u)
 	})
 
 	t.Run("Lock accounts after N logins", func(t *testing.T) {

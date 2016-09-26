@@ -124,7 +124,7 @@ func TestDatastore(t *testing.T) {
 		}
 
 		fidoToken := FidoToken{}
-		ds.db.Model(u).Association("FidoTokens").Append(fidoToken);
+		ds.db.Model(u).Association("FidoTokens").Append(fidoToken)
 
 		u, err = ds.GetUserByEmail(fakeEmail)
 		if err != nil {
@@ -132,7 +132,7 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		ds.GetTokens(u);
+		ds.GetTokens(u)
 
 		fmt.Printf("%+v", u)
 
@@ -141,7 +141,6 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 	})
-
 
 	// Tear down user controller
 
