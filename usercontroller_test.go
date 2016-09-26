@@ -33,12 +33,15 @@ func TestUserController(t *testing.T) {
 		res, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
+			t.FailNow()
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginUnactivated {
 			t.Error("User login succeeded (and shouldn't have)")
+			t.FailNow()
 		}
 	})
 
@@ -46,6 +49,7 @@ func TestUserController(t *testing.T) {
 		u, err := uc.Activate(fakeEmail)
 		if err != nil {
 			t.Error(err)
+			t.FailNow()
 		}
 		if u == nil {
 			t.Error("No login result")
@@ -53,14 +57,13 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login user", func(t *testing.T) {
-		uc.Activate(fakeEmail)
-
 		res, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginSuccess {
 			t.Error("User login failed")
@@ -74,6 +77,7 @@ func TestUserController(t *testing.T) {
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginFailure {
 			t.Error("User login succeeded with incorrect password")
@@ -87,15 +91,21 @@ func TestUserController(t *testing.T) {
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginFailure {
 			t.Error("User login succeeded with unknown email")
 		}
 	})
 
-	t.Run("Reject login with disabled user", func(t *testing.T) {
+	t.Run("Reject login with disabled user account", func(t *testing.T) {
 
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
 		u.Enabled = false;
 		uc.userStore.UpdateUser(u);
 
@@ -105,9 +115,10 @@ func TestUserController(t *testing.T) {
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginDisabled {
-			t.Error("User login succeeded with unknown email")
+			t.Error("User login succeeded with account disabled")
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
@@ -126,6 +137,7 @@ func TestUserController(t *testing.T) {
 		}
 		if res == nil {
 			t.Error("No login result")
+			t.FailNow()
 		}
 		if res.code != LoginLocked {
 			t.Error("User account was not locked", res)

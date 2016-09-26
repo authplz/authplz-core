@@ -8,7 +8,7 @@ func TestDatastore(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := datastore.NewDataStore(dbString)
+	ds := NewDataStore(dbString)
 	defer ds.Close()
 
 	ds.ForceSync()
@@ -111,7 +111,7 @@ func TestDatastore(t *testing.T) {
 
 	})
 
-	t.Run("Add U2F tokens", func(t *testing.T) {
+	t.Skip("Add U2F tokens", func(t *testing.T) {
 		// Create user
 		u, err := ds.GetUserByEmail(fakeEmail)
 		if err != nil {
@@ -124,19 +124,15 @@ func TestDatastore(t *testing.T) {
 		}
 
 		fidoToken := FidoToken{}
-		u.FidoTokens = append(u.FidoTokens, fidoToken)
-
-		u, err = ds.UpdateUser(u)
-		if err != nil {
-			t.Error(err)
-			return
-		}
+		ds.db.Model(u).Association("FidoTokens").Append(fidoToken);
 
 		u, err = ds.GetUserByEmail(fakeEmail)
 		if err != nil {
 			t.Error(err)
 			return
 		}
+
+		ds.GetTokens(u);
 
 		fmt.Printf("%+v", u)
 
@@ -146,40 +142,6 @@ func TestDatastore(t *testing.T) {
 		}
 	})
 
-	t.Run("Add TOTP tokens", func(t *testing.T) {
-		// Create user
-		u, err := ds.GetUserByEmail(fakeEmail)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if u == nil {
-			t.Error("User find by email failed")
-			return
-		}
-
-		totpToken := FidoToken{}
-		u.TotpTokens = append(u.TotpTokens, totpToken)
-
-		u, err = ds.UpdateUser(u)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		u, err = ds.GetUserByEmail(fakeEmail)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		fmt.Printf("%+v", u)
-
-		if u.SecondFactors() == false {
-			t.Error("No second factors found")
-			return
-		}
-	})
 
 	// Tear down user controller
 

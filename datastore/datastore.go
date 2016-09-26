@@ -18,9 +18,9 @@ type User struct {
 	Enabled		 bool   `gorm:"not null; default:false"`
 	Locked		 bool   `gorm:"not null; default:false"`
 	Admin		 bool   `gorm:"not null; default:false"`	
+	LoginRetries uint   `gorm:"not null; default:0"`
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
-	LoginRetries uint   `gorm:"not null; default:0"`
 }
 
 func (u *User) SecondFactors() bool {
@@ -66,12 +66,7 @@ func NewDataStore(dbString string) (dataStore DataStore) {
 		panic(err)
 	}
 
-	//db.LogMode(true)
-
-	db.AutoMigrate(&User{})
-	db.AutoMigrate(&TotpToken{})
-	db.AutoMigrate(&FidoToken{})
-	db.AutoMigrate(&AuditEvent{})
+	db = db.LogMode(true)
 
 	return DataStore{db}
 }
@@ -81,14 +76,17 @@ func (dataStore *DataStore) Close() {
 }
 
 func (ds *DataStore) ForceSync() {
-	ds.db.DropTableIfExists(&User{})
-	ds.db.AutoMigrate(&User{})
-	ds.db.DropTableIfExists(&FidoToken{})
-	ds.db.AutoMigrate(&FidoToken{})
-	ds.db.DropTableIfExists(&TotpToken{})
-	ds.db.AutoMigrate(&TotpToken{})
-	ds.db.DropTableIfExists(&AuditEvent{})
-	ds.db.AutoMigrate(&AuditEvent{})
+	db := ds.db
+
+	db = db.Exec("DROP TABLE IF EXISTS fido_tokens CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS totp_tokens CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS users CASCADE;")
+
+	db = db.AutoMigrate(&User{})
+	db = db.AutoMigrate(&FidoToken{})
+	db = db.AutoMigrate(&TotpToken{})
+	db = db.AutoMigrate(&AuditEvent{})
 }
 
 func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
@@ -106,7 +104,8 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 		Locked: false,
 		Admin: false}
 
-	err := dataStore.db.Create(user).Error
+	dataStore.db = dataStore.db.Create(user)
+	err := dataStore.db.Error
 	if err != nil {
 		return nil, err
 	}
@@ -177,3 +176,14 @@ func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
 
 	return totpTokens, err
 }
+
+func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
+	var err error;
+
+	u.FidoTokens, err= dataStore.GetFidoTokens(u);
+	u.TotpTokens, err= dataStore.GetTotpTokens(u);
+
+	return u, err
+}
+
+

@@ -65,7 +65,7 @@ func NewUserController(userStore UserStoreInterface, mail MailInterface) UserCon
 func (userController *UserController) CreateUser(email string, pass string) (user *datastore.User, err error) {
 
 	// Generate password hash
-	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), 14)
+	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), 8)
 	if hashErr != nil {
 		fmt.Println(hashErr)
 		return nil, fmt.Errorf("password hash to short")
