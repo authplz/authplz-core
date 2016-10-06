@@ -11,6 +11,12 @@ type TokenClaims struct {
 	jwt.StandardClaims
 }
 
+type TokenAction string
+//const {
+//	TokenActionActivate = "activate"
+//	TokenActionUnblock  = "unblock"
+//}
+
 // User object
 type TokenController struct {
 	hmacSecret []byte
