@@ -1,4 +1,4 @@
-package main
+package usercontroller
 
 //import "strings"
 import "fmt"
@@ -7,6 +7,34 @@ import "errors"
 import "golang.org/x/crypto/bcrypt"
 
 import "github.com/ryankurte/authplz/datastore"
+
+type UserInterface interface {
+	UUID() string
+	Email() string
+	Password() string
+	SetPassword(pass string)
+	Activated() bool
+	SetActivated(activated bool)
+	Enabled() bool
+	SetEnabled(enabled bool)
+	Locked() bool
+	SetLocked(locked bool)
+	Admin() bool
+	SetAdmin(admin bool)
+	LoginRetries() uint
+	ClearLoginRetries()
+}
+
+type User struct {
+    UUID         string `sql:"not null;unique"`
+    Email        string `sql:"not null;unique"`
+    Password     string `sql:"not null"`
+    Activated    bool   `sql:"not null; default:false"`
+    Enabled      bool   `sql:"not null; default:false"`
+    Locked       bool   `sql:"not null; default:false"`
+    Admin        bool   `sql:"not null; default:false"`
+    LoginRetries uint   `sql:"not null; default:0"`
+}
 
 type UserStoreInterface interface {
 	AddUser(email string, pass string) (user *datastore.User, err error)

@@ -78,6 +78,7 @@ func (mc *MailController) SendMail(email string, subject string, body string) er
 	return nil
 }
 
+// Send a signup (activation) email to the provided address
 func (mc *MailController) SendSignup(email string, data SignupFields) error {
     buf := new(bytes.Buffer)
     tmpl, ok := mc.templates["signup"]

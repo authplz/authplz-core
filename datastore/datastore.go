@@ -8,25 +8,6 @@ import "github.com/asaskevich/govalidator"
 import "github.com/jinzhu/gorm"
 import _ "github.com/jinzhu/gorm/dialects/postgres"
 
-// User object
-type User struct {
-	gorm.Model
-	UUID         string `gorm:"not null;unique"`
-	Email        string `gorm:"not null;unique"`
-	Password     string `gorm:"not null"`
-	Activated    bool   `gorm:"not null; default:false"`
-	Enabled      bool   `gorm:"not null; default:false"`
-	Locked       bool   `gorm:"not null; default:false"`
-	Admin        bool   `gorm:"not null; default:false"`
-	LoginRetries uint   `gorm:"not null; default:0"`
-	FidoTokens   []FidoToken
-	TotpTokens   []TotpToken
-}
-
-func (u *User) SecondFactors() bool {
-	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
-}
-
 // Fido/U2F token object
 type FidoToken struct {
 	gorm.Model

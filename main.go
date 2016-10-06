@@ -12,12 +12,13 @@ import "github.com/gocraft/web"
 
 import "github.com/asaskevich/govalidator"
 
+import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/datastore"
 
 type AuthPlzCtx struct {
 	port           string
 	address        string
-	userController *UserController
+	userController *usercontroller.UserController
 }
 
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -73,7 +74,7 @@ func main() {
 	defer ds.Close()
 
 	// Create controllers
-	uc := NewUserController(&ds, nil)
+	uc := usercontroller.NewUserController(&ds, nil)
 
 	// Create router
 	router := web.New(AuthPlzCtx{port, address, &uc}).
@@ -88,3 +89,5 @@ func main() {
 	fmt.Println("Listening at: " + port)
 	http.ListenAndServe("localhost:"+port, router)
 }
+
+
