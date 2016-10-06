@@ -1,17 +1,12 @@
 package datastore
+
 import "github.com/jinzhu/gorm"
+import "github.com/ryankurte/authplz/usercontroller"
 
 // User object
 type User struct {
     gorm.Model
-    UUID         string `gorm:"not null;unique"`
-    Email        string `gorm:"not null;unique"`
-    Password     string `gorm:"not null"`
-    Activated    bool   `gorm:"not null; default:false"`
-    Enabled      bool   `gorm:"not null; default:false"`
-    Locked       bool   `gorm:"not null; default:false"`
-    Admin        bool   `gorm:"not null; default:false"`
-    LoginRetries uint   `gorm:"not null; default:0"`
+    usercontroller.User
     FidoTokens   []FidoToken
     TotpTokens   []TotpToken
 }
