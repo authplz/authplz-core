@@ -21,11 +21,11 @@ type MailController struct {
 }
 
 // Fields required for a signup email
-type SignupFields struct {
+type MailFields struct {
     Domain string
     UserName string
     ServiceName string
-    ActivationUrl string
+    ActionUrl string
 }
 
 // Standard mailing templates (required for MailController creation)
@@ -79,7 +79,7 @@ func (mc *MailController) SendMail(email string, subject string, body string) er
 }
 
 // Send a signup (activation) email to the provided address
-func (mc *MailController) SendSignup(email string, data SignupFields) error {
+func (mc *MailController) SendSignup(email string, data MailFields) error {
     buf := new(bytes.Buffer)
     tmpl, ok := mc.templates["signup"]
     if !ok {
@@ -93,6 +93,20 @@ func (mc *MailController) SendSignup(email string, data SignupFields) error {
     return mc.SendMail(email, data.ServiceName + " account activation", buf.String());
 }
 
+// Send a password reset email to the provided address
+func (mc *MailController) SendPasswordReset(email string, data MailFields) error {
+    buf := new(bytes.Buffer)
+    tmpl, ok := mc.templates["passwordreset"]
+    if !ok {
+        return fmt.Errorf("template %s not found", "signup");
+    }
+    err := tmpl.Execute(buf, data)
+    if err != nil {
+        return err;
+    }
+
+    return mc.SendMail(email, data.ServiceName + " password reset", buf.String());
+}
 
 
 

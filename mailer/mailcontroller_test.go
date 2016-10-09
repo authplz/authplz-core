@@ -33,13 +33,28 @@ func TestMailController(t *testing.T) {
 
     t.Run("Can send signup emails", func(t *testing.T) {
 
-        sf := SignupFields{
+        sf := MailFields{
             UserName: "TestUser",
             ServiceName: "AuthPlzTest",
-            ActivationUrl: "https://not.a.url/kfaksbderubg",
+            ActionUrl: "https://not.a.url/action?token=activate",
         }
 
         err := mc.SendSignup("test@" + mgDomain, sf);
+        if err != nil {
+            fmt.Println(err)
+            t.Error(err)
+        }
+    })
+
+        t.Run("Can send password reset emails", func(t *testing.T) {
+
+        sf := MailFields{
+            UserName: "TestUser",
+            ServiceName: "AuthPlzTest",
+            ActionUrl: "https://not.a.url/action?token=reset",
+        }
+
+        err := mc.SendPasswordReset("test@" + mgDomain, sf);
         if err != nil {
             fmt.Println(err)
             t.Error(err)

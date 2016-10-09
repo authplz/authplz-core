@@ -36,8 +36,16 @@ type AuditEvent struct {
 	OriginIP  string
 }
 
+
+// Datastore instance storage
 type DataStore struct {
 	db *gorm.DB
+}
+
+// Query filter types
+type QueryFilter struct {
+	Limit uint		// Number of objects to return
+	Offset uint		// Offset of objects to return
 }
 
 func NewDataStore(dbString string) (dataStore DataStore) {
@@ -166,3 +174,18 @@ func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
 
 	return u, err
 }
+
+func (ds *DataStore) AddAuditEvent(u *User, auditEvent *AuditEvent) (user *User, err error) {
+	u.AuditEvents = append(u.AuditEvents, *auditEvent)
+	u, err = ds.UpdateUser(u)
+	return u, err
+}
+
+func (dataStore *DataStore) GetAuditEvents(u *User) ([]AuditEvent, error) {
+	var auditEvents []AuditEvent
+
+	err := dataStore.db.Model(u).Related(&auditEvents).Error
+
+	return auditEvents, err
+}
+

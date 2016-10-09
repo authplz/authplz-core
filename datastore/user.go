@@ -1,24 +1,57 @@
 package datastore
-
 import "github.com/jinzhu/gorm"
-import "github.com/ryankurte/authplz/usercontroller"
 
 // User object
 type User struct {
     gorm.Model
-    usercontroller.User
+    UUID         string `gorm:"not null;unique"`
+    Email        string `gorm:"not null;unique"`
+    Password     string `gorm:"not null"`
+    Activated    bool   `gorm:"not null; default:false"`
+    Enabled      bool   `gorm:"not null; default:false"`
+    Locked       bool   `gorm:"not null; default:false"`
+    Admin        bool   `gorm:"not null; default:false"`
+    LoginRetries uint   `gorm:"not null; default:0"`
     FidoTokens   []FidoToken
     TotpTokens   []TotpToken
+    AuditEvents  []AuditEvent
 }
 
 func (u *User) SecondFactors() bool {
     return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
 
+// It really frustrates me that I have to depend on the datastore.User type from usercontroller
+// especially because the actual datastore can be an interface :-/
+
+//type UserStoreInterface interface {
+//    AddUser(email string, pass string) (user *datastore.User, err error)
+//}
+
+// The Go standard method seems to be to create a usercontroller user struct and include it in the database user struct
+// However there does not seem to be a way to achieve this without requiring sql information / recursive inclusions :-/
+
+// So I tried creating an interface and working with that, but it's also not a thing...
+// It turns out you can't throw interfaces around as objects in the definition of interfaces
+// Or, I can't work out how :-(
+type UserInterface interface {
+    UUID() string
+    Email() string
+    Password() string
+    SetPassword(pass string)
+    Activated() bool
+    SetActivated(activated bool)
+    Enabled() bool
+    SetEnabled(enabled bool)
+    Locked() bool
+    SetLocked(locked bool)
+    Admin() bool
+    SetAdmin(admin bool)
+    LoginRetries() uint
+    ClearLoginRetries()
+}
+
 // Getters and Setters
-// These are here because it appears to be the only way of generalising the user object using an interface
-// The Go standard method would be to create a usercontroller user struct and include it in the database user struct
-// However there does not seem to be a way to achieve this without requiring sql information 
 func (u *User) GetUUID() string { return u.UUID }
 func (u *User) GetEmail() string { return u.Email }
 func (u *User) GetPassword() string { return u.Password }
