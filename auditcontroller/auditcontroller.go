@@ -1,16 +1,16 @@
-package auditcontroller
+package logcontroller
 
 import "github.com/ryankurte/authplz/datastore"
 
 // Interface that datastore must implement to provide audit controller
-type AuditStoreInterface interface {
+type LogStoreInterface interface {
     AddAuditEvent(u *datastore.User, token *datastore.AuditEvent) (user *datastore.User, err error)
     //GetAuditEvents(u *datastore.User) (user *[]datastore.AuditEvent, err error)
 }
 
 // Audit controller interface
-type AuditController struct {
-    auditStore AuditStoreInterface
+type LogController struct {
+    logStore LogStoreInterface
 }
 
 type UserEvent string;
@@ -20,12 +20,12 @@ const LoginEvent            UserEvent = "login"
 const PasswordChangeEvent   UserEvent = "password change"
 
 // Instantiate a mail controller
-func NewAuditController(auditStore AuditStoreInterface) (*AuditController) {
+func NewLogController(logStore LogStoreInterface) (*LogController) {
 
-    return &AuditController{auditStore: auditStore}
+    return &LogController{logStore: logStore}
 }
 
-func (ac *AuditController) AddEvent(user *datastore.User, event UserEvent) (err error) {
+func (ac *LogController) AddEvent(user *datastore.User, event UserEvent) (err error) {
 
 
     return nil
