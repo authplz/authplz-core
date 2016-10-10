@@ -9,6 +9,7 @@ import "net/http"
 //import "encoding/json"
 
 import "github.com/gocraft/web"
+//import "github.com/kataras/iris"
 
 import "github.com/asaskevich/govalidator"
 
@@ -19,6 +20,12 @@ type AuthPlzCtx struct {
 	port           string
 	address        string
 	userController *usercontroller.UserController
+}
+
+const 
+
+func TestMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	fmt.Println(req.Context());
 }
 
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -80,6 +87,7 @@ func main() {
 	router := web.New(AuthPlzCtx{port, address, &uc}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
+		Middleware(TestMiddleware).
 		Post("/login", (*AuthPlzCtx).Login).
 		Post("/create", (*AuthPlzCtx).Create).
 		Get("/logout", (*AuthPlzCtx).Logout).

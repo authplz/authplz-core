@@ -2,6 +2,7 @@ package eventcontroller
 
 import "fmt"
 
+// Async services must implement an event handling interface
 type AsyncServiceInterface interface {
     HandleEvent(event interface{}) error
 }
@@ -14,6 +15,7 @@ type AsyncService struct {
 
 // Create an async service routine
 func NewAsyncService(i AsyncServiceInterface) AsyncService {
+
     // Create inbound channel
     c := make(chan interface{}, 100)
 
@@ -39,7 +41,7 @@ func (svc *AsyncService) Run() error {
     fmt.Println("Started runner")
 
     for {
-        e, open := svc.c
+        e, open := <- svc.c
         if open {
             // Call event handler
             svc.i.HandleEvent(e)

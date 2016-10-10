@@ -6,8 +6,8 @@ import "fmt"
 // Interface that services must implement
 type ServiceInterface interface {
 	Run() error
+    SendEvent(e interface{}) error
 	Exit() error
-	SendEvent(e interface{}) error
 }
 
 // Event controller interface
@@ -25,37 +25,29 @@ func NewServiceManager() *ServiceManager {
 	return &ServiceManager{in: in}
 }
 
-// Send an event to all bound services
-func (ec *ServiceManager) SendEvent(event interface{}) {
-	ec.in <- event
-}
-
 // Bind a service to the event controller
 func (ec *ServiceManager) BindService(service ServiceInterface) {
 	ec.services = append(ec.services, service)
 }
 
-// Event loop / distribution routine
-func (ec *ServiceManager) EventLoop() (err error) {
-	// Run event loop
-	for {
-		// Await event on global channel
-		event, open := <-ec.in
+// Run the event controller
+func (ec *ServiceManager) Run() (err error) {
 
-		if open {
-			// Dispatch to bound services
-			for _, s := range ec.services {
-				s.SendEvent(event)
-			}
-		} else {
-			// Close service channels
-			for _, s := range ec.services {
-				s.Exit()
-			}
-			break
-		}
-	}
-	return nil
+    // Launch services
+    for _, s := range ec.services {
+        ec.wg.Add(1)
+        go ec.execute(s)
+    }
+
+    // Start event loop
+    go ec.eventLoop()
+
+    return nil
+}
+
+// Send an event to all bound services
+func (ec *ServiceManager) SendEvent(event interface{}) {
+    ec.in <- event
 }
 
 // Exit the event controller
@@ -73,19 +65,28 @@ func (ec *ServiceManager) Exit() (err error) {
 	return nil
 }
 
-// Run the event controller
-func (ec *ServiceManager) Run() (err error) {
 
-	// Launch services
-	for _, s := range ec.services {
-		ec.wg.Add(1)
-		go ec.execute(s)
-	}
+// Event loop / distribution routine
+func (ec *ServiceManager) eventLoop() (err error) {
+    // Run event loop
+    for {
+        // Await event on global channel
+        event, open := <-ec.in
 
-	// Start event loop
-	go ec.EventLoop()
-
-	return nil
+        if open {
+            // Dispatch to bound services
+            for _, s := range ec.services {
+                s.SendEvent(event)
+            }
+        } else {
+            // Close service channels
+            for _, s := range ec.services {
+                s.Exit()
+            }
+            break
+        }
+    }
+    return nil
 }
 
 // Execute a service
