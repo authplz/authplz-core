@@ -10,6 +10,8 @@ import "net/http"
 
 import "github.com/gocraft/web"
 //import "github.com/kataras/iris"
+import "github.com/gorilla/sessions"
+import "github.com/gorilla/context"
 
 import "github.com/asaskevich/govalidator"
 
@@ -20,12 +22,19 @@ type AuthPlzCtx struct {
 	port           string
 	address        string
 	userController *usercontroller.UserController
+	sessionStore   *sessions.CookieStore
 }
 
-const 
-
-func TestMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	fmt.Println(req.Context());
+func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	session, err := ctx.sessionStore.Get(req.Request, "user-session")
+	if err != nil {
+		fmt.Println(err);
+	} else {
+		fmt.Println(session);
+	}
+	
+	//session.Save(r, w)
+	next(rw, req)
 }
 
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -80,14 +89,17 @@ func main() {
 	ds := datastore.NewDataStore(dbString)
 	defer ds.Close()
 
+	// Create session store
+	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
+
 	// Create controllers
 	uc := usercontroller.NewUserController(&ds, nil)
 
 	// Create router
-	router := web.New(AuthPlzCtx{port, address, &uc}).
+	router := web.New(AuthPlzCtx{port, address, &uc, sessionStore}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
-		Middleware(TestMiddleware).
+		Middleware((*AuthPlzCtx).SessionMiddleware).
 		Post("/login", (*AuthPlzCtx).Login).
 		Post("/create", (*AuthPlzCtx).Create).
 		Get("/logout", (*AuthPlzCtx).Logout).
@@ -95,5 +107,5 @@ func main() {
 
 	// Start listening
 	fmt.Println("Listening at: " + port)
-	http.ListenAndServe("localhost:"+port, router)
+	http.ListenAndServe("localhost:"+port, context.ClearHandler(router))
 }
