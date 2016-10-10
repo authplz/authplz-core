@@ -36,7 +36,6 @@ type AuditEvent struct {
 	OriginIP  string
 }
 
-
 // Datastore instance storage
 type DataStore struct {
 	db *gorm.DB
@@ -44,8 +43,8 @@ type DataStore struct {
 
 // Query filter types
 type QueryFilter struct {
-	Limit uint		// Number of objects to return
-	Offset uint		// Offset of objects to return
+	Limit  uint // Number of objects to return
+	Offset uint // Offset of objects to return
 }
 
 func NewDataStore(dbString string) (dataStore DataStore) {
@@ -188,4 +187,3 @@ func (dataStore *DataStore) GetAuditEvents(u *User) ([]AuditEvent, error) {
 
 	return auditEvents, err
 }
-

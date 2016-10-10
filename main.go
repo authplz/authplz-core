@@ -89,5 +89,3 @@ func main() {
 	fmt.Println("Listening at: " + port)
 	http.ListenAndServe("localhost:"+port, router)
 }
-
-

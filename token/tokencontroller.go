@@ -12,6 +12,7 @@ type TokenClaims struct {
 }
 
 type TokenAction string
+
 //const {
 //	TokenActionActivate = "activate"
 //	TokenActionUnblock  = "unblock"
@@ -31,13 +32,13 @@ func NewTokenController(hmacSecret string) *TokenController {
 func (tc *TokenController) BuildToken(uuid string, action string, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
-	    Action: action,
-	    StandardClaims: jwt.StandardClaims{
-	    	IssuedAt:  time.Now().Unix(),
-	        ExpiresAt: time.Now().Add(duration).Unix(),
-	        Subject:   uuid,
-	        Issuer:    "test",
-	    },
+		Action: action,
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(duration).Unix(),
+			Subject:   uuid,
+			Issuer:    "test",
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -61,10 +62,10 @@ func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) 
 
 	claims, ok := token.Claims.(*TokenClaims)
 	if ok && token.Valid {
-        fmt.Printf("%v %v", claims.Action, claims.StandardClaims.ExpiresAt)
-        return claims, nil
-    } else {
-        fmt.Println(err)
-        return nil, err
-    }
+		fmt.Printf("%v %v", claims.Action, claims.StandardClaims.ExpiresAt)
+		return claims, nil
+	} else {
+		fmt.Println(err)
+		return nil, err
+	}
 }

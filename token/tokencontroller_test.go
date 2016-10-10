@@ -45,8 +45,8 @@ func TestTokenController(t *testing.T) {
 	})
 
 	t.Run("Rejects invalid token signatures", func(t *testing.T) {
-		brokenToken := []byte(tokenString[0:len(tokenString)-1])
-		brokenToken[len(brokenToken) - 1] = brokenToken[len(brokenToken) - 1] - 1;
+		brokenToken := []byte(tokenString[0 : len(tokenString)-1])
+		brokenToken[len(brokenToken)-1] = brokenToken[len(brokenToken)-1] - 1
 		brokenString := string(brokenToken)
 
 		_, err := tc.ParseToken(brokenString)
