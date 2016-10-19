@@ -2,6 +2,7 @@ package usercontroller
 
 //import "strings"
 import "fmt"
+import "log"
 import "errors"
 
 import "golang.org/x/crypto/bcrypt"
@@ -34,22 +35,23 @@ type LoginStatus struct {
 
 // User controller status enumerations
 const (
-	LoginSuccess     = iota // Login complete
-	LoginFailure     = iota // Login failed
-	LoginPartial     = iota // Further credentials required
-	LoginLocked      = iota // Account locked
-	LoginUnactivated = iota // Account not yet activated
-	LoginDisabled    = iota // Account disabled
+	LoginCodeSuccess     = iota // Login complete
+	LoginCodeFailure     = iota // Login failed
+	LoginCodePartial     = iota // Further credentials required
+	LoginCodeLocked      = iota // Account locked
+	LoginCodeUnactivated = iota // Account not yet activated
+	LoginCodeDisabled    = iota // Account disabled
 )
 
 // Login return object instances
-var loginSuccess = LoginStatus{LoginSuccess, "Login successful"}
-var loginFailure = LoginStatus{LoginFailure, "Invalid username or password"}
-var loginRequired = LoginStatus{LoginFailure, "Login required"}
-var loginPartial = LoginStatus{LoginFailure, "Second factor required"}
-var loginLocked = LoginStatus{LoginLocked, "User account locked"}
-var loginUnactivated = LoginStatus{LoginUnactivated, "User account not activated"}
-var loginDisabled = LoginStatus{LoginDisabled, "User account disabled"}
+var LoginSuccess = LoginStatus{LoginCodeSuccess, "Login successful"}
+var LoginFailure = LoginStatus{LoginCodeFailure, "Invalid username or password"}
+var LoginRequired = LoginStatus{LoginCodeFailure, "Login required"}
+var LoginPartial = LoginStatus{LoginCodeFailure, "Second factor required"}
+var LoginLocked = LoginStatus{LoginCodeLocked, "User account locked"}
+var LoginUnactivated = LoginStatus{LoginCodeUnactivated, "User account not activated"}
+var LoginDisabled = LoginStatus{LoginCodeDisabled, "User account disabled"}
+
 var loginError = errors.New("internal server error")
 
 type UserController struct {
@@ -97,6 +99,8 @@ func (userController *UserController) Create(email string, pass string) (user *d
 
 	// Send account activation token to user email
 
+	fmt.Printf("User %s created\r\n", email);
+
 	return u, nil
 }
 
@@ -118,6 +122,8 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		fmt.Println(err)
 		return nil, loginError
 	}
+
+	fmt.Printf("User %s activated\r\n", email);
 
 	return u, nil
 }
@@ -160,8 +166,10 @@ func (userController *UserController) Login(email string, pass string) (status *
 			}
 		}
 
+		fmt.Printf("User %s login failed, hash error\r\n", email);
+
 		// Error in case of hash error
-		return &loginFailure, nil
+		return &LoginFailure, nil
 	}
 
 	// Login if user exists and passwords match
@@ -169,27 +177,33 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 		if u.Enabled == false {
 			//TODO: handle disabled error
-			return &loginDisabled, nil
+			log.Printf("User %s login failed, account disabled\r\n", email);
+			return &LoginDisabled, nil
 		}
 
 		if u.Activated == false {
 			//TODO: handle un-activated error
-			return &loginUnactivated, nil
+			log.Printf("User %s login failed, account deactivated\r\n", email);
+			return &LoginUnactivated, nil
 		}
 
 		if u.Locked == true {
 			//TODO: handle locked error
-			return &loginLocked, nil
+			log.Printf("User %s login failed, account locked\r\n", email);
+			return &LoginLocked, nil
 		}
 
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
-			return &loginPartial, nil
+			log.Printf("User %s login failed, second factor required\r\n", email);
+			return &LoginPartial, nil
 		}
 
+		log.Printf("User %s login successful\r\n", email);
+
 		//TODO: update login time etc.
-		return &loginSuccess, nil
+		return &LoginSuccess, nil
 	}
 
-	return &loginFailure, nil
+	return &LoginFailure, nil
 }

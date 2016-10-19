@@ -67,9 +67,20 @@ func TestMain(t *testing.T) {
 	t.Run("Create User", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
-		v.Set("pass", fakePass)
+		v.Set("password", fakePass)
 
 		client.TestPost(t, "/create", http.StatusOK, v)
 	})
 
+	t.Run("Login fails prior to activation", func(t *testing.T) {
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		client.TestPost(t, "/login", http.StatusUnauthorized, v)
+	})
+
 }
+
+
+

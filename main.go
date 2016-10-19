@@ -31,13 +31,12 @@ type AuthPlzCtx struct {
 
 // User session layer
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	fmt.Println(ctx)
-	session, err := ctx.sessionStore.Get(req.Request, "user-session")
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(session)
-	}
+//	session, err := ctx.sessionStore.Get(req.Request, "user-session")
+//	if err != nil {
+//		fmt.Println(err)
+//	} else {
+//		fmt.Println(session)
+//	}
 
 	//session.Save(r, w)
 	next(rw, req)
@@ -65,12 +64,14 @@ func BindContext(extCtx AuthPlzCtx) MiddlewareFunc {
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		fmt.Fprint(rw, "email parameter required")
+		fmt.Printf("email parameter required")
+		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		fmt.Fprint(rw, "password parameter required")
+		fmt.Printf("password parameter required")
+		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -78,43 +79,54 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	if e != nil {
 		fmt.Fprint(rw, "Error: %s", e)
 		rw.WriteHeader(500)
+		return
 	}
 
 	if u == nil {
-		rw.WriteHeader(503)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	log.Println("Login OK")
 
-	rw.WriteHeader(501)
+	rw.WriteHeader(http.StatusOK)
 }
 
 // Login to a user account
 func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
+	fmt.Println("Login API call")
+
+	// Check parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		fmt.Fprint(rw, "email parameter required")
+		rw.WriteHeader(http.StatusBadRequest)
+		fmt.Println("email parameter required")
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		fmt.Fprint(rw, "password parameter required")
+		rw.WriteHeader(http.StatusBadRequest)
+		fmt.Println("password parameter required")
 		return
 	}
 
-	u, e := c.userController.Login(email, password)
+	// Attempt login
+	l, e := c.userController.Login(email, password)
 	if e != nil {
-		fmt.Fprint(rw, "Error: %s", e)
-		rw.WriteHeader(500)
+		rw.WriteHeader(http.StatusUnauthorized)
+		fmt.Printf("Error: %s", e)
+		return
 	}
 
-	if u == nil {
-		rw.WriteHeader(503)
+	// Check login status
+	if l == &usercontroller.LoginSuccess {
+		log.Println("Login OK")
+		rw.WriteHeader(http.StatusOK)
+		return
 	}
 
-	log.Println("Login OK")
-
-	rw.WriteHeader(200)
+	fmt.Printf("login endpoint: login failed %s", e)
+	rw.WriteHeader(http.StatusUnauthorized)
 }
 
 // Logout of a user account

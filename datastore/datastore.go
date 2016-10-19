@@ -54,7 +54,7 @@ func NewDataStore(dbString string) (dataStore DataStore) {
 		panic(err)
 	}
 
-	db = db.LogMode(true)
+	//db = db.LogMode(true)
 
 	return DataStore{db}
 }
