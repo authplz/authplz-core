@@ -20,7 +20,7 @@ func TestUserController(t *testing.T) {
 
 	// Run tests
 	t.Run("Create user", func(t *testing.T) {
-		u, err := uc.CreateUser(fakeEmail, fakePass)
+		u, err := uc.Create(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}

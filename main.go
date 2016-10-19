@@ -4,11 +4,13 @@ import "os"
 
 //import "strings"
 import "fmt"
+import "log"
 import "net/http"
 
 //import "encoding/json"
 
 import "github.com/gocraft/web"
+
 //import "github.com/kataras/iris"
 import "github.com/gorilla/sessions"
 import "github.com/gorilla/context"
@@ -32,23 +34,25 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	fmt.Println(ctx)
 	session, err := ctx.sessionStore.Get(req.Request, "user-session")
 	if err != nil {
-		fmt.Println(err);
+		fmt.Println(err)
 	} else {
-		fmt.Println(session);
+		fmt.Println(session)
 	}
-	
+
 	//session.Save(r, w)
 	next(rw, req)
 }
 
 // Convenience type to describe middleware functions
-type MiddlewareFunc func (ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
+type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
+
+const internalServerError string = "Internal Server Error"
 
 // Bind global context into the router
 func BindContext(extCtx AuthPlzCtx) MiddlewareFunc {
-	return func (ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		// Bind global components to context
-		ctx.port 	= extCtx.port
+		ctx.port = extCtx.port
 		ctx.address = extCtx.address
 		ctx.userController = extCtx.userController
 		ctx.sessionStore = extCtx.sessionStore
@@ -70,6 +74,18 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	u, e := c.userController.Create(email, password)
+	if e != nil {
+		fmt.Fprint(rw, "Error: %s", e)
+		rw.WriteHeader(500)
+	}
+
+	if u == nil {
+		rw.WriteHeader(503)
+	}
+
+	log.Println("Login OK")
+
 	rw.WriteHeader(501)
 }
 
@@ -86,7 +102,19 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	rw.WriteHeader(501)
+	u, e := c.userController.Login(email, password)
+	if e != nil {
+		fmt.Fprint(rw, "Error: %s", e)
+		rw.WriteHeader(500)
+	}
+
+	if u == nil {
+		rw.WriteHeader(503)
+	}
+
+	log.Println("Login OK")
+
+	rw.WriteHeader(200)
 }
 
 // Logout of a user account
@@ -96,9 +124,59 @@ func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 
 // Get user login status
 func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(501)
+	rw.WriteHeader(http.StatusUnauthorized)
 }
 
+type AuthPlzServer struct {
+	address string
+	port    string
+	ds      datastore.DataStore
+	ctx     AuthPlzCtx
+	router  *web.Router
+}
+
+func NewServer(address string, port string, db string) *AuthPlzServer {
+	server := AuthPlzServer{}
+
+	server.address = address
+	server.port = port
+
+	// Attempt database connection
+	server.ds = datastore.NewDataStore(db)
+
+	// Create session store
+	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
+
+	// Create controllers
+	uc := usercontroller.NewUserController(&(server.ds), nil)
+
+	// Create a global context object
+	server.ctx = AuthPlzCtx{port, address, &uc, sessionStore}
+
+	// Create router
+	server.router = web.New(AuthPlzCtx{}).
+		Middleware(BindContext(server.ctx)).
+		Middleware(web.LoggerMiddleware).
+		Middleware(web.ShowErrorsMiddleware).
+		Middleware((*AuthPlzCtx).SessionMiddleware).
+		Post("/api/login", (*AuthPlzCtx).Login).
+		Post("/api/create", (*AuthPlzCtx).Create).
+		Get("/api/logout", (*AuthPlzCtx).Logout).
+		Get("/api/status", (*AuthPlzCtx).Status)
+
+	// Start listening
+	fmt.Println("Listening at: " + port)
+
+	return &server
+}
+
+func (server *AuthPlzServer) Start() {
+	http.ListenAndServe(server.address+":"+server.port, context.ClearHandler(server.router))
+}
+
+func (server *AuthPlzServer) Close() {
+	server.ds.Close()
+}
 
 func main() {
 	var port string = "9000"
@@ -110,31 +188,6 @@ func main() {
 		port = os.Getenv("PORT")
 	}
 
-	// Attempt database connection
-	ds := datastore.NewDataStore(dbString)
-	defer ds.Close()
+	NewServer(address, port, dbString)
 
-	// Create session store
-	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
-
-	// Create controllers
-	uc := usercontroller.NewUserController(&ds, nil)
-
-	// Create a global context object
-	globalContext := AuthPlzCtx{port, address, &uc, sessionStore};
-
-	// Create router
-	router := web.New(AuthPlzCtx{}).
-		Middleware(BindContext(globalContext)).
-		Middleware(web.LoggerMiddleware).
-		Middleware(web.ShowErrorsMiddleware).
-		Middleware((*AuthPlzCtx).SessionMiddleware).
-		Post("/login", (*AuthPlzCtx).Login).
-		Post("/create", (*AuthPlzCtx).Create).
-		Get("/logout", (*AuthPlzCtx).Logout).
-		Get("/status", (*AuthPlzCtx).Status)
-
-	// Start listening
-	fmt.Println("Listening at: " + port)
-	http.ListenAndServe("localhost:"+port, context.ClearHandler(router))
 }
