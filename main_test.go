@@ -92,11 +92,11 @@ func TestMain(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		//client.TestGet(t, "/status", http.StatusUnauthorized)
 		client.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
 	})
 
 	t.Run("Create User", func(t *testing.T) {
+
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
@@ -107,6 +107,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Login fails prior to activation", func(t *testing.T) {
+
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
@@ -150,6 +151,15 @@ func TestMain(t *testing.T) {
 		client.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
 	})
 
+
+	t.Run("Logged in users can logout", func(t *testing.T) {
+
+		// Perform logout
+		client.TestGetApiResponse(t, "/logout", ApiResultOk, ApiMessageLogoutSuccess)
+
+		// Check user status
+		client.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+	})
 
 }
 

@@ -299,6 +299,17 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
+// Get user login status
+func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, ApiResultError, "You must be signed sign out")
+	} else {
+		c.session.Options.MaxAge = -1
+		c.session.Save(req.Request, rw)
+		c.WriteApiResult(rw, ApiResultOk, ApiMessageLogoutSuccess)
+	}
+}
+
 type AuthPlzServer struct {
 	address string
 	port    string
@@ -338,8 +349,9 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 		Post("/api/create", (*AuthPlzCtx).Create).
 		Post("/api/action", (*AuthPlzCtx).Action).
 		Get("/api/action", (*AuthPlzCtx).Action).
-		Get("/api/test", (*AuthPlzCtx).Test).
-		Get("/api/status", (*AuthPlzCtx).Status)
+		Get("/api/logout", (*AuthPlzCtx).Logout).
+		Get("/api/status", (*AuthPlzCtx).Status).
+		Get("/api/test", (*AuthPlzCtx).Test)
 
 	return &server
 }
