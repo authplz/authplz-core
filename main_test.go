@@ -1,11 +1,13 @@
 package main
 
 import "testing"
-
+import "fmt"
 import "time"
 import "net/http"
 import "net/url"
 import "net/http/cookiejar"
+
+import "encoding/json"
 
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
@@ -47,6 +49,26 @@ func (tc *TestClient) TestPost(t *testing.T, path string, statusCode int, v url.
 	return resp
 }
 
+func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
+	resp := tc.TestGet(t, path, http.StatusOK)
+
+	var status ApiResponse;
+	defer resp.Body.Close()
+	_ = json.NewDecoder(resp.Body).Decode(&status)
+
+	fmt.Printf("%+v\n", status);
+
+	if status.Result != result {
+		t.Errorf("Incorrect API result from %s, expected: %s received: %s", path, result, status.Result)
+		t.FailNow()
+	}
+
+	if status.Result != result {
+		t.Errorf("Incorrect API message from %s, expected: %s received: %s", path, message, status.Message)
+		t.FailNow()
+	}
+}
+
 func TestMain(t *testing.T) {
 	// Setup user controller for testing
 	var address string = "localhost"
@@ -63,12 +85,15 @@ func TestMain(t *testing.T) {
 	go server.Start()
 	defer server.Close()
 
-	client := NewTestClient("http://" + address + ":" + port + "/api")
+	apiPath := "http://" + address + ":" + port + "/api";
+
+	client := NewTestClient(apiPath)
 	var user *datastore.User
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		client.TestGet(t, "/status", http.StatusUnauthorized)
+		//client.TestGet(t, "/status", http.StatusUnauthorized)
+		client.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
 	})
 
 	t.Run("Create User", func(t *testing.T) {
@@ -91,20 +116,41 @@ func TestMain(t *testing.T) {
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
 
+		// Create activation token
 		d, _ := time.ParseDuration("10m")
 		at, _ := server.ctx.tokenController.BuildToken(user.UUID, token.TokenActionActivate, d)
 
+		// Use a separate test client instance
+		client2 := NewTestClient(apiPath)
+
+		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		client.TestPost(t, "/action", http.StatusOK, v)
+		client2.TestPost(t, "/action", http.StatusOK, v)
 
+		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
+		client2.TestPost(t, "/login", http.StatusOK, v)
 
-		client.TestPost(t, "/login", http.StatusOK, v)
-
-		t.FailNow()
+		// Check user status
+		client2.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
 	})
 
+	t.Run("Activated users can login", func(t *testing.T) {
+
+		// Attempt login
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		client.TestPost(t, "/login", http.StatusOK, v)
+
+		// Check user status
+		client.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+	})
+
+
 }
+
+

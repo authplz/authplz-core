@@ -22,26 +22,6 @@ import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 
-type ApiResponse struct {
-	result  string
-	message string
-}
-
-const ApiResultOk string = "ok"
-const ApiResultError string = "error"
-
-func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := ApiResponse{result: result, message: message}
-
-	js, err := json.Marshal(apiResp)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
-}
 
 // Application global context
 // TODO: this could be split and bound by module
@@ -84,14 +64,38 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	ctx.session = session
 
 	// Load user from session if set
-	if session.Values["sessionId"] != nil {
-		fmt.Println("sessionId found")
+	// TODO: this will be replaced with sessions when implemented
+	if session.Values["userId"] != nil {
+		fmt.Println("userId found")
 		//TODO: find user account
+		ctx.userid = session.Values["userId"].(string)
 	}
 
 	//session.Save(r, w)
 	next(rw, req)
 }
+
+func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, ApiResultError, "You must be signed in to view this page")
+	} else {
+		next(rw, req)
+	}
+}
+
+func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
+	apiResp := ApiResponse{Result: result, Message: message}
+
+	js, err := json.Marshal(apiResp)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -127,7 +131,7 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
 // Login to a user account
 func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
-	// Check parameters
+	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
 		rw.WriteHeader(http.StatusBadRequest)
@@ -149,10 +153,15 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	if l == &usercontroller.LoginPartial {
-		log.Println("Partial login")
-		//TODO: fetch tokens and set flash
-		rw.WriteHeader(http.StatusNotImplemented)
+	// Handle simple logins
+	if l == &usercontroller.LoginSuccess {
+		log.Println("Login OK")
+
+		// Create session
+		c.session.Values["userId"] = u.UUID
+		c.session.Save(req.Request, rw)
+
+		c.WriteApiResult(rw, ApiResultOk, ApiMessageLoginSuccess)
 		return
 	}
 
@@ -167,7 +176,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 			claims, err := c.global.tokenController.ParseToken(activateToken.(string))
 			if err != nil {
 				fmt.Printf("Invalid token\n")
-				c.WriteApiResult(rw, ApiResultError, "Invalid token")
+				c.WriteApiResult(rw, ApiResultError, ApiMessageInvalidToken)
 				return
 			}
 
@@ -178,9 +187,13 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 				if u.UUID == claims.Subject {
 					fmt.Printf("Activating user\n")
 
-					c.global.userController.Activate(u.Email);
+					c.global.userController.Activate(u.Email)
 
-					c.WriteApiResult(rw, ApiResultOk, "Activation Successful")
+					// Create session
+					c.session.Values["userId"] = u.UUID
+					c.session.Save(req.Request, rw)
+
+					c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
 
 				} else {
 					fmt.Printf("Subject mismatch user\n")
@@ -192,7 +205,6 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 				return
 			}
 
-		
 			rw.WriteHeader(http.StatusOK)
 
 		} else {
@@ -210,10 +222,11 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	}
 
-	// Check login status
-	if l == &usercontroller.LoginSuccess {
-		log.Println("Login OK")
-		rw.WriteHeader(http.StatusOK)
+	// Handle partial logins (2FA)
+	if l == &usercontroller.LoginPartial {
+		log.Println("Partial login")
+		//TODO: fetch tokens and set flash
+		rw.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 
@@ -240,7 +253,7 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		fmt.Printf("Received token, login required (saving to flash)\n")
 
 		// Clear existing flashes (by reading)
-		_ = c.session.Flashes();
+		_ = c.session.Flashes()
 
 		// Add token to flash and redirect
 		c.session.AddFlash(tokenString)
@@ -248,7 +261,6 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 		c.WriteApiResult(rw, ApiResultOk, "Saved token")
 		//TODO: redirect to login
-
 
 	} else {
 		// Check token validity
@@ -280,7 +292,11 @@ func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 
 // Get user login status
 func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusUnauthorized)
+	if c.userid == "" {
+		c.WriteApiResult(rw, ApiResultError, "You must be signed in to view this page")
+	} else {
+		c.WriteApiResult(rw, ApiResultOk, "Signed in")
+	}
 }
 
 type AuthPlzServer struct {
