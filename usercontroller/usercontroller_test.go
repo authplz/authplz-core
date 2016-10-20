@@ -39,7 +39,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginUnactivated {
+		if res.Code != LoginCodeUnactivated {
 			t.Error("User login succeeded (and shouldn't have)")
 			t.FailNow()
 		}
@@ -65,7 +65,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginSuccess {
+		if res.Code != LoginCodeSuccess {
 			t.Error("User login failed")
 		}
 	})
@@ -79,7 +79,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginFailure {
+		if res.Code != LoginCodeFailure {
 			t.Error("User login succeeded with incorrect password")
 		}
 	})
@@ -93,7 +93,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginFailure {
+		if res.Code != LoginCodeFailure {
 			t.Error("User login succeeded with unknown email")
 		}
 	})
@@ -117,7 +117,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginDisabled {
+		if res.Code != LoginCodeDisabled {
 			t.Error("User login succeeded with account disabled")
 		}
 
@@ -139,7 +139,7 @@ func TestUserController(t *testing.T) {
 			t.Error("No login result")
 			t.FailNow()
 		}
-		if res.code != LoginLocked {
+		if res.Code != LoginCodeLocked {
 			t.Error("User account was not locked", res)
 		}
 	})

@@ -4,6 +4,7 @@ import "time"
 import "fmt"
 
 import "github.com/dgrijalva/jwt-go"
+import "github.com/satori/go.uuid"
 
 // Custom claims object
 type TokenClaims struct {
@@ -11,37 +12,38 @@ type TokenClaims struct {
 	jwt.StandardClaims
 }
 
-type TokenAction string
 
-//const {
-//	TokenActionActivate = "activate"
-//	TokenActionUnblock  = "unblock"
-//}
+const TokenActionActivate string = "activate"
+const TokenActionUnblock  string = "unblock"
+
 
 // User object
 type TokenController struct {
+	address string
 	hmacSecret []byte
 }
 
 var signingMethod jwt.SigningMethod = jwt.SigningMethodHS256
 
-func NewTokenController(hmacSecret string) *TokenController {
-	return &TokenController{hmacSecret: []byte(hmacSecret)}
+func NewTokenController(address string, hmacSecret string) TokenController {
+	return TokenController{address: address, hmacSecret: []byte(hmacSecret)}
 }
 
-func (tc *TokenController) BuildToken(uuid string, action string, duration time.Duration) (string, error) {
+
+func (tc *TokenController) BuildToken(userid string, action string, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
 		Action: action,
 		StandardClaims: jwt.StandardClaims{
+			Id: uuid.NewV4().String(),
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(duration).Unix(),
-			Subject:   uuid,
-			Issuer:    "test",
+			Subject:   userid,
+			Issuer:    tc.address,
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(signingMethod, claims)
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(tc.hmacSecret)

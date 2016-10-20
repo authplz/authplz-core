@@ -29,8 +29,8 @@ type MailInterface interface {
 
 // Login status return objects
 type LoginStatus struct {
-	code    uint64
-	message string
+	Code    uint64
+	Message string
 }
 
 // User controller status enumerations

@@ -9,8 +9,9 @@ import "github.com/satori/go.uuid"
 func TestTokenController(t *testing.T) {
 
 	var fakeHmacKey string = "01234567890123456789012345678901"
+	var fakeAddress string = "localhost"
 
-	tc := NewTokenController(fakeHmacKey)
+	tc := NewTokenController(fakeAddress, fakeHmacKey)
 
 	var fakeUuid = uuid.NewV4().String()
 	var tokenString string

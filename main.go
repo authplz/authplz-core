@@ -7,7 +7,7 @@ import "fmt"
 import "log"
 import "net/http"
 
-//import "encoding/json"
+import "encoding/json"
 
 import "github.com/gocraft/web"
 
@@ -18,29 +18,66 @@ import "github.com/gorilla/context"
 import "github.com/asaskevich/govalidator"
 
 import "github.com/ryankurte/authplz/usercontroller"
+import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
+
+type ApiResponse struct {
+	result	string
+	message string
+}
+const ApiResultOk string = "ok"
+const ApiResultError string = "error"
+
+func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
+	apiResp := ApiResponse{result: result, message: message};
+
+	js, err := json.Marshal(apiResp)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+  	w.Header().Set("Content-Type", "application/json")
+  	w.Write(js)
+}
+
 
 // Application context
 // TODO: this could be split and bound by module
+type AuthPlzGlobalCtx struct {
+	port           	string
+	address        	string
+	userController 	*usercontroller.UserController
+	tokenController *token.TokenController
+	sessionStore   	*sessions.CookieStore
+}
+
 type AuthPlzCtx struct {
-	port           string
-	address        string
-	userController *usercontroller.UserController
-	sessionStore   *sessions.CookieStore
+	global 		*AuthPlzGlobalCtx
+	session 	*sessions.Session
 }
 
 // User session layer
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-//	session, err := ctx.sessionStore.Get(req.Request, "user-session")
-//	if err != nil {
-//		fmt.Println(err)
-//	} else {
-//		fmt.Println(session)
-//	}
+	session, err := ctx.global.sessionStore.Get(req.Request, "user-session")
+	if err != nil {
+		log.Print(err)
+		next(rw, req)
+		return
+	}
+
+	// Save session for further use
+	ctx.session = session;
+
+	// Load user from session if set
+	if session.Values["sessionId"] != nil {
+		fmt.Println("sessionId found")
+	}
 
 	//session.Save(r, w)
 	next(rw, req)
 }
+
 
 // Convenience type to describe middleware functions
 type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
@@ -48,14 +85,9 @@ type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Reques
 const internalServerError string = "Internal Server Error"
 
 // Bind global context into the router
-func BindContext(extCtx AuthPlzCtx) MiddlewareFunc {
+func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-		// Bind global components to context
-		ctx.port = extCtx.port
-		ctx.address = extCtx.address
-		ctx.userController = extCtx.userController
-		ctx.sessionStore = extCtx.sessionStore
-
+		ctx.global = globalCtx;
 		next(rw, req)
 	}
 }
@@ -75,7 +107,7 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	u, e := c.userController.Create(email, password)
+	u, e := c.global.userController.Create(email, password)
 	if e != nil {
 		fmt.Fprint(rw, "Error: %s", e)
 		rw.WriteHeader(500)
@@ -111,10 +143,25 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Attempt login
-	l, e := c.userController.Login(email, password)
+	l, e := c.global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		fmt.Printf("Error: %s", e)
+		return
+	}
+
+	if l == &usercontroller.LoginPartial {
+		log.Println("Partial login")
+		//TODO: fetch tokens and set flash
+		rw.WriteHeader(http.StatusNotImplemented)
+		return
+	}
+
+	if l == &usercontroller.LoginUnactivated {
+		log.Println("Account not activated")
+		//TODO: prompt for activation (resend email)
+		rw.WriteHeader(http.StatusNotImplemented)
+		//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
 		return
 	}
 
@@ -127,6 +174,16 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	fmt.Printf("login endpoint: login failed %s", e)
 	rw.WriteHeader(http.StatusUnauthorized)
+}
+
+func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
+	// Fetch the relevant token
+	token := req.FormValue("token")
+	if token == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		fmt.Println("token parameter required")
+		return
+	}
 }
 
 // Logout of a user account
@@ -143,7 +200,7 @@ type AuthPlzServer struct {
 	address string
 	port    string
 	ds      datastore.DataStore
-	ctx     AuthPlzCtx
+	ctx     AuthPlzGlobalCtx
 	router  *web.Router
 }
 
@@ -161,18 +218,20 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 
 	// Create controllers
 	uc := usercontroller.NewUserController(&(server.ds), nil)
+	tc := token.NewTokenController(server.address, "something-also-secret")
 
 	// Create a global context object
-	server.ctx = AuthPlzCtx{port, address, &uc, sessionStore}
+	server.ctx = AuthPlzGlobalCtx{port, address, &uc, &tc, sessionStore}
 
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).
-		Middleware(BindContext(server.ctx)).
+		Middleware(BindContext(&server.ctx)).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
 		Middleware((*AuthPlzCtx).SessionMiddleware).
 		Post("/api/login", (*AuthPlzCtx).Login).
 		Post("/api/create", (*AuthPlzCtx).Create).
+		Post("/api/action", (*AuthPlzCtx).Action).
 		Get("/api/logout", (*AuthPlzCtx).Logout).
 		Get("/api/status", (*AuthPlzCtx).Status)
 
