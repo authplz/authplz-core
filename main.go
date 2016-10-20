@@ -80,6 +80,16 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 	}
 }
 
+func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
+	c.session.Values["userId"] = u.UUID
+	c.session.Save(req.Request, rw)
+}
+
+func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
+	c.session.Options.MaxAge = -1
+      c.session.Save(req.Request, rw)
+}
+
 
 
 type AuthPlzServer struct {

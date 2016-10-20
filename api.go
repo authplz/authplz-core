@@ -92,9 +92,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
         log.Println("Login OK")
 
         // Create session
-        c.session.Values["userId"] = u.UUID
-        c.session.Save(req.Request, rw)
-
+        c.LoginUser(u, rw, req)
         c.WriteApiResult(rw, ApiResultOk, ApiMessageLoginSuccess)
         return
     }
@@ -124,9 +122,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
                     c.global.userController.Activate(u.Email)
 
                     // Create session
-                    c.session.Values["userId"] = u.UUID
-                    c.session.Save(req.Request, rw)
-
+                    c.LoginUser(u, rw, req)
                     c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
 
                 } else {
@@ -238,8 +234,7 @@ func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
     if c.userid == "" {
         c.WriteApiResult(rw, ApiResultError, "You must be signed sign out")
     } else {
-        c.session.Options.MaxAge = -1
-        c.session.Save(req.Request, rw)
+        c.LogoutUser(rw, req)
         c.WriteApiResult(rw, ApiResultOk, ApiMessageLogoutSuccess)
     }
 }
