@@ -129,14 +129,14 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 }
 
 //TODO: differentiate between login states and internal errors
-func (userController *UserController) Login(email string, pass string) (status *LoginStatus, err error) {
+func (userController *UserController) Login(email string, pass string) (status *LoginStatus, user *datastore.User, err error) {
 
 	// Fetch user account
 	u, err := userController.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, loginError
+		return nil, nil, loginError
 	}
 
 	// Fake hash if user does not exist, then make login decision after
@@ -162,14 +162,14 @@ func (userController *UserController) Login(email string, pass string) (status *
 			if err != nil {
 				// Userstore error, wrap
 				fmt.Println(err)
-				return nil, loginError
+				return nil, nil, loginError
 			}
 		}
 
 		fmt.Printf("User %s login failed, hash error\r\n", email)
 
 		// Error in case of hash error
-		return &LoginFailure, nil
+		return &LoginFailure, nil, nil
 	}
 
 	// Login if user exists and passwords match
@@ -178,32 +178,32 @@ func (userController *UserController) Login(email string, pass string) (status *
 		if u.Enabled == false {
 			//TODO: handle disabled error
 			log.Printf("User %s login failed, account disabled\r\n", email)
-			return &LoginDisabled, nil
+			return &LoginDisabled, u, nil
 		}
 
 		if u.Activated == false {
 			//TODO: handle un-activated error
 			log.Printf("User %s login failed, account deactivated\r\n", email)
-			return &LoginUnactivated, nil
+			return &LoginUnactivated, u, nil
 		}
 
 		if u.Locked == true {
 			//TODO: handle locked error
 			log.Printf("User %s login failed, account locked\r\n", email)
-			return &LoginLocked, nil
+			return &LoginLocked, u, nil
 		}
 
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
 			log.Printf("User %s login failed, second factor required\r\n", email)
-			return &LoginPartial, nil
+			return &LoginPartial, u, nil
 		}
 
 		log.Printf("User %s login successful\r\n", email)
 
 		//TODO: update login time etc.
-		return &LoginSuccess, nil
+		return &LoginSuccess, u, nil
 	}
 
-	return &LoginFailure, nil
+	return &LoginFailure, nil, nil
 }

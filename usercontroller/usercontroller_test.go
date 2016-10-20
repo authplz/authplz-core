@@ -30,7 +30,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("User account requires activation", func(t *testing.T) {
-		res, err := uc.Login(fakeEmail, fakePass)
+		res, _, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -57,7 +57,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login user", func(t *testing.T) {
-		res, err := uc.Login(fakeEmail, fakePass)
+		res, _, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}
@@ -71,7 +71,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Reject login with invalid password", func(t *testing.T) {
-		res, err := uc.Login(fakeEmail, "Wrong password")
+		res, _, err := uc.Login(fakeEmail, "Wrong password")
 		if err != nil {
 			t.Error(err)
 		}
@@ -85,7 +85,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Reject login with unknown user", func(t *testing.T) {
-		res, err := uc.Login("not@email.com", fakePass)
+		res, _, err := uc.Login("not@email.com", fakePass)
 		if err != nil {
 			t.Error(err)
 		}
@@ -109,7 +109,7 @@ func TestUserController(t *testing.T) {
 		u.Enabled = false
 		uc.userStore.UpdateUser(u)
 
-		res, err := uc.Login(fakeEmail, fakePass)
+		res, _, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}
@@ -131,7 +131,7 @@ func TestUserController(t *testing.T) {
 			uc.Login(fakeEmail, "Wrong password")
 		}
 
-		res, err := uc.Login(fakeEmail, fakePass)
+		res, _, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}

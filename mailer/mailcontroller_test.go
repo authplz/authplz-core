@@ -24,6 +24,9 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send emails", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
 		err := mc.SendMail("test@"+mgDomain, "test subject", "test body")
 		if err != nil {
 			fmt.Println(err)
@@ -32,6 +35,9 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send signup emails", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
 
 		sf := MailFields{
 			UserName:    "TestUser",
@@ -47,6 +53,9 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send password reset emails", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
 
 		sf := MailFields{
 			UserName:    "TestUser",

@@ -16,7 +16,7 @@ type TestClient struct {
 }
 
 func NewTestClient(path string) TestClient {
-	jar, _ := cookiejar.New(nil);
+	jar, _ := cookiejar.New(nil)
 	return TestClient{&http.Client{Jar: jar}, path}
 }
 

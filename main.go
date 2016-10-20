@@ -142,7 +142,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Attempt login
-	l, e := c.global.userController.Login(email, password)
+	l, u, e := c.global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		fmt.Printf("Error: %s", e)
@@ -156,14 +156,13 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	if l == &usercontroller.LoginUnactivated {
-		flashes := c.session.Flashes()
-		fmt.Printf("Flashes: %+v\n", flashes);
+	// Load flashes if they exist
+	flashes := c.session.Flashes()
 
+	// Handle not yet activated accounts
+	if l == &usercontroller.LoginUnactivated {
 		if len(flashes) > 0 {
 			activateToken := flashes[0]
-
-			fmt.Printf("Checking token validity %s\n", activateToken)
 
 			claims, err := c.global.tokenController.ParseToken(activateToken.(string))
 			if err != nil {
@@ -173,18 +172,28 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 			}
 
 			fmt.Printf("Valid token found\n")
-			switch claims.Action {
-			case token.TokenActionActivate:
+			if claims.Action == token.TokenActionActivate {
 				fmt.Printf("Activation token\n")
-			default:
-				fmt.Printf("Unrecognised token\n")
+
+				if u.UUID == claims.Subject {
+					fmt.Printf("Activating user\n")
+
+					c.global.userController.Activate(u.Email);
+
+					c.WriteApiResult(rw, ApiResultOk, "Activation Successful")
+
+				} else {
+					fmt.Printf("Subject mismatch user\n")
+				}
+
+			} else {
+				fmt.Printf("Invalid token\n")
 				rw.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
+		
 			rw.WriteHeader(http.StatusOK)
-
-
 
 		} else {
 			log.Println("Account not activated")
@@ -194,6 +203,11 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 
 		return
+	}
+
+	// TODO: handle disabled accounts
+	if l == &usercontroller.LoginDisabled {
+
 	}
 
 	// Check login status
@@ -208,9 +222,9 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 }
 
 func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
-	// Fetch the relevant token
-	var tokenString string;
 
+	// Grab token string from get or post request
+	var tokenString string
 	tokenString = req.FormValue("token")
 	if tokenString == "" {
 		req.URL.Query().Get("token")
@@ -223,53 +237,45 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 	// If the user isn't logged in
 	if c.userid == "" {
-		fmt.Printf("Received token, login required (saving to flash)\n", tokenString)
+		fmt.Printf("Received token, login required (saving to flash)\n")
+
+		// Clear existing flashes (by reading)
+		_ = c.session.Flashes();
+
 		// Add token to flash and redirect
 		c.session.AddFlash(tokenString)
 		c.session.Save(req.Request, rw)
 
 		c.WriteApiResult(rw, ApiResultOk, "Saved token")
-
 		//TODO: redirect to login
 
-	} else {
-		// TODO: Apply token
-		fmt.Printf("Checking token validity %s\n", tokenString)
 
+	} else {
+		// Check token validity
 		claims, err := c.global.tokenController.ParseToken(tokenString)
 		if err != nil {
-			fmt.Printf("Invalid token %s\n", tokenString)
+			fmt.Printf("Invalid token\n")
 			c.WriteApiResult(rw, ApiResultError, "Invalid token")
 			return
 		}
 
-		fmt.Printf("Valid token found %s\n", tokenString)
-		switch claims.Action {
-		case token.TokenActionActivate:
-			fmt.Printf("Activation token %s\n", tokenString)
-		default:
-			fmt.Printf("Unrecognised token %s\n", tokenString)
-			rw.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
+		fmt.Printf("Valid token found (claims: %+v)\n", claims)
+		//TODO: execute action token on signed in user
 		rw.WriteHeader(http.StatusOK)
 	}
 }
 
-
-
 // Logout of a user account
 func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	// Get the previously flashes, if any.
-    if flashes := c.session.Flashes(); len(flashes) > 0 {
-        fmt.Printf("Flashes: %+v\n", flashes)
-    } else {
-        // Set a new flash.
-        c.session.AddFlash("Hello, flash messages world!")
-    }
-    c.session.Save(req.Request, rw)
-    c.WriteApiResult(rw, ApiResultOk, "Test Response")
+	if flashes := c.session.Flashes(); len(flashes) > 0 {
+		fmt.Printf("Flashes: %+v\n", flashes)
+	} else {
+		// Set a new flash.
+		c.session.AddFlash("Hello, flash messages world!")
+	}
+	c.session.Save(req.Request, rw)
+	c.WriteApiResult(rw, ApiResultOk, "Test Response")
 }
 
 // Get user login status
