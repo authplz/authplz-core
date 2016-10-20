@@ -42,7 +42,7 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 }
 
 
-// Application context
+// Application global context
 // TODO: this could be split and bound by module
 type AuthPlzGlobalCtx struct {
 	port           	string
@@ -52,10 +52,25 @@ type AuthPlzGlobalCtx struct {
 	sessionStore   	*sessions.CookieStore
 }
 
+// Application handler context
 type AuthPlzCtx struct {
 	global 		*AuthPlzGlobalCtx
 	session 	*sessions.Session
 }
+
+// Convenience type to describe middleware functions
+type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
+
+// Bind global context object into the router context
+func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
+	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		ctx.global = globalCtx;
+		next(rw, req)
+	}
+}
+
+
+
 
 // User session layer
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -79,18 +94,8 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 }
 
 
-// Convenience type to describe middleware functions
-type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
-const internalServerError string = "Internal Server Error"
 
-// Bind global context into the router
-func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
-	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-		ctx.global = globalCtx;
-		next(rw, req)
-	}
-}
 
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
