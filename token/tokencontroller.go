@@ -12,14 +12,12 @@ type TokenClaims struct {
 	jwt.StandardClaims
 }
 
-
 const TokenActionActivate string = "activate"
-const TokenActionUnblock  string = "unblock"
-
+const TokenActionUnblock string = "unblock"
 
 // User object
 type TokenController struct {
-	address string
+	address    string
 	hmacSecret []byte
 }
 
@@ -29,13 +27,12 @@ func NewTokenController(address string, hmacSecret string) TokenController {
 	return TokenController{address: address, hmacSecret: []byte(hmacSecret)}
 }
 
-
 func (tc *TokenController) BuildToken(userid string, action string, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
 		Action: action,
 		StandardClaims: jwt.StandardClaims{
-			Id: uuid.NewV4().String(),
+			Id:        uuid.NewV4().String(),
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(duration).Unix(),
 			Subject:   userid,

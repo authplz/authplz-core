@@ -8,6 +8,7 @@ import "log"
 import "net/http"
 
 import "encoding/json"
+import "encoding/gob"
 
 import "github.com/gocraft/web"
 
@@ -22,14 +23,15 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 
 type ApiResponse struct {
-	result	string
+	result  string
 	message string
 }
+
 const ApiResultOk string = "ok"
 const ApiResultError string = "error"
 
 func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := ApiResponse{result: result, message: message};
+	apiResp := ApiResponse{result: result, message: message}
 
 	js, err := json.Marshal(apiResp)
 	if err != nil {
@@ -37,25 +39,25 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 		return
 	}
 
-  	w.Header().Set("Content-Type", "application/json")
-  	w.Write(js)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
-
 
 // Application global context
 // TODO: this could be split and bound by module
 type AuthPlzGlobalCtx struct {
-	port           	string
-	address        	string
-	userController 	*usercontroller.UserController
+	port            string
+	address         string
+	userController  *usercontroller.UserController
 	tokenController *token.TokenController
-	sessionStore   	*sessions.CookieStore
+	sessionStore    *sessions.CookieStore
 }
 
 // Application handler context
 type AuthPlzCtx struct {
-	global 		*AuthPlzGlobalCtx
-	session 	*sessions.Session
+	global  *AuthPlzGlobalCtx
+	session *sessions.Session
+	userid  string
 }
 
 // Convenience type to describe middleware functions
@@ -64,13 +66,10 @@ type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Reques
 // Bind global context object into the router context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-		ctx.global = globalCtx;
+		ctx.global = globalCtx
 		next(rw, req)
 	}
 }
-
-
-
 
 // User session layer
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -82,20 +81,17 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	}
 
 	// Save session for further use
-	ctx.session = session;
+	ctx.session = session
 
 	// Load user from session if set
 	if session.Values["sessionId"] != nil {
 		fmt.Println("sessionId found")
+		//TODO: find user account
 	}
 
 	//session.Save(r, w)
 	next(rw, req)
 }
-
-
-
-
 
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
@@ -131,8 +127,6 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
 // Login to a user account
 func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
-	fmt.Println("Login API call")
-
 	// Check parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
@@ -163,10 +157,42 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	if l == &usercontroller.LoginUnactivated {
-		log.Println("Account not activated")
-		//TODO: prompt for activation (resend email)
-		rw.WriteHeader(http.StatusNotImplemented)
-		//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
+		flashes := c.session.Flashes()
+		fmt.Printf("Flashes: %+v\n", flashes);
+
+		if len(flashes) > 0 {
+			activateToken := flashes[0]
+
+			fmt.Printf("Checking token validity %s\n", activateToken)
+
+			claims, err := c.global.tokenController.ParseToken(activateToken.(string))
+			if err != nil {
+				fmt.Printf("Invalid token\n")
+				c.WriteApiResult(rw, ApiResultError, "Invalid token")
+				return
+			}
+
+			fmt.Printf("Valid token found\n")
+			switch claims.Action {
+			case token.TokenActionActivate:
+				fmt.Printf("Activation token\n")
+			default:
+				fmt.Printf("Unrecognised token\n")
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			rw.WriteHeader(http.StatusOK)
+
+
+
+		} else {
+			log.Println("Account not activated")
+			//TODO: prompt for activation (resend email?)
+			rw.WriteHeader(http.StatusUnauthorized)
+			//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
+		}
+
 		return
 	}
 
@@ -183,17 +209,67 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	// Fetch the relevant token
-	token := req.FormValue("token")
-	if token == "" {
+	var tokenString string;
+
+	tokenString = req.FormValue("token")
+	if tokenString == "" {
+		req.URL.Query().Get("token")
+	}
+	if tokenString == "" {
 		rw.WriteHeader(http.StatusBadRequest)
 		fmt.Println("token parameter required")
 		return
 	}
+
+	// If the user isn't logged in
+	if c.userid == "" {
+		fmt.Printf("Received token, login required (saving to flash)\n", tokenString)
+		// Add token to flash and redirect
+		c.session.AddFlash(tokenString)
+		c.session.Save(req.Request, rw)
+
+		c.WriteApiResult(rw, ApiResultOk, "Saved token")
+
+		//TODO: redirect to login
+
+	} else {
+		// TODO: Apply token
+		fmt.Printf("Checking token validity %s\n", tokenString)
+
+		claims, err := c.global.tokenController.ParseToken(tokenString)
+		if err != nil {
+			fmt.Printf("Invalid token %s\n", tokenString)
+			c.WriteApiResult(rw, ApiResultError, "Invalid token")
+			return
+		}
+
+		fmt.Printf("Valid token found %s\n", tokenString)
+		switch claims.Action {
+		case token.TokenActionActivate:
+			fmt.Printf("Activation token %s\n", tokenString)
+		default:
+			fmt.Printf("Unrecognised token %s\n", tokenString)
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		rw.WriteHeader(http.StatusOK)
+	}
 }
 
+
+
 // Logout of a user account
-func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(501)
+func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
+	// Get the previously flashes, if any.
+    if flashes := c.session.Flashes(); len(flashes) > 0 {
+        fmt.Printf("Flashes: %+v\n", flashes)
+    } else {
+        // Set a new flash.
+        c.session.AddFlash("Hello, flash messages world!")
+    }
+    c.session.Save(req.Request, rw)
+    c.WriteApiResult(rw, ApiResultOk, "Test Response")
 }
 
 // Get user login status
@@ -214,6 +290,8 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 
 	server.address = address
 	server.port = port
+
+	gob.Register(&token.TokenClaims{})
 
 	// Attempt database connection
 	server.ds = datastore.NewDataStore(db)
@@ -237,17 +315,17 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 		Post("/api/login", (*AuthPlzCtx).Login).
 		Post("/api/create", (*AuthPlzCtx).Create).
 		Post("/api/action", (*AuthPlzCtx).Action).
-		Get("/api/logout", (*AuthPlzCtx).Logout).
+		Get("/api/action", (*AuthPlzCtx).Action).
+		Get("/api/test", (*AuthPlzCtx).Test).
 		Get("/api/status", (*AuthPlzCtx).Status)
-
-	// Start listening
-	fmt.Println("Listening at: " + port)
 
 	return &server
 }
 
 func (server *AuthPlzServer) Start() {
-	http.ListenAndServe(server.address+":"+server.port, context.ClearHandler(server.router))
+	// Start listening
+	fmt.Println("Listening at: " + server.port)
+	log.Fatal(http.ListenAndServe(server.address+":"+server.port, context.ClearHandler(server.router)))
 }
 
 func (server *AuthPlzServer) Close() {
@@ -256,7 +334,7 @@ func (server *AuthPlzServer) Close() {
 
 func main() {
 	var port string = "9000"
-	var address string = "loalhost"
+	var address string = "localhost"
 	var dbString string = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Parse environmental variables
@@ -264,6 +342,7 @@ func main() {
 		port = os.Getenv("PORT")
 	}
 
-	NewServer(address, port, dbString)
+	server := NewServer(address, port, dbString)
 
+	server.Start()
 }
