@@ -123,7 +123,31 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		return nil, loginError
 	}
 
-	fmt.Printf("User %s activated\r\n", email)
+	fmt.Printf("User %s account activated\r\n", email)
+
+	return u, nil
+}
+
+func (userController *UserController) Unlock(email string) (user *datastore.User, err error) {
+
+	// Fetch user account
+	u, err := userController.userStore.GetUserByEmail(email)
+	if err != nil {
+		// Userstore error, wrap
+		fmt.Println(err)
+		return nil, loginError
+	}
+
+	u.Locked = false
+
+	u, err = userController.userStore.UpdateUser(u)
+	if err != nil {
+		// Userstore error, wrap
+		fmt.Println(err)
+		return nil, loginError
+	}
+
+	fmt.Printf("User %s account unlocked\r\n", email)
 
 	return u, nil
 }

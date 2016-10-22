@@ -52,11 +52,11 @@ func (tc *TestClient) TestPost(t *testing.T, path string, statusCode int, v url.
 func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
 	resp := tc.TestGet(t, path, http.StatusOK)
 
-	var status ApiResponse;
+	var status ApiResponse
 	defer resp.Body.Close()
 	_ = json.NewDecoder(resp.Body).Decode(&status)
 
-	fmt.Printf("%+v\n", status);
+	fmt.Printf("%+v\n", status)
 
 	if status.Result != result {
 		t.Errorf("Incorrect API result from %s, expected: %s received: %s", path, result, status.Result)
@@ -85,7 +85,7 @@ func TestMain(t *testing.T) {
 	go server.Start()
 	defer server.Close()
 
-	apiPath := "http://" + address + ":" + port + "/api";
+	apiPath := "http://" + address + ":" + port + "/api"
 
 	client := NewTestClient(apiPath)
 	var user *datastore.User
@@ -113,6 +113,30 @@ func TestMain(t *testing.T) {
 		v.Set("password", fakePass)
 
 		client.TestPost(t, "/login", http.StatusUnauthorized, v)
+	})
+
+	t.Run("Account activation requires valid activation token subject", func(t *testing.T) {
+
+		// Create activation token
+		d, _ := time.ParseDuration("10m")
+		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionActivate, d)
+
+		// Use a separate test client instance
+		client2 := NewTestClient(apiPath)
+
+		// Post activation token
+		v := url.Values{}
+		v.Set("token", at)
+		client2.TestPost(t, "/action", http.StatusOK, v)
+
+		// Attempt login with activation cookie
+		v = url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+
+		// Check user status
+		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
@@ -151,6 +175,78 @@ func TestMain(t *testing.T) {
 		client.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
 	})
 
+	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
+
+		client2 := NewTestClient(apiPath)
+
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", "WrongPass")
+
+		// Attempt login to cause account lock
+		for i := 0; i < 10; i++ {
+			client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+		}
+
+		// Check user status
+		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+
+		// Set to correct password
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		// Check login still fails
+		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+	})
+
+	t.Run("Account unlock requires valid unlock token subject", func(t *testing.T) {
+
+		// Use a separate test client instance
+		client2 := NewTestClient(apiPath)
+		
+
+		// Create activation token
+		d, _ := time.ParseDuration("10m")
+		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionUnlock, d)
+
+		// Post activation token
+		v := url.Values{}
+		v.Set("token", at)
+		client2.TestPost(t, "/action", http.StatusOK, v)
+
+		// Attempt login with activation cookie
+		v = url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+
+		// Check user status
+		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+	})
+
+	t.Run("Locked accounts can be unlocked", func(t *testing.T) {
+
+		// Create activation token
+		d, _ := time.ParseDuration("10m")
+		at, _ := server.ctx.tokenController.BuildToken(user.UUID, token.TokenActionUnlock, d)
+
+		// Use a separate test client instance
+		client2 := NewTestClient(apiPath)
+
+		// Post activation token
+		v := url.Values{}
+		v.Set("token", at)
+		client2.TestPost(t, "/action", http.StatusOK, v)
+
+		// Attempt login with activation cookie
+		v = url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		client2.TestPost(t, "/login", http.StatusOK, v)
+
+		// Check user status
+		client2.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+	})
 
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
@@ -162,5 +258,3 @@ func TestMain(t *testing.T) {
 	})
 
 }
-
-

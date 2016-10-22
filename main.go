@@ -19,7 +19,6 @@ import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 
-
 // Application global context
 // TODO: this could be split and bound by module
 type AuthPlzGlobalCtx struct {
@@ -87,10 +86,8 @@ func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *we
 
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Options.MaxAge = -1
-      c.session.Save(req.Request, rw)
+	c.session.Save(req.Request, rw)
 }
-
-
 
 type AuthPlzServer struct {
 	address string

@@ -13,7 +13,7 @@ type TokenClaims struct {
 }
 
 const TokenActionActivate string = "activate"
-const TokenActionUnblock string = "unblock"
+const TokenActionUnlock string = "unlock"
 
 // User object
 type TokenController struct {
