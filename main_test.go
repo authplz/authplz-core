@@ -203,7 +203,6 @@ func TestMain(t *testing.T) {
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
-		
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")

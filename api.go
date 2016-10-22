@@ -63,6 +63,48 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
+func (c *AuthPlzCtx) HandleToken(tokenString string, rw web.ResponseWriter, req *web.Request) (user *datastore.User, err error) {
+
+	// Check token validity
+	claims, err := c.global.tokenController.ParseToken(tokenString)
+	if err != nil {
+		fmt.Printf("Invalid token\n")
+		return nil, fmt.Errorf("Invalid or expired token")
+	}
+
+	if u.UUID == claims.Subject {
+		fmt.Printf("Subject does not match user id\n")
+		rw.WriteHeader(http.StatusUnauthorized)
+		return nil, fmt.Errorf("Subject does not match user id")
+	}
+
+	fmt.Printf("Valid token found\n")
+	switch claims.Action {
+	case token.TokenActionUnlock:
+			fmt.Printf("Unlocking user\n")
+
+			c.global.userController.Unlock(u.Email)
+
+			// Create session
+			c.LoginUser(u, rw, req)
+			c.WriteApiResult(rw, ApiResultOk, ApiMessageUnlockSuccessful)
+
+	case token.TokenActionActivate:
+			fmt.Printf("Activating user\n")
+
+			c.global.userController.Activate(u.Email)
+
+			// Create session
+			c.LoginUser(u, rw, req)
+			c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
+
+	default:
+		fmt.Printf("Invalid token action\n")
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+}
+
 // Login to a user account
 func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
