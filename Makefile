@@ -10,7 +10,7 @@ run: build
 	./authplz
 
 test:
-	go test ./...
+	go test -p=1 ./...
 
 install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger

@@ -245,7 +245,7 @@ func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 // Get user login status
 func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, "You must be signed in to view this page")
+		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
 	} else {
 		c.WriteApiResult(rw, ApiResultOk, "Signed in")
 	}
@@ -254,7 +254,7 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 // Get user login status
 func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, "You must be signed sign out")
+		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
 	} else {
 		c.LogoutUser(rw, req)
 		c.WriteApiResult(rw, ApiResultOk, ApiMessageLogoutSuccess)
