@@ -117,21 +117,16 @@ func TestMain(t *testing.T) {
 
 	t.Run("Account activation requires valid activation token subject", func(t *testing.T) {
 
-
-
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
 		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
-		fmt.Println("----------------------------------")
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
 		client2.TestPost(t, "/action", http.StatusOK, v)
-		
-		fmt.Println("====================================")
 
 		// Attempt login with activation cookie
 		v = url.Values{}
@@ -141,14 +136,13 @@ func TestMain(t *testing.T) {
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
-
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(user.UUID, token.TokenActionActivate, d)
+		at, _ := server.ctx.tokenController.BuildToken(user.ExtId, token.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
@@ -232,7 +226,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(user.UUID, token.TokenActionUnlock, d)
+		at, _ := server.ctx.tokenController.BuildToken(user.ExtId, token.TokenActionUnlock, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
@@ -250,6 +244,19 @@ func TestMain(t *testing.T) {
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+	})
+
+	t.Run("Logged in users can get account info", func(t *testing.T) {
+
+		// Perform logout
+		resp := client.TestGet(t, "/account", http.StatusOK)
+
+		var u datastore.User
+		_ = json.NewDecoder(resp.Body).Decode(&u)
+
+		if u.Email != fakeEmail {
+			t.Errorf("Email mismatch")
+		}
 	})
 
 	t.Run("Logged in users can logout", func(t *testing.T) {

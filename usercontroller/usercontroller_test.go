@@ -11,7 +11,7 @@ func TestUserController(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds, err:= datastore.NewDataStore(dbString)
+	ds, err := datastore.NewDataStore(dbString)
 	if err != nil {
 		t.Error("Error opening database")
 		t.FailNow()
@@ -146,6 +146,25 @@ func TestUserController(t *testing.T) {
 		if res.Code != LoginCodeLocked {
 			t.Error("User account was not locked", res)
 		}
+	})
+
+	t.Run("Get user", func(t *testing.T) {
+
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
+		u1, err := uc.GetUser(u.ExtId)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		if u1 == nil {
+			t.Error("No user fetched")
+		}
+
 	})
 
 	// Tear down user controller

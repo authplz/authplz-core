@@ -32,6 +32,18 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 	w.Write(js)
 }
 
+// Helper to write API results out
+func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
+	js, err := json.Marshal(i)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
@@ -74,7 +86,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 		return fmt.Errorf("Invalid or expired token")
 	}
 
-	if u.UUID != claims.Subject {
+	if u.ExtId != claims.Subject {
 		fmt.Println("HandleToken: Token subject does not match user id")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return fmt.Errorf("Token subject does not match user id")
@@ -148,12 +160,12 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		// Grab token and perform action
 		tokenString := flashes[0].(string)
 
-		tokenErr := c.HandleToken(u, tokenString, rw, req);
+		tokenErr := c.HandleToken(u, tokenString, rw, req)
 		if tokenErr == nil {
-			fmt.Printf("Token action complete\n");
-			return;
+			fmt.Printf("Token action complete\n")
+			return
 		} else {
-			fmt.Printf("Token error %s\n", tokenErr);
+			fmt.Printf("Token error %s\n", tokenErr)
 		}
 	}
 
@@ -186,8 +198,8 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 
+// Handle an action token
 func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
-
 	// Grab token string from get or post request
 	var tokenString string
 	tokenString = req.FormValue("token")
@@ -229,7 +241,7 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
-// Logout of a user account
+// Test endpoint
 func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	// Get the previously flashes, if any.
 	if flashes := c.session.Flashes(); len(flashes) > 0 {
@@ -248,6 +260,34 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
 	} else {
 		c.WriteApiResult(rw, ApiResultOk, "Signed in")
+	}
+}
+
+// Get user object
+func (c *AuthPlzCtx) Account(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
+
+	} else {
+		fmt.Println("aaaaaaaaaaaaaaaaaa")
+		u, err := c.global.userController.GetUser(c.userid)
+		if err != nil {
+			log.Print(err)
+			c.WriteApiResult(rw, ApiResultError, ApiMessageInternalError)
+			return
+		}
+		fmt.Println("bbbbbbbbbbbbbbbbbb")
+		js, err := json.Marshal(u)
+		if err != nil {
+			log.Print(err)
+			c.WriteApiResult(rw, ApiResultError, ApiMessageInternalError)
+			return
+		}
+
+		fmt.Println("---------------------")
+
+		rw.Header().Set("Content-Type", "application/json")
+		rw.Write(js)
 	}
 }
 

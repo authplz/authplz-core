@@ -11,7 +11,7 @@ import "github.com/ryankurte/authplz/datastore"
 
 type UserStoreInterface interface {
 	AddUser(email string, pass string) (user *datastore.User, err error)
-	GetUserByUUID(uuid string) (user *datastore.User, err error)
+	GetUserByExtId(extId string) (user *datastore.User, err error)
 	GetUserByEmail(email string) (user *datastore.User, err error)
 	UpdateUser(user *datastore.User) (*datastore.User, error)
 }
@@ -99,7 +99,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 
 	// Send account activation token to user email
 
-	fmt.Printf("User %s created\r\n", email)
+	fmt.Printf("UserController.Create: User %s created\r\n", email)
 
 	return u, nil
 }
@@ -123,7 +123,7 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		return nil, loginError
 	}
 
-	fmt.Printf("User %s account activated\r\n", email)
+	fmt.Printf("UserController.Activate: User %s account activated\r\n", email)
 
 	return u, nil
 }
@@ -147,7 +147,7 @@ func (userController *UserController) Unlock(email string) (user *datastore.User
 		return nil, loginError
 	}
 
-	fmt.Printf("User %s account unlocked\r\n", email)
+	fmt.Printf("UserController.Unlock: User %s account unlocked\r\n", email)
 
 	return u, nil
 }
@@ -178,7 +178,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 			u.LoginRetries++
 
 			if u.LoginRetries > 5 {
-				fmt.Println("Locking user %s", email)
+				fmt.Println("UserController.Login: Locking user %s", email)
 				u.Locked = true
 			}
 
@@ -190,7 +190,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 			}
 		}
 
-		fmt.Printf("User %s login failed, hash error\r\n", email)
+		fmt.Printf("UserController.Login: User %s login failed, hash error\r\n", email)
 
 		// Error in case of hash error
 		return &LoginFailure, nil, nil
@@ -201,25 +201,25 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 		if u.Enabled == false {
 			//TODO: handle disabled error
-			log.Printf("User %s login failed, account disabled\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account disabled\r\n", email)
 			return &LoginDisabled, u, nil
 		}
 
 		if u.Activated == false {
 			//TODO: handle un-activated error
-			log.Printf("User %s login failed, account deactivated\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account deactivated\r\n", email)
 			return &LoginUnactivated, u, nil
 		}
 
 		if u.Locked == true {
 			//TODO: handle locked error
-			log.Printf("User %s login failed, account locked\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account locked\r\n", email)
 			return &LoginLocked, u, nil
 		}
 
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
-			log.Printf("User %s login failed, second factor required\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, second factor required\r\n", email)
 			return &LoginPartial, u, nil
 		}
 
@@ -230,4 +230,26 @@ func (userController *UserController) Login(email string, pass string) (status *
 	}
 
 	return &LoginFailure, nil, nil
+}
+
+func (userController *UserController) GetUser(extId string) (user *datastore.User, err error) {
+	// Attempt to fetch user
+	u, err := userController.userStore.GetUserByExtId(extId)
+	if err != nil {
+		// Userstore error, wrap
+		fmt.Println(err)
+		return nil, fmt.Errorf("User not found")
+	}
+
+	// Explicitly pass allowed fields from controller
+	sanatizedUser := datastore.User{
+		Email:     u.Email,
+		Activated: u.Activated,
+		Enabled:   u.Enabled,
+		Locked:    u.Locked,
+		Admin:     u.Admin,
+		LastLogin: u.LastLogin,
+	}
+
+	return &sanatizedUser, nil
 }

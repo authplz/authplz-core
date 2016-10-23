@@ -61,7 +61,6 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	// Load user from session if set
 	// TODO: this will be replaced with sessions when implemented
 	if session.Values["userId"] != nil {
-		fmt.Println("userId found")
 		//TODO: find user account
 		ctx.userid = session.Values["userId"].(string)
 	}
@@ -79,7 +78,7 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 }
 
 func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
-	c.session.Values["userId"] = u.UUID
+	c.session.Values["userId"] = u.ExtId
 	c.session.Save(req.Request, rw)
 }
 
@@ -109,7 +108,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	if err != nil {
 		panic("Error opening database")
 	}
-	server.ds = ds;
+	server.ds = ds
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
@@ -133,6 +132,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 		Get("/api/action", (*AuthPlzCtx).Action).
 		Get("/api/logout", (*AuthPlzCtx).Logout).
 		Get("/api/status", (*AuthPlzCtx).Status).
+		Get("/api/account", (*AuthPlzCtx).Account).
 		Get("/api/test", (*AuthPlzCtx).Test)
 
 	return &server

@@ -1,11 +1,13 @@
 package datastore
 
+import "time"
+
 import "github.com/jinzhu/gorm"
 
 // User object
 type User struct {
 	gorm.Model
-	UUID         string `gorm:"not null;unique"`
+	ExtId        string `gorm:"not null;unique"`
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`
 	Activated    bool   `gorm:"not null; default:false"`
@@ -13,6 +15,7 @@ type User struct {
 	Locked       bool   `gorm:"not null; default:false"`
 	Admin        bool   `gorm:"not null; default:false"`
 	LoginRetries uint   `gorm:"not null; default:0"`
+	LastLogin    time.Time
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
 	AuditEvents  []AuditEvent
@@ -36,24 +39,24 @@ func (u *User) SecondFactors() bool {
 // It turns out you can't throw interfaces around as objects in the definition of interfaces
 // Or, I can't work out how :-(
 type UserInterface interface {
-	UUID() string
-	Email() string
-	Password() string
+	GetExId() string
+	GetEmail() string
+	GetPassword() string
 	SetPassword(pass string)
-	Activated() bool
+	GetActivated() bool
 	SetActivated(activated bool)
-	Enabled() bool
+	GetEnabled() bool
 	SetEnabled(enabled bool)
-	Locked() bool
+	GetLocked() bool
 	SetLocked(locked bool)
-	Admin() bool
+	GetAdmin() bool
 	SetAdmin(admin bool)
-	LoginRetries() uint
+	GetLoginRetries() uint
 	ClearLoginRetries()
 }
 
 // Getters and Setters
-func (u *User) GetUUID() string             { return u.UUID }
+func (u *User) GetExId() string             { return u.ExtId }
 func (u *User) GetEmail() string            { return u.Email }
 func (u *User) GetPassword() string         { return u.Password }
 func (u *User) SetPassword(pass string)     { u.Password = pass }

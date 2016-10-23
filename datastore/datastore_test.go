@@ -77,6 +77,34 @@ func TestDatastore(t *testing.T) {
 		}
 	})
 
+	t.Run("Finds users by uuid", func(t *testing.T) {
+		// Create user
+		u, err := ds.GetUserByEmail(fakeEmail)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if u == nil {
+			t.Error("User find by email failed")
+			return
+		}
+
+		u, err = ds.GetUserByExtId(u.ExtId)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if u == nil {
+			t.Error("User find by UserId failed")
+			return
+		}
+
+		if u.Email != fakeEmail {
+			t.Error("Email address mismatch")
+			return
+		}
+	})
+
 	t.Run("Update users", func(t *testing.T) {
 		// Create user
 		u, err := ds.GetUserByEmail(fakeEmail)

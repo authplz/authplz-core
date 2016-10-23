@@ -86,7 +86,7 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 	user := &User{
 		Email:     email,
 		Password:  pass,
-		UUID:      uuid.NewV4().String(),
+		ExtId:     uuid.NewV4().String(),
 		Enabled:   true,
 		Activated: false,
 		Locked:    false,
@@ -114,10 +114,10 @@ func (dataStore *DataStore) GetUserByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (dataStore *DataStore) GetUserByUUID(uuid string) (*User, error) {
+func (dataStore *DataStore) GetUserByExtId(extId string) (*User, error) {
 
 	var user User
-	err := dataStore.db.Where(&User{UUID: uuid}).First(user).Error
+	err := dataStore.db.Where(&User{ExtId: extId}).First(&user).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
