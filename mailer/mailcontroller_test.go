@@ -24,8 +24,8 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send emails", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("skipping test in short mode.")
+		if mgDomain == "" {
+			t.Skip("skipping mailgun tests (no API config)")
 		}
 		err := mc.SendMail("test@"+mgDomain, "test subject", "test body")
 		if err != nil {
@@ -35,8 +35,8 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send signup emails", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("skipping test in short mode.")
+		if mgDomain == "" {
+			t.Skip("skipping mailgun tests (no API config)")
 		}
 
 		sf := MailFields{
@@ -53,8 +53,8 @@ func TestMailController(t *testing.T) {
 	})
 
 	t.Run("Can send password reset emails", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("skipping test in short mode.")
+		if mgDomain == "" {
+			t.Skip("skipping mailgun tests (no API config)")
 		}
 
 		sf := MailFields{
