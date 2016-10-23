@@ -51,7 +51,6 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	session, err := ctx.global.sessionStore.Get(req.Request, "user-session")
 	if err != nil {
-		log.Print(err)
 		next(rw, req)
 		return
 	}

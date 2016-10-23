@@ -10,6 +10,7 @@ import "github.com/asaskevich/govalidator"
 
 import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
+import "github.com/ryankurte/authplz/datastore"
 
 // Common API response object
 type ApiResponse struct {
@@ -63,45 +64,47 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (c *AuthPlzCtx) HandleToken(tokenString string, rw web.ResponseWriter, req *web.Request) (user *datastore.User, err error) {
+func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
 
 	// Check token validity
 	claims, err := c.global.tokenController.ParseToken(tokenString)
 	if err != nil {
-		fmt.Printf("Invalid token\n")
-		return nil, fmt.Errorf("Invalid or expired token")
-	}
-
-	if u.UUID == claims.Subject {
-		fmt.Printf("Subject does not match user id\n")
+		fmt.Println("HandleToken: Invalid or expired token")
 		rw.WriteHeader(http.StatusUnauthorized)
-		return nil, fmt.Errorf("Subject does not match user id")
+		return fmt.Errorf("Invalid or expired token")
 	}
 
-	fmt.Printf("Valid token found\n")
+	if u.UUID != claims.Subject {
+		fmt.Println("HandleToken: Token subject does not match user id")
+		rw.WriteHeader(http.StatusUnauthorized)
+		return fmt.Errorf("Token subject does not match user id")
+	}
+
 	switch claims.Action {
 	case token.TokenActionUnlock:
-			fmt.Printf("Unlocking user\n")
+		fmt.Printf("HandleToken: Unlocking user\n")
 
-			c.global.userController.Unlock(u.Email)
+		c.global.userController.Unlock(u.Email)
 
-			// Create session
-			c.LoginUser(u, rw, req)
-			c.WriteApiResult(rw, ApiResultOk, ApiMessageUnlockSuccessful)
+		// Create session
+		c.LoginUser(u, rw, req)
+		c.WriteApiResult(rw, ApiResultOk, ApiMessageUnlockSuccessful)
+		return nil
 
 	case token.TokenActionActivate:
-			fmt.Printf("Activating user\n")
+		fmt.Printf("HandleToken: Activating user\n")
 
-			c.global.userController.Activate(u.Email)
+		c.global.userController.Activate(u.Email)
 
-			// Create session
-			c.LoginUser(u, rw, req)
-			c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
+		// Create session
+		c.LoginUser(u, rw, req)
+		c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
+		return nil
 
 	default:
-		fmt.Printf("Invalid token action\n")
+		fmt.Printf("HandleToken: Invalid token action\n")
 		rw.WriteHeader(http.StatusBadRequest)
-		return
+		return fmt.Errorf("Invalid token action")
 	}
 }
 
@@ -125,7 +128,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	l, u, e := c.global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
-		fmt.Printf("Error: %s", e)
+		fmt.Printf("Error: %s\n", e)
 		return
 	}
 
@@ -141,114 +144,45 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Load flashes if they exist
 	flashes := c.session.Flashes()
+	if len(flashes) > 0 {
+		// Grab token and perform action
+		tokenString := flashes[0].(string)
+
+		tokenErr := c.HandleToken(u, tokenString, rw, req);
+		if tokenErr == nil {
+			fmt.Printf("Token action complete\n");
+			return;
+		} else {
+			fmt.Printf("Token error %s\n", tokenErr);
+		}
+	}
 
 	// Handle not yet activated accounts
 	if l == &usercontroller.LoginUnactivated {
-		if len(flashes) > 0 {
-			activateToken := flashes[0]
-
-			claims, err := c.global.tokenController.ParseToken(activateToken.(string))
-			if err != nil {
-				fmt.Printf("Invalid token\n")
-				c.WriteApiResult(rw, ApiResultError, ApiMessageInvalidToken)
-				return
-			}
-
-			fmt.Printf("Valid token found\n")
-			if claims.Action == token.TokenActionActivate {
-				fmt.Printf("Activation token\n")
-
-				if u.UUID == claims.Subject {
-					fmt.Printf("Activating user\n")
-
-					c.global.userController.Activate(u.Email)
-
-					// Create session
-					c.LoginUser(u, rw, req)
-					c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
-
-				} else {
-					fmt.Printf("Subject mismatch user\n")
-					rw.WriteHeader(http.StatusUnauthorized)
-					return
-				}
-
-			} else {
-				fmt.Printf("Invalid token\n")
-				rw.WriteHeader(http.StatusBadRequest)
-				return
-			}
-
-			rw.WriteHeader(http.StatusOK)
-
-		} else {
-			log.Println("Account not activated")
-			//TODO: prompt for activation (resend email?)
-			rw.WriteHeader(http.StatusUnauthorized)
-			//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
-		}
-
+		log.Println("Account not activated")
+		//TODO: prompt for activation (resend email?)
+		rw.WriteHeader(http.StatusUnauthorized)
+		//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
 		return
 	}
 
 	// TODO: handle locked accounts
 	if l == &usercontroller.LoginLocked {
-
-		if len(flashes) > 0 {
-			unlockToken := flashes[0]
-
-			claims, err := c.global.tokenController.ParseToken(unlockToken.(string))
-			if err != nil {
-				fmt.Printf("Invalid token\n")
-				c.WriteApiResult(rw, ApiResultError, ApiMessageInvalidToken)
-				return
-			}
-
-			fmt.Printf("Valid token found\n")
-			if claims.Action == token.TokenActionUnlock {
-				fmt.Printf("Unlock token\n")
-
-				if u.UUID == claims.Subject {
-					fmt.Printf("Unlocking user\n")
-
-					c.global.userController.Unlock(u.Email)
-
-					// Create session
-					c.LoginUser(u, rw, req)
-					c.WriteApiResult(rw, ApiResultOk, ApiMessageUnlockSuccessful)
-
-				} else {
-					fmt.Printf("Subject does not match user id\n")
-					rw.WriteHeader(http.StatusUnauthorized)
-					return
-				}
-
-			} else {
-				fmt.Printf("Invalid token\n")
-				rw.WriteHeader(http.StatusBadRequest)
-				return
-			}
-
-			rw.WriteHeader(http.StatusOK)
-
-		} else {
-			log.Println("Account locked")
-			//TODO: prompt for activation (resend email?)
-			rw.WriteHeader(http.StatusUnauthorized)
-			//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
-		}
-
+		log.Println("Account locked")
+		//TODO: prompt for activation (resend email?)
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
 	// Handle partial logins (2FA)
 	if l == &usercontroller.LoginPartial {
 		log.Println("Partial login")
-		//TODO: fetch tokens and set flash
+		//TODO: fetch tokens and set flash for 2FA
 		rw.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 
-	fmt.Printf("login endpoint: login failed %s", e)
+	log.Printf("Login failed\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 

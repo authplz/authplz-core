@@ -117,17 +117,21 @@ func TestMain(t *testing.T) {
 
 	t.Run("Account activation requires valid activation token subject", func(t *testing.T) {
 
+
+
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
 		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
-
+		fmt.Println("----------------------------------")
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
 		client2.TestPost(t, "/action", http.StatusOK, v)
+		
+		fmt.Println("====================================")
 
 		// Attempt login with activation cookie
 		v = url.Values{}
@@ -137,6 +141,7 @@ func TestMain(t *testing.T) {
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
