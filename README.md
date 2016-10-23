@@ -9,7 +9,7 @@ This provides an alternative to hosted solutions such as [StormPath](https://sto
 
 Early WIP.
 
-[![Build Status](https://travis-ci.com/ryankurte/authplz.svg)](https://travis-ci.com/ryankurte/authplz)
+[![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz)
 
 ## Features
 
