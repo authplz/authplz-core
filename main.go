@@ -91,7 +91,7 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 type AuthPlzServer struct {
 	address string
 	port    string
-	ds      datastore.DataStore
+	ds      *datastore.DataStore
 	ctx     AuthPlzGlobalCtx
 	router  *web.Router
 }
@@ -105,13 +105,17 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	gob.Register(&token.TokenClaims{})
 
 	// Attempt database connection
-	server.ds = datastore.NewDataStore(db)
+	ds, err := datastore.NewDataStore(db)
+	if err != nil {
+		panic("Error opening database")
+	}
+	server.ds = ds;
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
 
 	// Create controllers
-	uc := usercontroller.NewUserController(&(server.ds), nil)
+	uc := usercontroller.NewUserController(server.ds, nil)
 	tc := token.NewTokenController(server.address, "something-also-secret")
 
 	// Create a global context object

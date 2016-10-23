@@ -11,11 +11,15 @@ func TestLogController(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := datastore.NewDataStore(dbString)
+	ds, err := datastore.NewDataStore(dbString)
+	if err != nil {
+		t.Error("Error opening database")
+		t.FailNow()
+	}
 	ds.ForceSync()
 
 	// Create controllers
-	lc := NewLogController(&ds)
+	lc := NewLogController(ds)
 
 	// Create fake user
 	u, _ := ds.AddUser(fakeEmail, fakePass)

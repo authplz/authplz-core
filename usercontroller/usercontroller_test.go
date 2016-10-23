@@ -11,12 +11,16 @@ func TestUserController(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := datastore.NewDataStore(dbString)
+	ds, err:= datastore.NewDataStore(dbString)
+	if err != nil {
+		t.Error("Error opening database")
+		t.FailNow()
+	}
 
 	ds.ForceSync()
 
 	// Create controllers
-	uc := NewUserController(&ds, nil)
+	uc := NewUserController(ds, nil)
 
 	// Run tests
 	t.Run("Create user", func(t *testing.T) {

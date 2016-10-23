@@ -8,7 +8,11 @@ func TestDatastore(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds := NewDataStore(dbString)
+	ds, err := NewDataStore(dbString)
+	if err != nil {
+		t.Error("Error opening database")
+		t.FailNow()
+	}
 	defer ds.Close()
 
 	ds.ForceSync()

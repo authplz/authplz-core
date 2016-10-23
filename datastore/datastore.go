@@ -47,16 +47,16 @@ type QueryFilter struct {
 	Offset uint // Offset of objects to return
 }
 
-func NewDataStore(dbString string) (dataStore DataStore) {
+func NewDataStore(dbString string) (*DataStore, error) {
+	// Attempt database connection
 	db, err := gorm.Open("postgres", dbString)
 	if err != nil {
-		fmt.Println("failed to connect database: " + dbString)
-		panic(err)
+		return nil, fmt.Errorf("failed to connect database: %s", dbString)
 	}
 
 	//db = db.LogMode(true)
 
-	return DataStore{db}
+	return &DataStore{db}, nil
 }
 
 func (dataStore *DataStore) Close() {
