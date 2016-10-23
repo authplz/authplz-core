@@ -6,11 +6,12 @@ import "testing"
 func TestDatastore(t *testing.T) {
 	// Setup user controller for testing
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+	//var dbString = "postgres://postgres:postgres@localhost/postgres"
 
 	// Attempt database connection
 	ds, err := NewDataStore(dbString)
 	if err != nil {
-		t.Error("Error opening database")
+		t.Errorf("%s", err)
 		t.FailNow()
 	}
 	defer ds.Close()
