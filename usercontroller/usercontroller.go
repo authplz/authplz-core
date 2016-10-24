@@ -68,7 +68,6 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), 8)
 	if hashErr != nil {
-		fmt.Println(hashErr)
 		return nil, fmt.Errorf("password hash to short")
 	}
 
@@ -76,8 +75,8 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	u, err := userController.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
-		return nil, err
+		log.Println(err)
+		return nil, fmt.Errorf("error checking for user account")
 	}
 
 	if u != nil {
@@ -89,7 +88,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	u, err = userController.userStore.AddUser(email, string(hash))
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
+		log.Println(err)
 		return nil, fmt.Errorf("error creating user")
 	}
 
@@ -99,7 +98,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 
 	// Send account activation token to user email
 
-	fmt.Printf("UserController.Create: User %s created\r\n", email)
+	log.Printf("UserController.Create: User %s created\r\n", email)
 
 	return u, nil
 }
@@ -123,7 +122,7 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		return nil, loginError
 	}
 
-	fmt.Printf("UserController.Activate: User %s account activated\r\n", email)
+	log.Printf("UserController.Activate: User %s account activated\r\n", email)
 
 	return u, nil
 }
@@ -134,7 +133,7 @@ func (userController *UserController) Unlock(email string) (user *datastore.User
 	u, err := userController.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
+		log.Println(err)
 		return nil, loginError
 	}
 
@@ -143,11 +142,11 @@ func (userController *UserController) Unlock(email string) (user *datastore.User
 	u, err = userController.userStore.UpdateUser(u)
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
+		log.Println(err)
 		return nil, loginError
 	}
 
-	fmt.Printf("UserController.Unlock: User %s account unlocked\r\n", email)
+	log.Printf("UserController.Unlock: User %s account unlocked\r\n", email)
 
 	return u, nil
 }
@@ -159,7 +158,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 	u, err := userController.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
+		log.Println(err)
 		return nil, nil, loginError
 	}
 
@@ -177,20 +176,20 @@ func (userController *UserController) Login(email string, pass string) (status *
 		if u != nil {
 			u.LoginRetries++
 
-			if u.LoginRetries > 5 {
-				fmt.Println("UserController.Login: Locking user %s", email)
+			if (u.LoginRetries > 5) && (u.Locked == false) {
+				log.Println("UserController.Login: Locking user %s", email)
 				u.Locked = true
 			}
 
 			u, err = userController.userStore.UpdateUser(u)
 			if err != nil {
 				// Userstore error, wrap
-				fmt.Println(err)
+				log.Println(err)
 				return nil, nil, loginError
 			}
 		}
 
-		fmt.Printf("UserController.Login: User %s login failed, hash error\r\n", email)
+		log.Printf("UserController.Login: User %s login failed, invalid password\r\n", email)
 
 		// Error in case of hash error
 		return &LoginFailure, nil, nil
@@ -223,7 +222,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 			return &LoginPartial, u, nil
 		}
 
-		log.Printf("User %s login successful\r\n", email)
+		log.Printf("UserController.Login: User %s login successful\r\n", email)
 
 		//TODO: update login time etc.
 		return &LoginSuccess, u, nil
@@ -237,7 +236,7 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 	u, err := userController.userStore.GetUserByExtId(extId)
 	if err != nil {
 		// Userstore error, wrap
-		fmt.Println(err)
+		log.Println(err)
 		return nil, fmt.Errorf("User not found")
 	}
 

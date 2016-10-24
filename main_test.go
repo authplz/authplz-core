@@ -1,7 +1,7 @@
 package main
 
 import "testing"
-import "fmt"
+//import "fmt"
 import "time"
 import "net/http"
 import "net/url"
@@ -11,6 +11,7 @@ import "encoding/json"
 
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
+import "github.com/ryankurte/authplz/api"
 
 type TestClient struct {
 	*http.Client
@@ -52,11 +53,9 @@ func (tc *TestClient) TestPost(t *testing.T, path string, statusCode int, v url.
 func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
 	resp := tc.TestGet(t, path, http.StatusOK)
 
-	var status ApiResponse
+	var status api.ApiResponse
 	defer resp.Body.Close()
 	_ = json.NewDecoder(resp.Body).Decode(&status)
-
-	fmt.Printf("%+v\n", status)
 
 	if status.Result != result {
 		t.Errorf("Incorrect API result from %s, expected: %s received: %s", path, result, status.Result)
@@ -92,7 +91,7 @@ func TestMain(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		client.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 	})
 
 	t.Run("Create User", func(t *testing.T) {
@@ -135,7 +134,7 @@ func TestMain(t *testing.T) {
 		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
@@ -159,7 +158,7 @@ func TestMain(t *testing.T) {
 		client2.TestPost(t, "/login", http.StatusOK, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
 	})
 
 	t.Run("Activated users can login", func(t *testing.T) {
@@ -171,7 +170,7 @@ func TestMain(t *testing.T) {
 		client.TestPost(t, "/login", http.StatusOK, v)
 
 		// Check user status
-		client.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+		client.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
 	})
 
 	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
@@ -188,7 +187,7 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 
 		// Set to correct password
 		v.Set("email", fakeEmail)
@@ -219,7 +218,7 @@ func TestMain(t *testing.T) {
 		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 	})
 
 	t.Run("Locked accounts can be unlocked", func(t *testing.T) {
@@ -243,7 +242,7 @@ func TestMain(t *testing.T) {
 		client2.TestPost(t, "/login", http.StatusOK, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", ApiResultOk, ApiMessageLoginSuccess)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
 	})
 
 	t.Run("Logged in users can get account info", func(t *testing.T) {
@@ -262,10 +261,10 @@ func TestMain(t *testing.T) {
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout
-		client.TestGetApiResponse(t, "/logout", ApiResultOk, ApiMessageLogoutSuccess)
+		client.TestGetApiResponse(t, "/logout", api.ApiResultOk, api.ApiMessageLogoutSuccess)
 
 		// Check user status
-		client.TestGetApiResponse(t, "/status", ApiResultError, ApiMessageUnauthorized)
+		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 	})
 
 }

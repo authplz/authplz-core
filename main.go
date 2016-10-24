@@ -5,6 +5,7 @@ import "os"
 //import "strings"
 import "fmt"
 import "log"
+import "path"
 import "net/http"
 
 import "encoding/gob"
@@ -14,10 +15,12 @@ import "github.com/gocraft/web"
 //import "github.com/kataras/iris"
 import "github.com/gorilla/sessions"
 import "github.com/gorilla/context"
+//import "github.com/gorilla/csrf"
 
 import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/api"
 
 // Application global context
 // TODO: this could be split and bound by module
@@ -34,6 +37,7 @@ type AuthPlzCtx struct {
 	global  *AuthPlzGlobalCtx
 	session *sessions.Session
 	userid  string
+	message string
 }
 
 // Convenience type to describe middleware functions
@@ -71,7 +75,7 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 
 func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, "You must be signed in to view this page")
+		c.WriteApiResult(rw, api.ApiResultError, "You must be signed in to view this page")
 	} else {
 		next(rw, req)
 	}
@@ -87,12 +91,44 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Save(req.Request, rw)
 }
 
+func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {
+	session, err := c.global.sessionStore.Get(req.Request, "user-message")
+	if err != nil {
+		return
+	}
+	session.AddFlash(message)
+
+	c.session.Save(req.Request, rw)
+}
+
+func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string{
+	session, err := c.global.sessionStore.Get(req.Request, "user-message")
+	if err != nil {
+		return ""
+	}
+
+	flashes := session.Flashes()
+	if len(flashes) > 0 {
+		return flashes[0].(string)
+	}
+
+	return ""
+}
+
 type AuthPlzServer struct {
 	address string
 	port    string
 	ds      *datastore.DataStore
 	ctx     AuthPlzGlobalCtx
 	router  *web.Router
+}
+
+type AuthPlzConfig struct {
+	Address       string
+	Port 		  string
+	Database	  string
+	CookieSecret  string
+	TokenSecret	  string
 }
 
 func NewServer(address string, port string, db string) *AuthPlzServer {
@@ -113,6 +149,8 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
 
+	// TODO: Create CSRF middleware
+
 	// Create controllers
 	uc := usercontroller.NewUserController(server.ds, nil)
 	tc := token.NewTokenController(server.address, "something-also-secret")
@@ -125,15 +163,23 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 		Middleware(BindContext(&server.ctx)).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
-		Middleware((*AuthPlzCtx).SessionMiddleware).
-		Post("/api/login", (*AuthPlzCtx).Login).
-		Post("/api/create", (*AuthPlzCtx).Create).
-		Post("/api/action", (*AuthPlzCtx).Action).
-		Get("/api/action", (*AuthPlzCtx).Action).
-		Get("/api/logout", (*AuthPlzCtx).Logout).
-		Get("/api/status", (*AuthPlzCtx).Status).
-		Get("/api/account", (*AuthPlzCtx).Account).
-		Get("/api/test", (*AuthPlzCtx).Test)
+		Middleware((*AuthPlzCtx).SessionMiddleware)
+
+	// Enable static file hosting
+	currentRoot, _ := os.Getwd()
+	server.router.Middleware(web.StaticMiddleware(path.Join(currentRoot, "static"), web.StaticOption{IndexFile: "index.html"}))
+
+	// Create API router
+	// TODO: this can probably be a module
+	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
+	apiRouter.Post("/login", 	(*AuthPlzCtx).Login)
+	apiRouter.Post("/create", 	(*AuthPlzCtx).Create)
+	apiRouter.Post("/action", 	(*AuthPlzCtx).Action)
+	apiRouter.Get("/action", 	(*AuthPlzCtx).Action)
+	apiRouter.Get("/logout", 	(*AuthPlzCtx).Logout)
+	apiRouter.Get("/status", 	(*AuthPlzCtx).Status)
+	apiRouter.Get("/account", 	(*AuthPlzCtx).Account)
+	apiRouter.Get("/test", 		(*AuthPlzCtx).Test)
 
 	return &server
 }

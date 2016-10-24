@@ -11,28 +11,10 @@ import "github.com/asaskevich/govalidator"
 import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/api"
 
-// Common API response object
-type ApiResponse struct {
-	Result  string
-	Message string
-}
 
-// Helper to write API results out
-func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := ApiResponse{Result: result, Message: message}
-
-	js, err := json.Marshal(apiResp)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
-}
-
-// Helper to write API results out
+// Helper to write objects out as JSON
 func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 	js, err := json.Marshal(i)
 	if err != nil {
@@ -44,17 +26,23 @@ func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 	w.Write(js)
 }
 
+// Helper to write API results out
+func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
+	apiResp := api.ApiResponse{Result: result, Message: message}
+	ctx.WriteJson(w, apiResp);
+}
+
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		fmt.Printf("email parameter required")
+		fmt.Printf("api.Create: email parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		fmt.Printf("password parameter required")
+		fmt.Printf("api.Create: password parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -71,50 +59,51 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Println("Login OK")
+	log.Println("api.Create: Create OK")
 
 	rw.WriteHeader(http.StatusOK)
 }
 
+// Handle an action token
 func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
 
 	// Check token validity
 	claims, err := c.global.tokenController.ParseToken(tokenString)
 	if err != nil {
-		fmt.Println("HandleToken: Invalid or expired token")
+		fmt.Println("api.HandleToken: Invalid or expired token")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return fmt.Errorf("Invalid or expired token")
 	}
 
 	if u.ExtId != claims.Subject {
-		fmt.Println("HandleToken: Token subject does not match user id")
+		fmt.Println("api.HandleToken: Token subject does not match user id")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return fmt.Errorf("Token subject does not match user id")
 	}
 
 	switch claims.Action {
 	case token.TokenActionUnlock:
-		fmt.Printf("HandleToken: Unlocking user\n")
+		fmt.Printf("api.HandleToken: Unlocking user\n")
 
 		c.global.userController.Unlock(u.Email)
 
 		// Create session
 		c.LoginUser(u, rw, req)
-		c.WriteApiResult(rw, ApiResultOk, ApiMessageUnlockSuccessful)
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageUnlockSuccessful)
 		return nil
 
 	case token.TokenActionActivate:
-		fmt.Printf("HandleToken: Activating user\n")
+		fmt.Printf("api.HandleToken: Activating user\n")
 
 		c.global.userController.Activate(u.Email)
 
 		// Create session
 		c.LoginUser(u, rw, req)
-		c.WriteApiResult(rw, ApiResultOk, ApiMessageActivationSuccessful)
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageActivationSuccessful)
 		return nil
 
 	default:
-		fmt.Printf("HandleToken: Invalid token action\n")
+		fmt.Printf("api.HandleToken: Invalid token action\n")
 		rw.WriteHeader(http.StatusBadRequest)
 		return fmt.Errorf("Invalid token action")
 	}
@@ -126,13 +115,11 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
 		rw.WriteHeader(http.StatusBadRequest)
-		fmt.Println("email parameter required")
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
 		rw.WriteHeader(http.StatusBadRequest)
-		fmt.Println("password parameter required")
 		return
 	}
 
@@ -140,17 +127,17 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	l, u, e := c.global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
-		fmt.Printf("Error: %s\n", e)
+		fmt.Printf("api.Login: user controller error %s\n", e)
 		return
 	}
 
 	// Handle simple logins
 	if l == &usercontroller.LoginSuccess {
-		log.Println("Login OK")
+		log.Println("api.Login: Login OK")
 
 		// Create session
 		c.LoginUser(u, rw, req)
-		c.WriteApiResult(rw, ApiResultOk, ApiMessageLoginSuccess)
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLoginSuccess)
 		return
 	}
 
@@ -162,43 +149,43 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 		tokenErr := c.HandleToken(u, tokenString, rw, req)
 		if tokenErr == nil {
-			fmt.Printf("Token action complete\n")
+			fmt.Printf("api.Login: Token action complete\n")
 			return
 		} else {
-			fmt.Printf("Token error %s\n", tokenErr)
+			fmt.Printf("api.Login: Token error %s\n", tokenErr)
 		}
 	}
 
 	// Handle not yet activated accounts
 	if l == &usercontroller.LoginUnactivated {
-		log.Println("Account not activated")
+		log.Println("api.Login: Account not activated")
 		//TODO: prompt for activation (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
-		//c.WriteApiResult(rw, ApiResultError, usercontroller.LoginUnactivated.Message);
+		//c.WriteApiResult(rw, api.ApiResultError, usercontroller.LoginUnactivated.Message);
 		return
 	}
 
 	// TODO: handle locked accounts
 	if l == &usercontroller.LoginLocked {
-		log.Println("Account locked")
-		//TODO: prompt for activation (resend email?)
+		log.Println("api.Login: Account locked")
+		//TODO: prompt for unlock (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Handle partial logins (2FA)
 	if l == &usercontroller.LoginPartial {
-		log.Println("Partial login")
+		log.Println("api.Login: Partial login")
 		//TODO: fetch tokens and set flash for 2FA
 		rw.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 
-	log.Printf("Login failed\n")
+	log.Printf("api.Login: Login failed\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 
-// Handle an action token
+// Handle an action token (both get and post calls)
 func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	// Grab token string from get or post request
 	var tokenString string
@@ -208,14 +195,11 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	}
 	if tokenString == "" {
 		rw.WriteHeader(http.StatusBadRequest)
-		fmt.Println("token parameter required")
 		return
 	}
 
 	// If the user isn't logged in
 	if c.userid == "" {
-		fmt.Printf("Received token, login required (saving to flash)\n")
-
 		// Clear existing flashes (by reading)
 		_ = c.session.Flashes()
 
@@ -223,23 +207,53 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		c.session.AddFlash(tokenString)
 		c.session.Save(req.Request, rw)
 
-		c.WriteApiResult(rw, ApiResultOk, "Saved token")
+		c.WriteApiResult(rw, api.ApiResultOk, "Saved token")
 		//TODO: redirect to login
 
 	} else {
-		// Check token validity
-		claims, err := c.global.tokenController.ParseToken(tokenString)
+		//TODO: handle any active-user tokens here
+		rw.WriteHeader(http.StatusNotImplemented)
+	}
+}
+
+
+// Get user login status
+func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+	} else {
+		c.WriteApiResult(rw, api.ApiResultOk, "Signed in")
+	}
+}
+
+// Get user object
+func (c *AuthPlzCtx) Account(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+
+	} else {
+		// Fetch user from user controller
+		u, err := c.global.userController.GetUser(c.userid)
 		if err != nil {
-			fmt.Printf("Invalid token\n")
-			c.WriteApiResult(rw, ApiResultError, "Invalid token")
+			log.Print(err)
+			c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
 			return
 		}
 
-		fmt.Printf("Valid token found (claims: %+v)\n", claims)
-		//TODO: execute action token on signed in user
-		rw.WriteHeader(http.StatusOK)
+		c.WriteJson(rw, u);
 	}
 }
+
+// End a user session
+func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+	} else {
+		c.LogoutUser(rw, req)
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLogoutSuccess)
+	}
+}
+
 
 // Test endpoint
 func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
@@ -251,52 +265,6 @@ func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 		c.session.AddFlash("Hello, flash messages world!")
 	}
 	c.session.Save(req.Request, rw)
-	c.WriteApiResult(rw, ApiResultOk, "Test Response")
+	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
 
-// Get user login status
-func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
-	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
-	} else {
-		c.WriteApiResult(rw, ApiResultOk, "Signed in")
-	}
-}
-
-// Get user object
-func (c *AuthPlzCtx) Account(rw web.ResponseWriter, req *web.Request) {
-	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
-
-	} else {
-		fmt.Println("aaaaaaaaaaaaaaaaaa")
-		u, err := c.global.userController.GetUser(c.userid)
-		if err != nil {
-			log.Print(err)
-			c.WriteApiResult(rw, ApiResultError, ApiMessageInternalError)
-			return
-		}
-		fmt.Println("bbbbbbbbbbbbbbbbbb")
-		js, err := json.Marshal(u)
-		if err != nil {
-			log.Print(err)
-			c.WriteApiResult(rw, ApiResultError, ApiMessageInternalError)
-			return
-		}
-
-		fmt.Println("---------------------")
-
-		rw.Header().Set("Content-Type", "application/json")
-		rw.Write(js)
-	}
-}
-
-// Get user login status
-func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
-	if c.userid == "" {
-		c.WriteApiResult(rw, ApiResultError, ApiMessageUnauthorized)
-	} else {
-		c.LogoutUser(rw, req)
-		c.WriteApiResult(rw, ApiResultOk, ApiMessageLogoutSuccess)
-	}
-}
