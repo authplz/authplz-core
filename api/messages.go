@@ -20,6 +20,9 @@ const ApiMessageUnauthorized string = "You must be logged in to view this page"
 const ApiMessageInvalidToken string = "Invalid token"
 const ApiMessageInternalError string = "Internal server error"
 
+const ApiMessageU2FRegistrationFailed string = "U2F Registration failed"
+const ApiMessageU2FRegistrationComplete string = "U2F Registration complete"
+
 // API Response instances
 var ApiResponseLoginSuccess = ApiResponse{ApiResultOk, ApiMessageLoginSuccess}
 var ApiResponseLogoutSuccess = ApiResponse{ApiResultOk, ApiMessageLogoutSuccess}

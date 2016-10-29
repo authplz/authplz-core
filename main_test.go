@@ -2,12 +2,15 @@ package main
 
 import "testing"
 //import "fmt"
+import "bytes"
 import "time"
 import "net/http"
 import "net/url"
 import "net/http/cookiejar"
 
 import "encoding/json"
+
+import "github.com/ryankurte/go-u2f"
 
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
@@ -50,23 +53,88 @@ func (tc *TestClient) TestPost(t *testing.T, path string, statusCode int, v url.
 	return resp
 }
 
-func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
+func (tc *TestClient) TestGetJson(t *testing.T, path string, inst interface{}) {
 	resp := tc.TestGet(t, path, http.StatusOK)
-
-	var status api.ApiResponse
 	defer resp.Body.Close()
-	_ = json.NewDecoder(resp.Body).Decode(&status)
+	err := json.NewDecoder(resp.Body).Decode(&inst)
+	if err != nil {
+		t.Errorf("Error decoding json for type %T\n", inst)
+	}
+}
 
+func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
+	
+	queryPath := tc.basePath + path
+
+	resp, err := tc.PostForm(queryPath, v)
+	if err != nil {
+		t.Errorf("Error %s posting to %s\n", err, queryPath)
+	}
+
+	defer resp.Body.Close()
+	if resp != nil {
+		err := json.NewDecoder(resp.Body).Decode(&responseInst)
+		if err != nil {
+			t.Errorf("Error decoding json for type %T\n", responseInst)
+		}
+	}
+}
+
+func (tc *TestClient) TestPostJsonGetJson(t *testing.T, path string, requestInst interface{}, responseInst interface{}) {
+	
+	queryPath := tc.basePath + path
+
+	js, err := json.Marshal(requestInst)
+	if err != nil {
+		t.Errorf("Error %s converting %T to json\n", err, requestInst)
+		return
+	}
+
+	resp, err := tc.Post(queryPath, "application/json", bytes.NewReader(js))
+	if err != nil {
+		t.Errorf("Error %s posting to %s\n", err, queryPath)
+	}
+
+	defer resp.Body.Close()
+	if resp != nil {
+		err := json.NewDecoder(resp.Body).Decode(&responseInst)
+		if err != nil {
+			t.Errorf("Error decoding json for type %T\n", responseInst)
+		}
+	}
+}
+
+func (tc *TestClient) TestCheckApiResponse(t *testing.T, status api.ApiResponse, result string, message string) {
 	if status.Result != result {
-		t.Errorf("Incorrect API result from %s, expected: %s received: %s", path, result, status.Result)
+		t.Errorf("Incorrect API result, expected: %s received: %s message: %s", result, status.Result, status.Message)
 		t.FailNow()
 	}
 
-	if status.Result != result {
-		t.Errorf("Incorrect API message from %s, expected: %s received: %s", path, message, status.Message)
+	if status.Message != message {
+		t.Errorf("Incorrect API message, expected: %s received: %s", message, status.Message)
 		t.FailNow()
 	}
 }
+
+func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
+	var status api.ApiResponse
+	tc.TestGetJson(t, path, &status)
+	tc.TestCheckApiResponse(t, status, result, message)
+}
+
+func (tc *TestClient) TestPostApiResponse(t *testing.T, path string, v url.Values, result string, message string) {
+	var status api.ApiResponse
+	tc.TestPostFormGetJson(t, path, v, &status)
+	tc.TestCheckApiResponse(t, status, result, message)
+}
+
+
+func (tc *TestClient) TestPostJsonCheckApiResponse(t *testing.T, path string, inst interface{}, result string, message string) {
+	var status api.ApiResponse
+	tc.TestPostJsonGetJson(t, path, inst, &status)
+	tc.TestCheckApiResponse(t, status, result, message)
+}
+
 
 func TestMain(t *testing.T) {
 	// Setup user controller for testing
@@ -88,6 +156,8 @@ func TestMain(t *testing.T) {
 
 	client := NewTestClient(apiPath)
 	var user *datastore.User
+
+	vt, _ := u2f.NewVirtualKey()
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
@@ -256,6 +326,28 @@ func TestMain(t *testing.T) {
 		if u.Email != fakeEmail {
 			t.Errorf("Email mismatch")
 		}
+	})
+
+	t.Run("Logged in users can enrol tokens", func(t *testing.T) {
+
+		// Generate enrolment request
+		var rr u2f.RegisterRequestMessage
+		client.TestGetJson(t, "/u2f/enrol", &rr)
+
+		if rr.AppID != address {
+			t.Errorf("U2F challenge AppId mismatch")
+		}
+
+		// Handle via virtual token
+		resp, err := vt.HandleRegisterRequest(rr)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		// Post registration response back
+		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
+
 	})
 
 	t.Run("Logged in users can logout", func(t *testing.T) {

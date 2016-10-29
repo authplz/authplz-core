@@ -7,6 +7,7 @@ import "encoding/json"
 
 import "github.com/gocraft/web"
 import "github.com/asaskevich/govalidator"
+import "github.com/ryankurte/go-u2f"
 
 import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
@@ -216,13 +217,12 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
-
 // Get user login status
 func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
 	} else {
-		c.WriteApiResult(rw, api.ApiResultOk, "Signed in")
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLoginSuccess)
 	}
 }
 
@@ -253,6 +253,68 @@ func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLogoutSuccess)
 	}
 }
+
+func (c *AuthPlzCtx) EnrolU2FGet(rw web.ResponseWriter, req *web.Request) {
+	// Check if user is logged in
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+		return
+	}
+
+	//TODO: get existing keys
+	var registeredKeys []u2f.Registration
+
+	// Build U2F challenge
+	challenge, _ := u2f.NewChallenge(c.global.address, []string{c.global.address}, registeredKeys)
+	u2fReq := challenge.RegisterRequest()
+
+	c.session.Values["u2f-register-challenge"] = challenge;
+	c.session.Save(req.Request, rw)
+
+	c.WriteJson(rw, *u2fReq);
+}
+
+func (c *AuthPlzCtx) EnrolU2FPost(rw web.ResponseWriter, req *web.Request) {
+	
+	// Check if user is logged in
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+		return
+	}
+
+	// Fetch request from session vars
+	if(c.session.Values["u2f-register-challenge"] == nil) {
+		c.WriteApiResult(rw, api.ApiResultError, "No challenge found")
+		fmt.Println("No challenge found in session flash")
+		return
+	}
+	challenge := c.session.Values["u2f-register-challenge"].(*u2f.Challenge)
+
+	// Parse JSON response body
+	var u2fResp u2f.RegisterResponse
+	jsonErr := json.NewDecoder(req.Body).Decode(&u2fResp)
+	if jsonErr != nil {
+		c.WriteApiResult(rw, api.ApiResultError, "Invalid U2F registration response")
+		return
+	}
+
+	// Check registration validity
+	// TODO: attestation should be disabled only in test mode
+	reg, err := challenge.Register(u2fResp, &u2f.RegistrationConfig{SkipAttestationVerify: true})
+	if err != nil {
+	    // Registration failed.
+	    log.Println(err)
+	    c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageU2FRegistrationFailed)
+	    return
+	}
+
+	fmt.Printf("Registration: %+v\n", reg)
+
+	//TODO: save registration against user
+
+	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
+}
+
 
 
 // Test endpoint

@@ -61,7 +61,6 @@ func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) 
 
 	claims, ok := token.Claims.(*TokenClaims)
 	if ok && token.Valid {
-		fmt.Printf("%v %v", claims.Action, claims.StandardClaims.ExpiresAt)
 		return claims, nil
 	} else {
 		fmt.Println(err)

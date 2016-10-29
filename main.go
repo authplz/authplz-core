@@ -16,6 +16,7 @@ import "github.com/gocraft/web"
 import "github.com/gorilla/sessions"
 import "github.com/gorilla/context"
 //import "github.com/gorilla/csrf"
+import "github.com/ryankurte/go-u2f"
 
 import "github.com/ryankurte/authplz/usercontroller"
 import "github.com/ryankurte/authplz/token"
@@ -138,6 +139,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	server.port = port
 
 	gob.Register(&token.TokenClaims{})
+	gob.Register(&u2f.Challenge{})
 
 	// Attempt database connection
 	ds, err := datastore.NewDataStore(db)
@@ -161,8 +163,8 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).
 		Middleware(BindContext(&server.ctx)).
-		Middleware(web.LoggerMiddleware).
-		Middleware(web.ShowErrorsMiddleware).
+		//Middleware(web.LoggerMiddleware).
+		//Middleware(web.ShowErrorsMiddleware).
 		Middleware((*AuthPlzCtx).SessionMiddleware)
 
 	// Enable static file hosting
@@ -170,16 +172,20 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	server.router.Middleware(web.StaticMiddleware(path.Join(currentRoot, "static"), web.StaticOption{IndexFile: "index.html"}))
 
 	// Create API router
-	// TODO: this can probably be a module
+	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
 	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
-	apiRouter.Post("/login", 	(*AuthPlzCtx).Login)
+
 	apiRouter.Post("/create", 	(*AuthPlzCtx).Create)
+	apiRouter.Post("/login", 	(*AuthPlzCtx).Login)
 	apiRouter.Post("/action", 	(*AuthPlzCtx).Action)
 	apiRouter.Get("/action", 	(*AuthPlzCtx).Action)
 	apiRouter.Get("/logout", 	(*AuthPlzCtx).Logout)
 	apiRouter.Get("/status", 	(*AuthPlzCtx).Status)
 	apiRouter.Get("/account", 	(*AuthPlzCtx).Account)
 	apiRouter.Get("/test", 		(*AuthPlzCtx).Test)
+
+	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).EnrolU2FGet)
+	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).EnrolU2FPost)
 
 	return &server
 }
