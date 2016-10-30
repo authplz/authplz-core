@@ -56,11 +56,12 @@ var loginError = errors.New("internal server error")
 
 type UserController struct {
 	userStore UserStoreInterface
+	tokenStore TokenStoreInterface
 	mail      MailInterface
 }
 
-func NewUserController(userStore UserStoreInterface, mail MailInterface) UserController {
-	return UserController{userStore, mail}
+func NewUserController(userStore UserStoreInterface, tokenStore TokenStoreInterface, mail MailInterface) UserController {
+	return UserController{userStore, tokenStore, mail}
 }
 
 func (userController *UserController) Create(email string, pass string) (user *datastore.User, err error) {
@@ -252,3 +253,36 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 
 	return &sanatizedUser, nil
 }
+
+func sanatizeUser (u *datastore.User) *datastore.User {
+	sanatizedUser := datastore.User{
+		Email:     u.Email,
+		Activated: u.Activated,
+		Enabled:   u.Enabled,
+		Locked:    u.Locked,
+		Admin:     u.Admin,
+		LastLogin: u.LastLogin,
+	}
+	return &sanatizedUser
+}
+
+func (userController *UserController) AddFidoToken(extId string, token *datastore.FidoToken) (user *datastore.User, err error) {
+	// Attempt to fetch user
+	u, err := userController.userStore.GetUserByExtId(extId)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("User not found")
+	}
+
+	u, err = userController.tokenStore.AddFidoToken(u, token);
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("Error adding token")
+	}
+
+	return sanatizeUser(u), nil
+}
+
+

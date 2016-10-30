@@ -3,7 +3,6 @@ package main
 import "os"
 
 //import "strings"
-import "fmt"
 import "log"
 import "path"
 import "net/http"
@@ -15,6 +14,7 @@ import "github.com/gocraft/web"
 //import "github.com/kataras/iris"
 import "github.com/gorilla/sessions"
 import "github.com/gorilla/context"
+
 //import "github.com/gorilla/csrf"
 import "github.com/ryankurte/go-u2f"
 
@@ -102,7 +102,7 @@ func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req 
 	c.session.Save(req.Request, rw)
 }
 
-func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string{
+func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string {
 	session, err := c.global.sessionStore.Get(req.Request, "user-message")
 	if err != nil {
 		return ""
@@ -125,11 +125,11 @@ type AuthPlzServer struct {
 }
 
 type AuthPlzConfig struct {
-	Address       string
-	Port 		  string
-	Database	  string
-	CookieSecret  string
-	TokenSecret	  string
+	Address      string
+	Port         string
+	Database     string
+	CookieSecret string
+	TokenSecret  string
 }
 
 func NewServer(address string, port string, db string) *AuthPlzServer {
@@ -154,7 +154,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	// TODO: Create CSRF middleware
 
 	// Create controllers
-	uc := usercontroller.NewUserController(server.ds, nil)
+	uc := usercontroller.NewUserController(server.ds, server.ds, nil)
 	tc := token.NewTokenController(server.address, "something-also-secret")
 
 	// Create a global context object
@@ -175,14 +175,14 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
 	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
 
-	apiRouter.Post("/create", 	(*AuthPlzCtx).Create)
-	apiRouter.Post("/login", 	(*AuthPlzCtx).Login)
-	apiRouter.Post("/action", 	(*AuthPlzCtx).Action)
-	apiRouter.Get("/action", 	(*AuthPlzCtx).Action)
-	apiRouter.Get("/logout", 	(*AuthPlzCtx).Logout)
-	apiRouter.Get("/status", 	(*AuthPlzCtx).Status)
-	apiRouter.Get("/account", 	(*AuthPlzCtx).Account)
-	apiRouter.Get("/test", 		(*AuthPlzCtx).Test)
+	apiRouter.Post("/create", (*AuthPlzCtx).Create)
+	apiRouter.Post("/login", (*AuthPlzCtx).Login)
+	apiRouter.Post("/action", (*AuthPlzCtx).Action)
+	apiRouter.Get("/action", (*AuthPlzCtx).Action)
+	apiRouter.Get("/logout", (*AuthPlzCtx).Logout)
+	apiRouter.Get("/status", (*AuthPlzCtx).Status)
+	apiRouter.Get("/account", (*AuthPlzCtx).Account)
+	apiRouter.Get("/test", (*AuthPlzCtx).Test)
 
 	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).EnrolU2FGet)
 	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).EnrolU2FPost)
@@ -192,7 +192,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 
 func (server *AuthPlzServer) Start() {
 	// Start listening
-	fmt.Println("Listening at: " + server.port)
+	log.Println("Listening at: " + server.port)
 	log.Fatal(http.ListenAndServe(server.address+":"+server.port, context.ClearHandler(server.router)))
 }
 

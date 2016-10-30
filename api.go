@@ -14,7 +14,6 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
-
 // Helper to write objects out as JSON
 func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 	js, err := json.Marshal(i)
@@ -30,20 +29,20 @@ func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 // Helper to write API results out
 func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
 	apiResp := api.ApiResponse{Result: result, Message: message}
-	ctx.WriteJson(w, apiResp);
+	ctx.WriteJson(w, apiResp)
 }
 
 // Create a user
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		fmt.Printf("api.Create: email parameter required")
+		log.Printf("api.Create: email parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		fmt.Printf("api.Create: password parameter required")
+		log.Printf("api.Create: password parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -77,14 +76,14 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 	}
 
 	if u.ExtId != claims.Subject {
-		fmt.Println("api.HandleToken: Token subject does not match user id")
+		log.Println("api.HandleToken: Token subject does not match user id")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return fmt.Errorf("Token subject does not match user id")
 	}
 
 	switch claims.Action {
 	case token.TokenActionUnlock:
-		fmt.Printf("api.HandleToken: Unlocking user\n")
+		log.Printf("api.HandleToken: Unlocking user\n")
 
 		c.global.userController.Unlock(u.Email)
 
@@ -94,7 +93,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 		return nil
 
 	case token.TokenActionActivate:
-		fmt.Printf("api.HandleToken: Activating user\n")
+		log.Printf("api.HandleToken: Activating user\n")
 
 		c.global.userController.Activate(u.Email)
 
@@ -104,7 +103,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 		return nil
 
 	default:
-		fmt.Printf("api.HandleToken: Invalid token action\n")
+		log.Printf("api.HandleToken: Invalid token action\n")
 		rw.WriteHeader(http.StatusBadRequest)
 		return fmt.Errorf("Invalid token action")
 	}
@@ -128,7 +127,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	l, u, e := c.global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
-		fmt.Printf("api.Login: user controller error %s\n", e)
+		log.Printf("api.Login: user controller error %s\n", e)
 		return
 	}
 
@@ -150,10 +149,10 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 		tokenErr := c.HandleToken(u, tokenString, rw, req)
 		if tokenErr == nil {
-			fmt.Printf("api.Login: Token action complete\n")
+			log.Printf("api.Login: Token action complete\n")
 			return
 		} else {
-			fmt.Printf("api.Login: Token error %s\n", tokenErr)
+			log.Printf("api.Login: Token error %s\n", tokenErr)
 		}
 	}
 
@@ -240,7 +239,7 @@ func (c *AuthPlzCtx) Account(rw web.ResponseWriter, req *web.Request) {
 			return
 		}
 
-		c.WriteJson(rw, u);
+		c.WriteJson(rw, u)
 	}
 }
 
@@ -268,14 +267,14 @@ func (c *AuthPlzCtx) EnrolU2FGet(rw web.ResponseWriter, req *web.Request) {
 	challenge, _ := u2f.NewChallenge(c.global.address, []string{c.global.address}, registeredKeys)
 	u2fReq := challenge.RegisterRequest()
 
-	c.session.Values["u2f-register-challenge"] = challenge;
+	c.session.Values["u2f-register-challenge"] = challenge
 	c.session.Save(req.Request, rw)
 
-	c.WriteJson(rw, *u2fReq);
+	c.WriteJson(rw, *u2fReq)
 }
 
 func (c *AuthPlzCtx) EnrolU2FPost(rw web.ResponseWriter, req *web.Request) {
-	
+
 	// Check if user is logged in
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
@@ -283,7 +282,7 @@ func (c *AuthPlzCtx) EnrolU2FPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch request from session vars
-	if(c.session.Values["u2f-register-challenge"] == nil) {
+	if c.session.Values["u2f-register-challenge"] == nil {
 		c.WriteApiResult(rw, api.ApiResultError, "No challenge found")
 		fmt.Println("No challenge found in session flash")
 		return
@@ -299,29 +298,40 @@ func (c *AuthPlzCtx) EnrolU2FPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Check registration validity
-	// TODO: attestation should be disabled only in test mode
+	// TODO: attestation should be disabled only in test mode, need a better certificate list
 	reg, err := challenge.Register(u2fResp, &u2f.RegistrationConfig{SkipAttestationVerify: true})
 	if err != nil {
-	    // Registration failed.
-	    log.Println(err)
-	    c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageU2FRegistrationFailed)
-	    return
+		// Registration failed.
+		log.Println(err)
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageU2FRegistrationFailed)
+		return
 	}
 
-	fmt.Printf("Registration: %+v\n", reg)
+	// Create datastore token model
+    token := datastore.FidoToken{
+        KeyHandle:   reg.KeyHandle,
+        PublicKey:   reg.PublicKey,
+        Certificate: reg.Certificate,
+        Counter:  reg.Counter,
+    }
 
-	//TODO: save registration against user
+    // Save registration against user
+	_, err = c.global.userController.AddFidoToken(c.userid, &token)
+	if err != nil {
+		// Registration failed.
+		log.Println(err)
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		return
+	}
 
 	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
 }
-
-
 
 // Test endpoint
 func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	// Get the previously flashes, if any.
 	if flashes := c.session.Flashes(); len(flashes) > 0 {
-		fmt.Printf("Flashes: %+v\n", flashes)
+		log.Printf("Flashes: %+v\n", flashes)
 	} else {
 		// Set a new flash.
 		c.session.AddFlash("Hello, flash messages world!")
@@ -329,4 +339,3 @@ func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	c.session.Save(req.Request, rw)
 	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
-

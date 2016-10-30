@@ -16,7 +16,7 @@ type FidoToken struct {
 	KeyHandle   string
 	PublicKey   string
 	Certificate string
-	UsageCount  uint
+	Counter  uint
 }
 
 // Time based One Time Password Token object

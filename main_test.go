@@ -1,6 +1,7 @@
 package main
 
 import "testing"
+
 //import "fmt"
 import "bytes"
 import "time"
@@ -63,7 +64,7 @@ func (tc *TestClient) TestGetJson(t *testing.T, path string, inst interface{}) {
 }
 
 func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
-	
+
 	queryPath := tc.basePath + path
 
 	resp, err := tc.PostForm(queryPath, v)
@@ -81,7 +82,7 @@ func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Value
 }
 
 func (tc *TestClient) TestPostJsonGetJson(t *testing.T, path string, requestInst interface{}, responseInst interface{}) {
-	
+
 	queryPath := tc.basePath + path
 
 	js, err := json.Marshal(requestInst)
@@ -128,13 +129,11 @@ func (tc *TestClient) TestPostApiResponse(t *testing.T, path string, v url.Value
 	tc.TestCheckApiResponse(t, status, result, message)
 }
 
-
 func (tc *TestClient) TestPostJsonCheckApiResponse(t *testing.T, path string, inst interface{}, result string, message string) {
 	var status api.ApiResponse
 	tc.TestPostJsonGetJson(t, path, inst, &status)
 	tc.TestCheckApiResponse(t, status, result, message)
 }
-
 
 func TestMain(t *testing.T) {
 	// Setup user controller for testing
