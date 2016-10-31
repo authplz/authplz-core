@@ -15,15 +15,15 @@ Early WIP.
 
 - [X] Account creation
 - [X] Account activation
-- [ ] User login - Partial Support, needs 2fa & redirects
-- [X] Account locking
+- [ ] User login - Partial Support, needs redirects
+- [X] Account locking (and token + password based unlocking)
 - [X] User logout
 - [ ] User password update
 - [ ] User Password reset
-- [ ] Email notification - Partial
+- [ ] Email notification - Partial, Mailgun implemented, SMTP to go
 - [ ] Audit / Event logging
-- [ ] 2FA token enrolment
-- [ ] 2FA token validation
+- [X] 2FA token enrolment
+- [X] 2FA token validation - Partial, needs integration with password reset
 - [ ] 2FA token management
 - [ ] OAuth2 delegation
 - [ ] Account linking (google, facebook, github)
