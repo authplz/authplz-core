@@ -349,6 +349,50 @@ func TestMain(t *testing.T) {
 
 	})
 
+	t.Run("Second factor required for login", func(t *testing.T) {
+
+		client2 := NewTestClient(apiPath)
+
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		client2.TestPost(t, "/login", http.StatusAccepted, v)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+	})
+
+	t.Run("Second factor allows login", func(t *testing.T) {
+
+		client2 := NewTestClient(apiPath)
+
+		// Start login
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		client2.TestPost(t, "/login", http.StatusAccepted, v)
+
+		// Fetch U2F request
+		var sr u2f.SignRequestMessage
+		client2.TestGetJson(t, "/u2f/authenticate", &sr)
+
+		if sr.AppID != address {
+			t.Errorf("U2F challenge AppId mismatch")
+		}
+
+		// Handle via virtual token
+		resp, err := vt.HandleAuthenticationRequest(sr)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		// Post response and check login status
+		client2.TestPostJsonCheckApiResponse(t, "/u2f/authenticate", resp, api.ApiResultOk, api.ApiMessageLoginSuccess)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
+
+	})
+
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout

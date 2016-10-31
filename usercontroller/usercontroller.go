@@ -199,6 +199,9 @@ func (userController *UserController) Login(email string, pass string) (status *
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
 
+		u.FidoTokens, _ = userController.tokenStore.GetFidoTokens(u)
+		//TotpTokens, _ := userController.tokenStore.GetTotpTokens(u)
+
 		if u.Enabled == false {
 			//TODO: handle disabled error
 			log.Printf("UserController.Login: User %s login failed, account disabled\r\n", email)
@@ -241,21 +244,13 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 		return nil, fmt.Errorf("User not found")
 	}
 
-	// Explicitly pass allowed fields from controller
-	sanatizedUser := datastore.User{
-		Email:     u.Email,
-		Activated: u.Activated,
-		Enabled:   u.Enabled,
-		Locked:    u.Locked,
-		Admin:     u.Admin,
-		LastLogin: u.LastLogin,
-	}
-
-	return &sanatizedUser, nil
+	return sanatizeUser(u), nil
 }
 
+// Internal function to remove non-public user fields prior to returning user objects
 func sanatizeUser (u *datastore.User) *datastore.User {
 	sanatizedUser := datastore.User{
+		ExtId:	   u.ExtId,
 		Email:     u.Email,
 		Activated: u.Activated,
 		Enabled:   u.Enabled,
@@ -275,6 +270,7 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 		return nil, fmt.Errorf("User not found")
 	}
 
+	// Attempt to add tokens
 	u, err = userController.tokenStore.AddFidoToken(u, token);
 	if err != nil {
 		// Userstore error, wrap
@@ -285,4 +281,29 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 	return sanatizeUser(u), nil
 }
 
+func (userController *UserController) GetFidoTokens(extId string) ([]datastore.FidoToken, error) {
+		// Attempt to fetch user
+	u, err := userController.userStore.GetUserByExtId(extId)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("User not found")
+	}
+
+	// Attempt to add tokens
+	tokens, err := userController.tokenStore.GetFidoTokens(u);
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("Error adding token")
+	}
+
+	return tokens, nil
+}
+
+func (userController *UserController) UpdateFidoToken(token datastore.FidoToken) error {
+
+
+	return nil
+}
 

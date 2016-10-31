@@ -70,7 +70,7 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 		ctx.userid = session.Values["userId"].(string)
 	}
 
-	//session.Save(r, w)
+	session.Save(req.Request, rw)
 	next(rw, req)
 }
 
@@ -85,11 +85,13 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
 	c.session.Values["userId"] = u.ExtId
 	c.session.Save(req.Request, rw)
+	c.userid = u.ExtId
 }
 
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Options.MaxAge = -1
 	c.session.Save(req.Request, rw)
+	c.userid = ""
 }
 
 func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {
@@ -184,8 +186,10 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
 	apiRouter.Get("/account", (*AuthPlzCtx).Account)
 	apiRouter.Get("/test", (*AuthPlzCtx).Test)
 
-	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).EnrolU2FGet)
-	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).EnrolU2FPost)
+	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).U2FEnrolGet)
+	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).U2FEnrolPost)
+	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)
+	apiRouter.Post("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticatePost)
 
 	return &server
 }

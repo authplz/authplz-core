@@ -21,6 +21,10 @@ type User struct {
 	AuditEvents  []AuditEvent
 }
 
+func (u *User) FetchSecondFactors() bool {
+	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
+}
+
 func (u *User) SecondFactors() bool {
 	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
