@@ -11,11 +11,21 @@ import "net/http/cookiejar"
 
 import "encoding/json"
 
-
+// Test client instance
+// Handles cookies as well as API base addresses to simplify testing
+// Signifies failure using the bound testing class.
 type TestClient struct {
     *http.Client
     basePath string
-    resp *http.Response
+    t *testing.T
+}
+
+// Test response instance
+// Allows chaining of requests and responses
+type TestResponse struct {
+    *http.Response
+    Error error
+    t *testing.T
 }
 
 // Create a new TestClient instance
@@ -24,59 +34,75 @@ func NewTestClient(path string) TestClient {
     return TestClient{&http.Client{Jar: jar}, path, nil}
 }
 
+// Bind a testing instance to a test client
+func (tc *TestClient) BindTest(t *testing.T) *TestClient {
+    tc.t = t
+
+    return tc
+}
+
 // Internal helper to handle errors
-func (tc *TestClient) testHandleErr(t *testing.T, resp *http.Response, err error, path string, statusCode int) {
+func (tc *TestClient) testHandleErr(resp *http.Response, err error, path string, statusCode int) {
     if err != nil {
-        t.Error(err)
-        t.FailNow()
+        tc.t.Error(err)
+        tc.t.FailNow()
     }
     if resp.StatusCode != statusCode {
-        t.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
-        t.FailNow()
+        tc.t.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
+        tc.t.FailNow()
     }
 }
 
-func (tc *TestClient) TestGet(t *testing.T, path string, statusCode int) *TestClient {
+// Get from an API endpoint
+func (tc *TestClient) TestGet(path string, statusCode int) *TestResponse {
     queryPath := tc.basePath + path
 
     resp, err := tc.Get(queryPath)
-    tc.testHandleErr(t, resp, err, queryPath, statusCode)
-    tc.resp = resp
-    return tc
+    tc.testHandleErr(resp, err, queryPath, statusCode)
+    
+    tr := &TestResponse{resp, err, tc.t}
+
+    return tr
 }
 
-func (tc *TestClient) TestPostForm(t *testing.T, path string, statusCode int, v url.Values) *TestClient {
+// Post a form to an api endpoint
+func (tc *TestClient) TestPostForm(path string, statusCode int, v url.Values) *TestResponse {
     queryPath := tc.basePath + path
 
     resp, err := tc.PostForm(queryPath, v)
-    tc.testHandleErr(t, resp, err, queryPath, statusCode)
-    tc.resp = resp
-    return tc
+    tc.testHandleErr(resp, err, queryPath, statusCode)
+    
+    tr := &TestResponse{resp, err, tc.t}
+
+    return tr
 }
 
-func (tc *TestClient) TestPostJson(t *testing.T, path string, statusCode int, requestInst interface{}) *TestClient {
+// Post JSON to an api endpoint
+func (tc *TestClient) TestPostJson(path string, statusCode int, requestInst interface{}) *TestResponse {
 
     queryPath := tc.basePath + path
 
     js, err := json.Marshal(requestInst)
     if err != nil {
-        t.Errorf("Error %s converting %T to json\n", err, requestInst)
+        tc.t.Errorf("Error %s converting %T to json\n", err, requestInst)
         return nil
     }
 
     resp, err := tc.Post(queryPath, "application/json", bytes.NewReader(js))
-    tc.testHandleErr(t, resp, err, queryPath, statusCode)
+    tc.testHandleErr(resp, err, queryPath, statusCode)
 
-    tc.resp = resp
-    return tc
+    tr := &TestResponse{resp, err, tc.t}
+
+    return tr
 }
 
-func (tc *TestClient) TestParseJson(t *testing.T, inst interface{}) {
-    defer tc.resp.Body.Close()
-    if tc.resp != nil {
-        err := json.NewDecoder(tc.resp.Body).Decode(&inst)
+// Parse a response to JSON
+func (tc *TestResponse) TestParseJson(inst interface{}) {
+    defer tc.Body.Close()
+    if tc.Error == nil {
+        err := json.NewDecoder(tc.Body).Decode(&inst)
         if err != nil {
-            t.Errorf("Error decoding json for type %T\n", inst)
+            tc.t.Errorf("Error decoding json for type %T\n", inst)
         }
     }
 }
