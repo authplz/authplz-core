@@ -3,13 +3,9 @@ package app
 import "testing"
 
 //import "fmt"
-import "bytes"
 import "time"
 import "net/http"
 import "net/url"
-import "net/http/cookiejar"
-
-import "encoding/json"
 
 import "github.com/ryankurte/go-u2f"
 
@@ -17,92 +13,16 @@ import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
 
-type TestClient struct {
-	*http.Client
-	basePath string
-}
-
-func NewTestClient(path string) TestClient {
-	jar, _ := cookiejar.New(nil)
-	return TestClient{&http.Client{Jar: jar}, path}
-}
-
-func (tc *TestClient) handleErr(t *testing.T, resp *http.Response, err error, path string, statusCode int) {
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	if resp.StatusCode != statusCode {
-		t.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
-		t.FailNow()
-	}
-}
-
-func (tc *TestClient) TestGet(t *testing.T, path string, statusCode int) *http.Response {
-	queryPath := tc.basePath + path
-
-	resp, err := tc.Get(queryPath)
-	tc.handleErr(t, resp, err, queryPath, statusCode)
-	return resp
-}
-
-func (tc *TestClient) TestPost(t *testing.T, path string, statusCode int, v url.Values) *http.Response {
-	queryPath := tc.basePath + path
-
-	resp, err := tc.PostForm(queryPath, v)
-	tc.handleErr(t, resp, err, queryPath, statusCode)
-	return resp
-}
-
-func (tc *TestClient) TestGetJson(t *testing.T, path string, inst interface{}) {
-	resp := tc.TestGet(t, path, http.StatusOK)
-	defer resp.Body.Close()
-	err := json.NewDecoder(resp.Body).Decode(&inst)
-	if err != nil {
-		t.Errorf("Error decoding json for type %T\n", inst)
-	}
-}
-
 func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
-
 	queryPath := tc.basePath + path
 
-	resp, err := tc.PostForm(queryPath, v)
-	if err != nil {
-		t.Errorf("Error %s posting to %s\n", err, queryPath)
-	}
-
-	defer resp.Body.Close()
-	if resp != nil {
-		err := json.NewDecoder(resp.Body).Decode(&responseInst)
-		if err != nil {
-			t.Errorf("Error decoding json for type %T\n", responseInst)
-		}
-	}
+	tc.TestPostForm(t, queryPath, 200, v).TestParseJson(t, responseInst)
 }
 
 func (tc *TestClient) TestPostJsonGetJson(t *testing.T, path string, requestInst interface{}, responseInst interface{}) {
-
 	queryPath := tc.basePath + path
 
-	js, err := json.Marshal(requestInst)
-	if err != nil {
-		t.Errorf("Error %s converting %T to json\n", err, requestInst)
-		return
-	}
-
-	resp, err := tc.Post(queryPath, "application/json", bytes.NewReader(js))
-	if err != nil {
-		t.Errorf("Error %s posting to %s\n", err, queryPath)
-	}
-
-	defer resp.Body.Close()
-	if resp != nil {
-		err := json.NewDecoder(resp.Body).Decode(&responseInst)
-		if err != nil {
-			t.Errorf("Error decoding json for type %T\n", responseInst)
-		}
-	}
+	tc.TestPostJson(t, queryPath, 200, requestInst).TestParseJson(t, responseInst)
 }
 
 func (tc *TestClient) TestCheckApiResponse(t *testing.T, status api.ApiResponse, result string, message string) {
@@ -119,7 +39,7 @@ func (tc *TestClient) TestCheckApiResponse(t *testing.T, status api.ApiResponse,
 
 func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
 	var status api.ApiResponse
-	tc.TestGetJson(t, path, &status)
+	tc.TestGet(t, path, 200).TestParseJson(t, &status)
 	tc.TestCheckApiResponse(t, status, result, message)
 }
 
@@ -136,27 +56,35 @@ func (tc *TestClient) TestPostJsonCheckApiResponse(t *testing.T, path string, in
 }
 
 func TestMain(t *testing.T) {
-	// Setup user controller for testing
-	var address string = "localhost"
-	var port string = "9000"
-	var dbString string = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
+	// Fetch default configuration
+	c, err := DefaultConfig()
+	if err != nil {
+        t.Error(err.Error())
+    }
+
+    // Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@"
 
 	// Attempt database connection
-	server := NewServer(address, port, dbString)
+	server := NewServer(*c)
+
+	// Force database synchronization
 	server.ds.ForceSync()
 
+	// Launch server process
 	go server.Start()
 	defer server.Close()
 
-	apiPath := "http://" + address + ":" + port + "/api"
+	// Setup test helpers
+	apiPath := "http://" + c.Address + ":" + c.Port + "/api"
 
 	client := NewTestClient(apiPath)
 	var user *datastore.User
 
 	vt, _ := u2f.NewVirtualKey()
+
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
@@ -169,7 +97,7 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		client.TestPost(t, "/create", http.StatusOK, v)
+		client.TestPostForm(t, "/create", http.StatusOK, v)
 
 		user, _ = server.ds.GetUserByEmail(fakeEmail)
 	})
@@ -180,7 +108,7 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		client.TestPost(t, "/login", http.StatusUnauthorized, v)
+		client.TestPostForm(t, "/login", http.StatusUnauthorized, v)
 	})
 
 	t.Run("Account activation requires valid activation token subject", func(t *testing.T) {
@@ -194,13 +122,13 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		client2.TestPost(t, "/action", http.StatusOK, v)
+		client2.TestPostForm(t, "/action", http.StatusOK, v)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+		client2.TestPostForm(t, "/login", http.StatusUnauthorized, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
@@ -218,13 +146,13 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		client2.TestPost(t, "/action", http.StatusOK, v)
+		client2.TestPostForm(t, "/action", http.StatusOK, v)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.TestPost(t, "/login", http.StatusOK, v)
+		client2.TestPostForm(t, "/login", http.StatusOK, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
@@ -236,7 +164,7 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client.TestPost(t, "/login", http.StatusOK, v)
+		client.TestPostForm(t, "/login", http.StatusOK, v)
 
 		// Check user status
 		client.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
@@ -252,7 +180,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login to cause account lock
 		for i := 0; i < 10; i++ {
-			client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+			client2.TestPostForm(t, "/login", http.StatusUnauthorized, v)
 		}
 
 		// Check user status
@@ -263,7 +191,7 @@ func TestMain(t *testing.T) {
 		v.Set("password", fakePass)
 
 		// Check login still fails
-		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+		client2.TestPostForm(t, "/login", http.StatusUnauthorized, v)
 	})
 
 	t.Run("Account unlock requires valid unlock token subject", func(t *testing.T) {
@@ -278,13 +206,13 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		client2.TestPost(t, "/action", http.StatusOK, v)
+		client2.TestPostForm(t, "/action", http.StatusOK, v)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.TestPost(t, "/login", http.StatusUnauthorized, v)
+		client2.TestPostForm(t, "/login", http.StatusUnauthorized, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
@@ -302,25 +230,21 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		client2.TestPost(t, "/action", http.StatusOK, v)
+		client2.TestPostForm(t, "/action", http.StatusOK, v)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.TestPost(t, "/login", http.StatusOK, v)
+		client2.TestPostForm(t, "/login", http.StatusOK, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
 	})
 
 	t.Run("Logged in users can get account info", func(t *testing.T) {
-
-		// Perform logout
-		resp := client.TestGet(t, "/account", http.StatusOK)
-
 		var u datastore.User
-		_ = json.NewDecoder(resp.Body).Decode(&u)
+		client.TestGet(t, "/account", http.StatusOK).TestParseJson(t, &u)
 
 		if u.Email != fakeEmail {
 			t.Errorf("Email mismatch")
@@ -331,9 +255,9 @@ func TestMain(t *testing.T) {
 
 		// Generate enrolment request
 		var rr u2f.RegisterRequestMessage
-		client.TestGetJson(t, "/u2f/enrol", &rr)
+		client.TestGet(t, "/u2f/enrol", 200).TestParseJson(t, &rr)
 
-		if rr.AppID != address {
+		if rr.AppID != c.Address {
 			t.Errorf("U2F challenge AppId mismatch")
 		}
 
@@ -357,7 +281,7 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		client2.TestPost(t, "/login", http.StatusAccepted, v)
+		client2.TestPostForm(t, "/login", http.StatusAccepted, v)
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
 	})
 
@@ -370,13 +294,13 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		client2.TestPost(t, "/login", http.StatusAccepted, v)
+		client2.TestPostForm(t, "/login", http.StatusAccepted, v)
 
 		// Fetch U2F request
 		var sr u2f.SignRequestMessage
-		client2.TestGetJson(t, "/u2f/authenticate", &sr)
+		client2.TestGet(t, "/u2f/authenticate", 200).TestParseJson(t, &sr)
 
-		if sr.AppID != address {
+		if sr.AppID != c.Address {
 			t.Errorf("U2F challenge AppId mismatch")
 		}
 

@@ -22,7 +22,6 @@ func TestUserController(t *testing.T) {
 	// Create controllers
 	uc := NewUserController(ds, ds, nil)
 
-	// Run tests
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)
 		if err != nil {

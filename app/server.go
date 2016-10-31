@@ -30,17 +30,17 @@ type AuthPlzServer struct {
     router  *web.Router
 }
 
-func NewServer(address string, port string, db string) *AuthPlzServer {
+func NewServer(config AuthPlzConfig) *AuthPlzServer {
     server := AuthPlzServer{}
 
-    server.address = address
-    server.port = port
+    server.address = config.Address
+    server.port = config.Port
 
     gob.Register(&token.TokenClaims{})
     gob.Register(&u2f.Challenge{})
 
     // Attempt database connection
-    ds, err := datastore.NewDataStore(db)
+    ds, err := datastore.NewDataStore(config.Database)
     if err != nil {
         panic("Error opening database")
     }
@@ -56,7 +56,7 @@ func NewServer(address string, port string, db string) *AuthPlzServer {
     tc := token.NewTokenController(server.address, "something-also-secret")
 
     // Create a global context object
-    server.ctx = AuthPlzGlobalCtx{port, address, &uc, &tc, sessionStore}
+    server.ctx = AuthPlzGlobalCtx{server.port, server.address, &uc, &tc, sessionStore}
 
     // Create router
     server.router = web.New(AuthPlzCtx{}).
