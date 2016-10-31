@@ -20,7 +20,7 @@ func TestUserController(t *testing.T) {
 	ds.ForceSync()
 
 	// Create controllers
-	uc := NewUserController(ds, nil)
+	uc := NewUserController(ds, ds, nil)
 
 	// Run tests
 	t.Run("Create user", func(t *testing.T) {
