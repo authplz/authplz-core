@@ -1,6 +1,7 @@
 package datastore
 
 import "fmt"
+import "time"
 
 import "github.com/satori/go.uuid"
 import "github.com/asaskevich/govalidator"
@@ -16,7 +17,8 @@ type FidoToken struct {
 	KeyHandle   string
 	PublicKey   string
 	Certificate string
-	Counter  uint
+	Counter  	uint
+	LastUsed time.Time
 }
 
 // Time based One Time Password Token object
@@ -26,6 +28,7 @@ type TotpToken struct {
 	Name       string
 	Secret     string
 	UsageCount uint
+	LastUsed time.Time
 }
 
 // Audit events for a login account
@@ -172,6 +175,16 @@ func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
 	u.TotpTokens, err = dataStore.GetTotpTokens(u)
 
 	return u, err
+}
+
+func (dataStore *DataStore) UpdateFidoToken(token *FidoToken) (*FidoToken, error) {
+
+	err := dataStore.db.Save(&token).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 func (ds *DataStore) AddAuditEvent(u *User, auditEvent *AuditEvent) (user *User, err error) {

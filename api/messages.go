@@ -28,6 +28,7 @@ const ApiMessageU2FRegistrationComplete string = "U2F Registration complete"
 
 const ApiMessageSecondFactorRequired string = "U2F Authentication required"
 const ApiMessageNoU2FPending string = "U2F no authentication pending"
+const ApiMessageNoU2FTokenFound string = "U2F matching u2f token found"
 
 // API Response instances
 var ApiResponseLoginSuccess = ApiResponse{ApiResultOk, ApiMessageLoginSuccess}

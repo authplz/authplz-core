@@ -22,6 +22,7 @@ type TokenStoreInterface interface {
 	AddTotpToken(u *datastore.User, token *datastore.TotpToken) (user *datastore.User, err error)
 	GetFidoTokens(u *datastore.User) ([]datastore.FidoToken, error)
 	GetTotpTokens(u *datastore.User) ([]datastore.TotpToken, error)
+	UpdateFidoToken(t *datastore.FidoToken) (*datastore.FidoToken, error)
 }
 
 type MailInterface interface {
@@ -337,8 +338,12 @@ func (userController *UserController) GetFidoTokens(extId string) ([]datastore.F
 	return tokens, nil
 }
 
-func (userController *UserController) UpdateFidoToken(token datastore.FidoToken) error {
-
+func (userController *UserController) UpdateFidoToken(token *datastore.FidoToken) error {
+	_, err := userController.tokenStore.UpdateFidoToken(token)
+	if err != nil {
+		log.Println(err)
+		return ErrorUpdatingToken
+	}
 
 	return nil
 }

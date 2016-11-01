@@ -12,5 +12,6 @@ var (
     ErrorPasswordMismatch = errors.New("User Controller: password mismatch")
     ErrorUpdatingUser = errors.New("User Controller: error updating user")
     ErrorAddingToken = errors.New("User Controller: error adding token")
+    ErrorUpdatingToken = errors.New("User Controller: error updating token")
 )
 

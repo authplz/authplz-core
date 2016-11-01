@@ -2,6 +2,7 @@ package app
 
 import "fmt"
 import "log"
+import "time"
 import "encoding/json"
 
 import "github.com/gocraft/web"
@@ -208,15 +209,32 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 		return
 	}
 
-	// Create datastore token model
-	token := datastore.FidoToken{
-		KeyHandle:   reg.KeyHandle,
-		PublicKey:   reg.PublicKey,
-		Certificate: reg.Certificate,
-		Counter:     reg.Counter,
-	}
+    // Fetch existing keys
+    tokens, err := c.global.userController.GetFidoTokens(userid)
+    if err != nil {
+        log.Printf("Error fetching U2F tokens %s", err)
+        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+        return
+    }
 
-	// Save registration against user
+    // Match with registration token
+    var token *datastore.FidoToken = nil
+    for _, t := range tokens {
+        if t.KeyHandle == reg.KeyHandle {
+            token = &t
+        }
+    }
+    if token == nil {
+        log.Printf("Matching U2F token not found")
+        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageNoU2FTokenFound)
+        return
+    }
+
+    // Update token counter / last used
+    token.Counter = reg.Counter
+    token.LastUsed = time.Now()
+
+	// Save updated token against user
 	err = c.global.userController.UpdateFidoToken(token)
 	if err != nil {
 		// Registration failed.
