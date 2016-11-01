@@ -147,6 +147,26 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
+	t.Run("Unlock accounts", func(t *testing.T) {
+		_, err = uc.Unlock(fakeEmail)
+		if err != nil {
+			t.Error(err)
+		}
+
+		res, _, err := uc.Login(fakeEmail, fakePass)
+		if err != nil {
+			t.Error(err)
+		}
+		if res == nil {
+			t.Error("No login result")
+			t.FailNow()
+		}
+		if res.Code != LoginCodeSuccess {
+			t.Error("User account login failed", res)
+		}
+
+	})
+
 	t.Run("Get user", func(t *testing.T) {
 
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
@@ -164,6 +184,46 @@ func TestUserController(t *testing.T) {
 			t.Error("No user fetched")
 		}
 
+	})
+
+	t.Run("Update user password", func(t *testing.T) {
+
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
+		newPass := "Test new password"
+
+		_, err := uc.UpdatePassword(u.ExtId, fakePass, newPass)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		res, _, err := uc.Login(fakeEmail, newPass)
+		if err != nil {
+			t.Error(err)
+		}
+		if res == nil {
+			t.Error("No login result")
+			t.FailNow()
+		}
+		if res.Code != LoginCodeSuccess {
+			t.Error("User account login failed", res)
+		}
+
+		fakePass = newPass
+	})
+
+	t.Run("Update password requires correct old password", func(t *testing.T) {
+
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
+		newPass := "Test new password"
+
+		_, err := uc.UpdatePassword(u.ExtId, "wrongPass", newPass)
+		if err == nil {
+			t.Error(err)
+			t.FailNow()
+		}
 	})
 
 	// Tear down user controller

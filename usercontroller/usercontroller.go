@@ -58,16 +58,17 @@ type UserController struct {
 	userStore UserStoreInterface
 	tokenStore TokenStoreInterface
 	mail      MailInterface
+	hashRounds int
 }
 
 func NewUserController(userStore UserStoreInterface, tokenStore TokenStoreInterface, mail MailInterface) UserController {
-	return UserController{userStore, tokenStore, mail}
+	return UserController{userStore, tokenStore, mail, 8}
 }
 
 func (userController *UserController) Create(email string, pass string) (user *datastore.User, err error) {
 
 	// Generate password hash
-	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), 8)
+	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userController.hashRounds)
 	if hashErr != nil {
 		return nil, fmt.Errorf("password hash to short")
 	}
@@ -82,7 +83,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 
 	if u != nil {
 		// User exists, fail
-		return nil, fmt.Errorf("user account with email %s exists", email)
+		return nil, fmt.Errorf("user account with email %s exists", u.ExtId)
 	}
 
 	// Add user to database (disabled)
@@ -99,7 +100,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 
 	// Send account activation token to user email
 
-	log.Printf("UserController.Create: User %s created\r\n", email)
+	log.Printf("UserController.Create: User %s created\r\n", u.ExtId)
 
 	return u, nil
 }
@@ -123,7 +124,7 @@ func (userController *UserController) Activate(email string) (user *datastore.Us
 		return nil, loginError
 	}
 
-	log.Printf("UserController.Activate: User %s account activated\r\n", email)
+	log.Printf("UserController.Activate: User %s account activated\r\n", u.ExtId)
 
 	return u, nil
 }
@@ -147,7 +148,7 @@ func (userController *UserController) Unlock(email string) (user *datastore.User
 		return nil, loginError
 	}
 
-	log.Printf("UserController.Unlock: User %s account unlocked\r\n", email)
+	log.Printf("UserController.Unlock: User %s account unlocked\r\n", u.ExtId)
 
 	return u, nil
 }
@@ -178,7 +179,7 @@ func (userController *UserController) Login(email string, pass string) (status *
 			u.LoginRetries++
 
 			if (u.LoginRetries > 5) && (u.Locked == false) {
-				log.Println("UserController.Login: Locking user %s", email)
+				log.Printf("UserController.Login: Locking user %s", u.ExtId)
 				u.Locked = true
 			}
 
@@ -188,9 +189,11 @@ func (userController *UserController) Login(email string, pass string) (status *
 				log.Println(err)
 				return nil, nil, loginError
 			}
-		}
 
-		log.Printf("UserController.Login: User %s login failed, invalid password\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, invalid password\r\n", u.ExtId)
+		} else {
+			log.Printf("UserController.Login: Login failed, unrecognised account\r\n")
+		}
 
 		// Error in case of hash error
 		return &LoginFailure, nil, nil
@@ -204,29 +207,29 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 		if u.Enabled == false {
 			//TODO: handle disabled error
-			log.Printf("UserController.Login: User %s login failed, account disabled\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account disabled\r\n", u.ExtId)
 			return &LoginDisabled, u, nil
 		}
 
 		if u.Activated == false {
 			//TODO: handle un-activated error
-			log.Printf("UserController.Login: User %s login failed, account deactivated\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account deactivated\r\n", u.ExtId)
 			return &LoginUnactivated, u, nil
 		}
 
 		if u.Locked == true {
 			//TODO: handle locked error
-			log.Printf("UserController.Login: User %s login failed, account locked\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, account locked\r\n", u.ExtId)
 			return &LoginLocked, u, nil
 		}
 
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
-			log.Printf("UserController.Login: User %s login failed, second factor required\r\n", email)
+			log.Printf("UserController.Login: User %s login failed, second factor required\r\n", u.ExtId)
 			return &LoginPartial, u, nil
 		}
 
-		log.Printf("UserController.Login: User %s login successful\r\n", email)
+		log.Printf("UserController.Login: User %s login successful\r\n", u.ExtId)
 
 		//TODO: update login time etc.
 		return &LoginSuccess, u, nil
@@ -247,19 +250,43 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 	return sanatizeUser(u), nil
 }
 
-// Internal function to remove non-public user fields prior to returning user objects
-func sanatizeUser (u *datastore.User) *datastore.User {
-	sanatizedUser := datastore.User{
-		ExtId:	   u.ExtId,
-		Email:     u.Email,
-		Activated: u.Activated,
-		Enabled:   u.Enabled,
-		Locked:    u.Locked,
-		Admin:     u.Admin,
-		LastLogin: u.LastLogin,
+func (userController *UserController) UpdatePassword(extId string, old string, new string) (user *datastore.User, err error) {
+
+	// Fetch user
+	u, err := userController.userStore.GetUserByExtId(extId)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("User not found")
 	}
-	return &sanatizedUser
+
+	// Check password
+	hashErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(old))
+	if hashErr != nil {
+		return nil, fmt.Errorf("password mismatch")
+	}
+
+	// Generate new hash
+	hash, hashErr := bcrypt.GenerateFromPassword([]byte(new), userController.hashRounds)
+	if hashErr != nil {
+		return nil, fmt.Errorf("password hash too short")
+	}
+
+	// Update user object
+	u.Password = string(hash)
+	u, err = userController.userStore.UpdateUser(u)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, fmt.Errorf("Error updating user")
+	}
+
+	log.Printf("UserController.UpdatePassword: User %s password updated\r\n", extId)
+
+	return sanatizeUser(u), nil
 }
+
+
 
 func (userController *UserController) AddFidoToken(extId string, token *datastore.FidoToken) (user *datastore.User, err error) {
 	// Attempt to fetch user
@@ -305,5 +332,19 @@ func (userController *UserController) UpdateFidoToken(token datastore.FidoToken)
 
 
 	return nil
+}
+
+// Internal function to remove non-public user fields prior to returning user objects
+func sanatizeUser (u *datastore.User) *datastore.User {
+	sanatizedUser := datastore.User{
+		ExtId:	   u.ExtId,
+		Email:     u.Email,
+		Activated: u.Activated,
+		Enabled:   u.Enabled,
+		Locked:    u.Locked,
+		Admin:     u.Admin,
+		LastLogin: u.LastLogin,
+	}
+	return &sanatizedUser
 }
 

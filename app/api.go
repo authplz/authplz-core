@@ -227,7 +227,25 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Get user object
-func (c *AuthPlzCtx) Account(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+
+	} else {
+		// Fetch user from user controller
+		u, err := c.global.userController.GetUser(c.userid)
+		if err != nil {
+			log.Print(err)
+			c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+			return
+		}
+
+		c.WriteJson(rw, u)
+	}
+}
+
+// Get user object
+func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
 

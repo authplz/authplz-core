@@ -267,7 +267,19 @@ func TestMain(t *testing.T) {
 
 		// Post registration response back
 		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
+	})
 
+	t.Run("Logged in users can update passwords", func(t *testing.T) {
+
+		v := url.Values{}
+
+		v.Set("email", fakeEmail)
+		v.Set("old_password", fakePass)
+		v.Set("new_password", "NewFakePassword")
+
+		var status api.ApiResponse
+		client.BindTest(t).TestPostForm("/account", http.StatusOK, v).TestParseJson(&status)
+		client.TestCheckApiResponse(t, status, api.ApiResultOk, api.ApiMessagePasswordUpdated)
 	})
 
 	t.Run("Second factor required for login", func(t *testing.T) {
