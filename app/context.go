@@ -1,5 +1,7 @@
 package app
 
+import "net"
+
 import "github.com/gorilla/sessions"
 
 import "github.com/gocraft/web"
@@ -25,12 +27,15 @@ type AuthPlzCtx struct {
 	session *sessions.Session
 	userid  string
 	message string
+	remoteAddr string
+	forwardedFor string
 }
 
 // Convenience type to describe middleware functions
 type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
-// Bind global context object into the router context
+// Helper to bind the global context object into the router context
+// This is a closure to run over an instance of the global context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.global = globalCtx
@@ -39,6 +44,7 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 }
 
 // User session layer
+// Middleware matches user session if it exists and saves userid to the session object
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	session, err := ctx.global.sessionStore.Get(req.Request, "user-session")
 	if err != nil {
@@ -60,6 +66,16 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	next(rw, req)
 }
 
+
+// Middleware to grab IP & forwarding headers and store in session
+func (ctx *AuthPlzCtx) GetIPMiddleware (rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	ctx.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
+	ctx.forwardedFor = req.Header.Get("x-forwarded-for")
+
+	next(rw, req)
+}
+
+// Middleware to ensure only logged in access to an endpoint
 func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, "You must be signed in to view this page")
@@ -68,18 +84,23 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 	}
 }
 
+
+// Helper function to login a user
 func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
 	c.session.Values["userId"] = u.ExtId
 	c.session.Save(req.Request, rw)
 	c.userid = u.ExtId
 }
 
+// Helper function to logout a user
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Options.MaxAge = -1
 	c.session.Save(req.Request, rw)
 	c.userid = ""
 }
 
+
+// Helper function to set a flash message for display to the user
 func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {
 	session, err := c.global.sessionStore.Get(req.Request, "user-message")
 	if err != nil {
@@ -90,6 +111,7 @@ func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req 
 	c.session.Save(req.Request, rw)
 }
 
+// Helper function to get a flash message to display to the user
 func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string {
 	session, err := c.global.sessionStore.Get(req.Request, "user-message")
 	if err != nil {

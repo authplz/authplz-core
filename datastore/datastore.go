@@ -37,6 +37,7 @@ type AuditEvent struct {
 	UserID    uint
 	EventType string
 	OriginIP  string
+	ForwardedFor string
 }
 
 // Datastore instance storage

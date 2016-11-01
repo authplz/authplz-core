@@ -63,7 +63,8 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 		Middleware(BindContext(&server.ctx)).
 		//Middleware(web.LoggerMiddleware).
 		//Middleware(web.ShowErrorsMiddleware).
-		Middleware((*AuthPlzCtx).SessionMiddleware)
+		Middleware((*AuthPlzCtx).SessionMiddleware).
+        Middleware((*AuthPlzCtx).GetIPMiddleware)
 
 	// Enable static file hosting
 	currentRoot, _ := os.Getwd()
