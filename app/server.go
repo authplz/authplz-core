@@ -87,6 +87,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).U2FEnrolPost)
 	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)
 	apiRouter.Post("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticatePost)
+    apiRouter.Get("/u2f/status", (*AuthPlzCtx).U2FStatusGet)
 
 	return &server
 }

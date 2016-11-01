@@ -247,3 +247,21 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	c.LoginUser(u, rw, req)
 	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLoginSuccess)
 }
+
+func (c *AuthPlzCtx) U2FStatusGet(rw web.ResponseWriter, req *web.Request) {
+
+    // Check if user is logged in
+    if c.userid == "" {
+        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+        return
+    }
+
+    tokens, err := c.global.userController.GetFidoTokens(c.userid)
+    if err != nil {
+        log.Printf("Error fetching U2F tokens %s", err)
+        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+        return
+    }
+
+    c.WriteJson(rw, tokens)
+}

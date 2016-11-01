@@ -268,11 +268,11 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Logged in users can enrol tokens", func(t *testing.T) {
-
 		// Generate enrolment request
 		var rr u2f.RegisterRequestMessage
 		client.BindTest(t).TestGet("/u2f/enrol", 200).TestParseJson(&rr)
 
+		// Check AppId is set correctly
 		if rr.AppID != c.Address {
 			t.Errorf("U2F challenge AppId mismatch")
 		}
@@ -288,8 +288,16 @@ func TestMain(t *testing.T) {
 		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
 	})
 
-	t.Run("Second factor required for login", func(t *testing.T) {
+	t.Run("Logged in users can list tokens", func(t *testing.T) {
+		var regs []u2f.Registration
+		client.BindTest(t).TestGet("/u2f/status", 200).TestParseJson(&regs)
 
+		if len(regs) != 1 {
+			t.Errorf("No registrations returned")
+		}
+	})
+
+	t.Run("Second factor required for login", func(t *testing.T) {
 		client2 := NewTestClient(apiPath)
 
 		v := url.Values{}
