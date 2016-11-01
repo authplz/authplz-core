@@ -248,7 +248,7 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLoginSuccess)
 }
 
-func (c *AuthPlzCtx) U2FStatusGet(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
     // Check if user is logged in
     if c.userid == "" {

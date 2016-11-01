@@ -290,7 +290,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Logged in users can list tokens", func(t *testing.T) {
 		var regs []u2f.Registration
-		client.BindTest(t).TestGet("/u2f/status", 200).TestParseJson(&regs)
+		client.BindTest(t).TestGet("/u2f/tokens", 200).TestParseJson(&regs)
 
 		if len(regs) != 1 {
 			t.Errorf("No registrations returned")
