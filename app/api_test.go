@@ -64,6 +64,7 @@ func TestMain(t *testing.T) {
 	var fakePass = "abcDEF123@"
 
 	// Attempt database connection
+	c.NoTls = true
 	server := NewServer(*c)
 
 	// Force database synchronization

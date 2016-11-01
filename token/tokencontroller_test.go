@@ -72,4 +72,8 @@ func TestTokenController(t *testing.T) {
 		}
 	})
 
+	t.Skip("Tokens can only be used once", func(t *testing.T) {
+
+	})
+
 }
