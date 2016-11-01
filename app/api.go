@@ -248,18 +248,30 @@ func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
-
-	} else {
-		// Fetch user from user controller
-		u, err := c.global.userController.GetUser(c.userid)
-		if err != nil {
-			log.Print(err)
-			c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
-			return
-		}
-
-		c.WriteJson(rw, u)
+		return
 	}
+
+	// Fetch password arguments
+	oldPass := req.FormValue("old_password")
+	if oldPass == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	newPass := req.FormValue("new_password")
+	if newPass == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Update password
+	_, err := c.global.userController.UpdatePassword(c.userid, oldPass, newPass)
+	if err != nil {
+		log.Print(err)
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		return
+	}
+
+	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessagePasswordUpdated)
 }
 
 // End a user session

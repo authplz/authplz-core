@@ -73,6 +73,37 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
+	t.Run("Login updates last login time", func(t *testing.T) {
+		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u1 == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
+		res, _, err := uc.Login(fakeEmail, fakePass)
+		if err != nil {
+			t.Error(err)
+		}
+		if res == nil {
+			t.Error("No login result")
+			t.FailNow()
+		}
+		if res.Code != LoginCodeSuccess {
+			t.Error("User login failed")
+		}
+
+		u2, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u2 == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
+		if u1.LastLogin == u2.LastLogin {
+			t.Errorf("Login times match (initial: %v new: %v)", u1.LastLogin, u2.LastLogin)
+			t.FailNow()
+		}
+	})
+
 	t.Run("Reject login with invalid password", func(t *testing.T) {
 		res, _, err := uc.Login(fakeEmail, "Wrong password")
 		if err != nil {
@@ -211,6 +242,33 @@ func TestUserController(t *testing.T) {
 		}
 
 		fakePass = newPass
+	})
+
+	t.Run("Update password updates password changed time", func(t *testing.T) {
+		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u1 == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
+		newPass := "Test new password &$#%"
+
+		_, err := uc.UpdatePassword(u1.ExtId, fakePass, newPass)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		u2, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u2 == nil {
+			t.Error("No user found")
+			t.FailNow()
+		}
+
+		if u1.PasswordChanged == u2.PasswordChanged {
+			t.Errorf("Password changed times match (initial: %v new: %v)", u1.PasswordChanged, u2.PasswordChanged)
+			t.FailNow()
+		}
 	})
 
 	t.Run("Update password requires correct old password", func(t *testing.T) {

@@ -4,6 +4,7 @@ package usercontroller
 import "fmt"
 import "log"
 import "errors"
+import "time"
 
 import "golang.org/x/crypto/bcrypt"
 
@@ -231,7 +232,14 @@ func (userController *UserController) Login(email string, pass string) (status *
 
 		log.Printf("UserController.Login: User %s login successful\r\n", u.ExtId)
 
-		//TODO: update login time etc.
+		// Update login time etc.
+		u.LastLogin = time.Now()
+		_, err = userController.userStore.UpdateUser(u)
+		if err != nil {
+			log.Println(err)
+			return &LoginFailure, nil, nil
+		}
+
 		return &LoginSuccess, u, nil
 	}
 
@@ -274,6 +282,7 @@ func (userController *UserController) UpdatePassword(extId string, old string, n
 
 	// Update user object
 	u.Password = string(hash)
+	u.PasswordChanged = time.Now()
 	u, err = userController.userStore.UpdateUser(u)
 	if err != nil {
 		// Userstore error, wrap

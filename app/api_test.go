@@ -56,10 +56,10 @@ func TestMain(t *testing.T) {
 	// Fetch default configuration
 	c, err := DefaultConfig()
 	if err != nil {
-        t.Error(err.Error())
-    }
+		t.Error(err.Error())
+	}
 
-    // Set test constants
+	// Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@"
 
@@ -81,7 +81,6 @@ func TestMain(t *testing.T) {
 	var user *datastore.User
 
 	vt, _ := u2f.NewVirtualKey()
-
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
@@ -248,6 +247,26 @@ func TestMain(t *testing.T) {
 		}
 	})
 
+	t.Run("Logged in users can update passwords", func(t *testing.T) {
+
+		v := url.Values{}
+		newPass := "New fake password 88@#"
+
+		v.Set("email", fakeEmail)
+		v.Set("old_password", fakePass)
+		v.Set("new_password", newPass)
+
+		var status api.ApiResponse
+		client.BindTest(t).TestPostForm("/account", http.StatusOK, v).TestParseJson(&status)
+		client.TestCheckApiResponse(t, status, api.ApiResultOk, api.ApiMessagePasswordUpdated)
+
+		fakePass = newPass
+	})
+
+	t.Skip("Users must be logged in to update passwords", func(t *testing.T) {
+		//TODO
+	})
+
 	t.Run("Logged in users can enrol tokens", func(t *testing.T) {
 
 		// Generate enrolment request
@@ -267,19 +286,6 @@ func TestMain(t *testing.T) {
 
 		// Post registration response back
 		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
-	})
-
-	t.Run("Logged in users can update passwords", func(t *testing.T) {
-
-		v := url.Values{}
-
-		v.Set("email", fakeEmail)
-		v.Set("old_password", fakePass)
-		v.Set("new_password", "NewFakePassword")
-
-		var status api.ApiResponse
-		client.BindTest(t).TestPostForm("/account", http.StatusOK, v).TestParseJson(&status)
-		client.TestCheckApiResponse(t, status, api.ApiResultOk, api.ApiMessagePasswordUpdated)
 	})
 
 	t.Run("Second factor required for login", func(t *testing.T) {

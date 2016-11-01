@@ -10,6 +10,7 @@ type User struct {
 	ExtId        string `gorm:"not null;unique"`
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`
+	PasswordChanged time.Time
 	Activated    bool   `gorm:"not null; default:false"`
 	Enabled      bool   `gorm:"not null; default:false"`
 	Locked       bool   `gorm:"not null; default:false"`
