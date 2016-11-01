@@ -68,7 +68,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// Enable static file hosting
 	currentRoot, _ := os.Getwd()
-	server.router.Middleware(web.StaticMiddleware(path.Join(currentRoot, "static"), web.StaticOption{IndexFile: "index.html"}))
+	server.router.Middleware(web.StaticMiddleware(path.Join(currentRoot, config.StaticDir), web.StaticOption{IndexFile: "index.html"}))
 
 	// Create API router
 	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package

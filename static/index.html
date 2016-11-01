@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- TODO: how to enable configurable title..? -->
-    <title>React Hello World</title>
+    <title>React Hell</title>
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
@@ -36,10 +36,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.js" integrity="sha256-IfEkAjjqhSUwLGLYFn0IlKNtSXk9KY9pTGFyJnSpm0w=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.6/react-bootstrap.js" integrity="sha256-vtKJrgu644x/DjvRtO3Ysf0iOCYudzO4Pkrsy2TsR6s=" crossorigin="anonymous"></script>
 
-    <!-- Babel & Bootstrap-react -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/validator/6.1.0/validator.js" integrity="sha256-eJQyPSGxEJ6L1LKbecWkMgKYp2oCqk/r+G0PSzAt4JY=" crossorigin="anonymous"></script>
     
+    <!-- Awful ReactBootstrap Polyfill -->
+    <script>
+        for (let i in ReactBootstrap) { this.parent[i] = ReactBootstrap[i]; }
+    </script>    
 
-    
-    <script src="authplz.jsx" type="text/babel"></script>
+    <!-- JSX that really should be compiled server side -->
+    <script src="js/api.js"></script>
+    <script src="jsx/createform.jsx" type="text/babel"></script>
+    <script src="jsx/loginform.jsx" type="text/babel"></script>
+    <script src="jsx/core.jsx" type="text/babel"></script>
+
   </body>
 </html>

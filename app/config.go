@@ -5,14 +5,16 @@ import "crypto/rand"
 
 // AuthPlz configuration structure
 type AuthPlzConfig struct {
-	Address      string
-	Port         string
-	Database     string
-	CookieSecret string
-	TokenSecret  string
-	TlsCert      string
-	TlsKey       string
-	NoTls        bool
+	Address      			string
+	Port         			string
+	Database     			string
+	CookieSecret 			string
+	TokenSecret  			string
+	TlsCert      			string
+	TlsKey       			string
+	NoTls        			bool
+	StaticDir	 			string
+	MinimumPasswordLength 	int
 }
 
 func generateSecret(len int) (string, error) {
@@ -40,6 +42,9 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	c.TlsCert = "server.pem"
 	c.TlsKey = "server.key"
 	c.NoTls = false
+	c.StaticDir = "./static"
+
+	c.MinimumPasswordLength = 12
 
 	var err error
 

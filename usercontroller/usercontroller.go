@@ -56,6 +56,8 @@ var LoginDisabled = LoginStatus{LoginCodeDisabled, "User account disabled"}
 
 var loginError = errors.New("internal server error")
 
+const minimumPasswordLength = 12
+
 type UserController struct {
 	userStore UserStoreInterface
 	tokenStore TokenStoreInterface
@@ -73,6 +75,10 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userController.hashRounds)
 	if hashErr != nil {
 		return nil, ErrorPasswordHashTooShort
+	}
+
+	if len(pass) < minimumPasswordLength {
+		return nil, ErrorPasswordTooShort
 	}
 
 	// Check if user exists

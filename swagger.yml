@@ -4,16 +4,21 @@ info:
   title: AuthPlz API
   description: User Auth(entication | orization) and management microservice API
   version: "1.0.0"
-# the domain of the service
 host: test.authplz.com
-# array of all schemes that your API supports
 schemes:
   - https
-# will be prefixed to all paths
-basePath: /v1
+basePath: /api/
 produces:
   - application/json
 paths:
+
+  /status:
+    get:
+      summary: User login status
+      description: Endpoint to check user login status
+      responses:
+        200:
+          description:
 
   /login:
     post:
@@ -24,7 +29,7 @@ paths:
           description: Login success
           schema:
             $ref: '#/definitions/User'
-        401:
+        202:
           description: Further Authorization Required
           schema:
             $ref: '#/definitions/SecondFactorReq'
@@ -38,6 +43,9 @@ paths:
           schema:
             $ref: '#/definitions/Error'
             
+
+
+
   /login/github:
     post:
       summary: Github login endpoint

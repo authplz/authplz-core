@@ -2,8 +2,8 @@ package api
 
 // Common API response object
 type ApiResponse struct {
-    Result  string
-    Message string
+    Result  string  `json:"result"`
+    Message string  `json:"message"`
 }
 
 // API result types
@@ -11,6 +11,9 @@ const ApiResultOk string = "ok"
 const ApiResultError string = "error"
 
 // API result messages
+const ApiMessageCreateUserSuccess string = "Created user account, check your emails for an activation token"
+const ApiMessagePasswordComplexityTooLow string = "Password does not meet complexity requirements"
+
 const ApiMessageLoginSuccess string = "Login successful"
 const ApiMessageLogoutSuccess string = "Logout successful"
 const ApiMessageActivationSuccessful string = "Account activation successful"

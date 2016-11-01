@@ -48,19 +48,29 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
 	u, e := c.global.userController.Create(email, password)
 	if e != nil {
-		fmt.Fprint(rw, "Error: %s", e)
-		rw.WriteHeader(500)
+		log.Printf("api.Create: user creation failed with %s", e)
+
+		if e == usercontroller.ErrorDuplicateAccount {
+			c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageCreateUserSuccess)
+			return
+		} else if e == usercontroller.ErrorPasswordTooShort {
+			c.WriteApiResult(rw, api.ApiResultError, api.ApiMessagePasswordComplexityTooLow)
+			return
+		}
+
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
 		return
 	}
 
 	if u == nil {
-		rw.WriteHeader(http.StatusInternalServerError)
+		log.Printf("api.Create: user creation failed")
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
 		return
 	}
 
 	log.Println("api.Create: Create OK")
 
-	rw.WriteHeader(http.StatusOK)
+	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageCreateUserSuccess)
 }
 
 // Handle an action token

@@ -4,6 +4,7 @@ import "errors"
 
 
 var (
+    ErrorPasswordTooShort = errors.New("User Controller: password does not meet complexity requirements")
     ErrorPasswordHashTooShort = errors.New("User Controller: password hash too short")
     ErrorFindingUser = errors.New("User Controller: error checking for user account")
     ErrorDuplicateAccount = errors.New("User Controller: user account with email exists")
