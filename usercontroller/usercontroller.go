@@ -71,7 +71,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userController.hashRounds)
 	if hashErr != nil {
-		return nil, fmt.Errorf("password hash to short")
+		return nil, ErrorPasswordHashTooShort
 	}
 
 	// Check if user exists
@@ -79,12 +79,12 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("error checking for user account")
+		return nil, ErrorFindingUser
 	}
 
 	if u != nil {
 		// User exists, fail
-		return nil, fmt.Errorf("user account with email %s exists", u.ExtId)
+		return nil, ErrorDuplicateAccount
 	}
 
 	// Add user to database (disabled)
@@ -92,7 +92,7 @@ func (userController *UserController) Create(email string, pass string) (user *d
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("error creating user")
+		return nil, ErrorCreatingUser
 	}
 
 	// Generate user activation token
@@ -252,7 +252,7 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("User not found")
+		return nil, ErrorUserNotFound
 	}
 
 	return sanatizeUser(u), nil
@@ -265,19 +265,19 @@ func (userController *UserController) UpdatePassword(extId string, old string, n
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("User not found")
+		return nil, ErrorUserNotFound
 	}
 
 	// Check password
 	hashErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(old))
 	if hashErr != nil {
-		return nil, fmt.Errorf("password mismatch")
+		return nil, ErrorPasswordMismatch
 	}
 
 	// Generate new hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(new), userController.hashRounds)
 	if hashErr != nil {
-		return nil, fmt.Errorf("password hash too short")
+		return nil, ErrorPasswordHashTooShort
 	}
 
 	// Update user object
@@ -287,7 +287,7 @@ func (userController *UserController) UpdatePassword(extId string, old string, n
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("Error updating user")
+		return nil, ErrorUpdatingUser
 	}
 
 	log.Printf("UserController.UpdatePassword: User %s password updated\r\n", extId)
@@ -303,7 +303,7 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("User not found")
+		return nil, ErrorUserNotFound
 	}
 
 	// Attempt to add tokens
@@ -311,7 +311,7 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("Error adding token")
+		return nil, ErrorAddingToken
 	}
 
 	return sanatizeUser(u), nil
@@ -323,7 +323,7 @@ func (userController *UserController) GetFidoTokens(extId string) ([]datastore.F
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("User not found")
+		return nil, ErrorUserNotFound
 	}
 
 	// Attempt to add tokens
@@ -331,7 +331,7 @@ func (userController *UserController) GetFidoTokens(extId string) ([]datastore.F
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, fmt.Errorf("Error adding token")
+		return nil, ErrorAddingToken
 	}
 
 	return tokens, nil
