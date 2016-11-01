@@ -11,6 +11,13 @@ Early WIP.
 
 [![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz)
 
+## Usage
+
+### Running
+1. Run `make install` to install dependencies
+2. Run `./gencert.sh` to generate TLS certificates
+3. Run `make run` to launch the app
+
 ## Features
 
 - [X] Account creation

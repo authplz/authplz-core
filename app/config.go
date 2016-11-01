@@ -10,6 +10,9 @@ type AuthPlzConfig struct {
     Database     string
     CookieSecret string
     TokenSecret  string
+    TlsCert      string
+    TlsKey       string
+    NoTls        bool
 }
 
 
@@ -33,6 +36,11 @@ func DefaultConfig() (*AuthPlzConfig, error) {
     c.Address = "localhost"
     c.Port = "9000"
     c.Database = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+
+    // Certificate files in environment
+    c.TlsCert = "server.pem"
+    c.TlsKey = "server.key"
+    c.NoTls = false
 
     var err error
 

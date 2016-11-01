@@ -25,6 +25,7 @@ import "github.com/ryankurte/authplz/datastore"
 type AuthPlzServer struct {
     address string
     port    string
+    config  AuthPlzConfig
     ds      *datastore.DataStore
     ctx     AuthPlzGlobalCtx
     router  *web.Router
@@ -33,8 +34,7 @@ type AuthPlzServer struct {
 func NewServer(config AuthPlzConfig) *AuthPlzServer {
     server := AuthPlzServer{}
 
-    server.address = config.Address
-    server.port = config.Port
+    server.config = config;
 
     gob.Register(&token.TokenClaims{})
     gob.Register(&u2f.Challenge{})
@@ -47,16 +47,16 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
     server.ds = ds
 
     // Create session store
-    sessionStore := sessions.NewCookieStore([]byte("something-very-secret"))
+    sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
 
     // TODO: Create CSRF middleware
 
     // Create controllers
     uc := usercontroller.NewUserController(server.ds, server.ds, nil)
-    tc := token.NewTokenController(server.address, "something-also-secret")
+    tc := token.NewTokenController(server.config.Address, config.TokenSecret)
 
     // Create a global context object
-    server.ctx = AuthPlzGlobalCtx{server.port, server.address, &uc, &tc, sessionStore}
+    server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, &uc, &tc, sessionStore}
 
     // Create router
     server.router = web.New(AuthPlzCtx{}).
@@ -92,8 +92,29 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 func (server *AuthPlzServer) Start() {
     // Start listening
-    log.Println("Listening at: " + server.port)
-    log.Fatal(http.ListenAndServe(server.address+":"+server.port, context.ClearHandler(server.router)))
+
+    // Set bind address
+    address := server.config.Address+ ":" +server.config.Port
+    log.Printf("Listening at: %s", address)
+
+    // Create GoCraft handler
+    handler := context.ClearHandler(server.router)
+
+    // Start with/without TLS
+    var err error
+    if server.config.NoTls == true {
+        log.Println("*******************************************************************************")
+        log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
+        log.Println("*******************************************************************************")
+        err = http.ListenAndServe(address, handler)
+    } else {
+        err = http.ListenAndServeTLS(address, server.config.TlsCert, server.config.TlsKey, handler)
+    }
+    
+    // Handle errors
+    if err != nil {
+        log.Fatal("ListenAndServe: ", err)
+    }
 }
 
 func (server *AuthPlzServer) Close() {
