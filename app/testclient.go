@@ -97,7 +97,7 @@ func (tc *TestClient) TestPostJson(path string, statusCode int, requestInst inte
 }
 
 // Parse a response to JSON
-func (tc *TestResponse) TestParseJson(inst interface{}) {
+func (tc *TestResponse) TestParseJson(inst interface{}) interface{} {
     defer tc.Body.Close()
     if tc.Error == nil {
         err := json.NewDecoder(tc.Body).Decode(&inst)
@@ -105,5 +105,6 @@ func (tc *TestResponse) TestParseJson(inst interface{}) {
             tc.t.Errorf("Error decoding json for type %T\n", inst)
         }
     }
+    return inst
 }
 

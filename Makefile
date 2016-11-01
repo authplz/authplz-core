@@ -35,6 +35,9 @@ coverage:
 
 # Container control
 
+docker:
+	docker build -t ryankurte/authplz .
+
 # Build containerized development environment
 build-env:
 	docker create --name ap-pg -p 5432:5432 postgres
