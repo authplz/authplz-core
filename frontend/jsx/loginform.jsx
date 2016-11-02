@@ -1,7 +1,12 @@
 'use strict';
 
+import React from 'react'
+import { render } from 'react-dom'
+import { Router, Route, Link, IndexRoute, hashHistory } from 'react-router'
+import { BrowserHistory } from 'react-history'
+
 // Login form component
-class LoginForm extends React.Component {
+export class LoginForm extends React.Component {
   constructor(props) {
     super(props);
     // Create form state

@@ -15,8 +15,13 @@ test:
 install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/lint/golint
+	npm install
 	go get ./...
 
+
+frontend:
+	@echo "Building frontend packages"
+	./node_modules/webpack/bin/webpack.js --config webpack.config.js --progress --profile --colors
 
 # Utilities
 
@@ -60,4 +65,4 @@ psql:
 	docker run -it --rm --link ap-pg:ap-pg postgres psql -h ap-pg -U postgres	
 
 
-.PHONY: start-env stop-env clean-env
+.PHONY: start-env stop-env clean-env frontend

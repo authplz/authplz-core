@@ -98,7 +98,7 @@ func (server *AuthPlzServer) Start() {
 
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
-	log.Printf("Listening at: %s", address)
+	
 
 	// Create GoCraft handler
 	handler := context.ClearHandler(server.router)
@@ -109,8 +109,10 @@ func (server *AuthPlzServer) Start() {
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
+		log.Printf("Listening at: http://%s", address)
 		err = http.ListenAndServe(address, handler)
 	} else {
+		log.Printf("Listening at: https://%s", address)
 		err = http.ListenAndServeTLS(address, server.config.TlsCert, server.config.TlsKey, handler)
 	}
 

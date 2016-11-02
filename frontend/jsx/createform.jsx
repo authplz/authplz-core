@@ -1,7 +1,12 @@
 'use strict';
 
+import React from 'react'
+import { render } from 'react-dom'
+import { Router, Route, Link, IndexRoute, hashHistory } from 'react-router'
+import { BrowserHistory } from 'react-history'
+
 // Create user form component
-class CreateUserForm extends React.Component {
+export class CreateUserForm extends React.Component {
   constructor(props) {
     super(props);
     // Create form state
@@ -74,7 +79,7 @@ class CreateUserForm extends React.Component {
     return (
       <div>
         <Col md={2} />
-        <Col md={8} >
+        <Col md={8}>
           <Alert bsStyle="success" hidden={!this.state.successMessage}>{this.state.successMessage}</Alert>
           <Alert bsStyle="danger" hidden={!this.state.errorMessage}>{this.state.errorMessage}</Alert>
           <Form horizontal>
@@ -118,7 +123,7 @@ class CreateUserForm extends React.Component {
               </Col>
             </FormGroup>
 
-            <br />
+            <div />
 
             <Col md={12}>
               <FormGroup>
@@ -132,14 +137,6 @@ class CreateUserForm extends React.Component {
       </div>
     );
   }
-
 }
-
-$(document).ready(function () {
-    console.log("Rendering React components")
-
-    // Render elements
-    ReactDOM.render(<CreateUserForm />, document.getElementById('root'));
-})
 
 

@@ -35,6 +35,12 @@ Early WIP.
 - [ ] OAuth2 delegation
 - [ ] Account linking (google, facebook, github)
 
+## Project Layout
+
+## Frontend
+
+- [frontend](frontend) contains raw frontend components
+- 
 
 ------
 
