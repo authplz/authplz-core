@@ -6,6 +6,11 @@ import { BrowserHistory } from 'react-history'
 import { LoginForm } from './loginform.jsx'
 import { CreateUserForm } from './createform.jsx'
 
+import jQuery from 'jquery';
+import Tether from 'tether';
+import Bootstrap from 'bootstrap';
+
+
 // Then we delete a bunch of code from App and
 // add some <Link> elements...
 const App = React.createClass({

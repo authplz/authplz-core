@@ -5,6 +5,10 @@ module.exports = [
         exclude: /(node_modules|bower_components|public|static)/,
         loader: "babel"
     },
+    { 
+        test: /\.css$/, 
+        loader: "style-loader!css-loader" 
+    },
     {
         test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
         exclude: /(node_modules|bower_components|static)/,
@@ -39,5 +43,9 @@ module.exports = [
         test: /\.png/,
         exclude: /(node_modules|bower_components|static)/,
         loader: "url-loader?limit=10000&mimetype=image/png"
+    },
+    { 
+        test: /bootstrap\/.+\.(jsx|js)$/,
+        loader: 'imports?jQuery=jquery,$=jquery,this=>window'
     }
 ];

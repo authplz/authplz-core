@@ -6,6 +6,11 @@ COPY . /go/src/github.com/ryankurte/authplz
 
 WORKDIR /go/src/github.com/ryankurte/authplz
 
-RUN go get -v -d
+# Fetch dependencies
+RUN make install
 
+# Build app
+RUN make build
+
+# Install app
 RUN go install -v

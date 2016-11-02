@@ -41,8 +41,7 @@ class LoginForm extends React.Component {
   render() {
     return (
       <div>
-        <Col md={2} />
-        <Col md={8} >
+        <Col md={8} mdOffset={2}>
           <Form horizontal>
             <FormGroup controlId="formHorizontalEmail">
               <Col componentClass={ControlLabel} md={2}>

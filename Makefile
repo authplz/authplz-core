@@ -3,25 +3,45 @@
 
 # Core Functions
 
-build:
-	go build
+# Install dependencies
+install: install-go install-frontend
 
-run: build
-	./authplz
+# Build backend and frontend components
+build: build-frontend build-go 
 
-test:
-	go test -p=1 ./...
+# Run application
+run: run-go
 
-install:
+# Test application
+test: test-go
+
+
+# Go Commands
+
+install-go:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/lint/golint
-	npm install
 	go get ./...
 
+build-go:
+	go build
 
-frontend:
+run-go: build-go
+	./authplz
+
+test-go:
+	go test -p=1 ./...
+
+
+# Frontend commands
+
+install-frontend:
+	npm install
+
+build-frontend:
 	@echo "Building frontend packages"
-	./node_modules/webpack/bin/webpack.js --config webpack.config.js --progress --profile --colors
+	@./node_modules/webpack/bin/webpack.js --config webpack.config.js --progress --profile --colors
+
 
 # Utilities
 

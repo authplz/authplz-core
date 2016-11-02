@@ -18,6 +18,8 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	tokenName = req.URL.Query().Get("name")
+
 	//TODO: get existing keys
 	var registeredKeys []u2f.Registration
 
@@ -26,6 +28,7 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	u2fReq := challenge.RegisterRequest()
 
 	c.session.Values["u2f-register-challenge"] = challenge
+	c.session.Values["u2f-register-name"] = tokenName
 	c.session.Save(req.Request, rw)
 
 	c.WriteJson(rw, *u2fReq)

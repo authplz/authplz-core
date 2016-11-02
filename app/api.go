@@ -202,7 +202,7 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	var tokenString string
 	tokenString = req.FormValue("token")
 	if tokenString == "" {
-		req.URL.Query().Get("token")
+		tokenString = req.URL.Query().Get("token")
 	}
 	if tokenString == "" {
 		rw.WriteHeader(http.StatusBadRequest)
