@@ -7,7 +7,7 @@ import "github.com/ryankurte/authplz/datastore"
 func TestUserController(t *testing.T) {
 	// Setup user controller for testing
 	var fakeEmail = "test@abc.com"
-	var fakePass = "abcDEF123@"
+	var fakePass = "abcDEF123@abcDEF123@"
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
