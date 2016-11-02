@@ -3,6 +3,7 @@ package app
 import "fmt"
 import "log"
 import "time"
+import "net/http"
 import "encoding/json"
 
 import "github.com/gocraft/web"
@@ -18,7 +19,11 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	tokenName = req.URL.Query().Get("name")
+	tokenName := req.URL.Query().Get("name")
+	if tokenName == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	//TODO: get existing keys
 	var registeredKeys []u2f.Registration
@@ -30,6 +35,8 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.session.Values["u2f-register-challenge"] = challenge
 	c.session.Values["u2f-register-name"] = tokenName
 	c.session.Save(req.Request, rw)
+
+	log.Println("api.U2FEnrolGet: Fetched enrolment challenge")
 
 	c.WriteJson(rw, *u2fReq)
 }

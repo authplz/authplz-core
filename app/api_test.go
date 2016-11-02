@@ -61,7 +61,7 @@ func TestMain(t *testing.T) {
 
 	// Set test constants
 	var fakeEmail = "test@abc.com"
-	var fakePass = "abcDEF123@"
+	var fakePass = "abcDEF123@abcDEF123"
 
 	// Attempt database connection
 	c.NoTls = true
@@ -268,9 +268,12 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Logged in users can enrol tokens", func(t *testing.T) {
+		v := url.Values{}
+		v.Set("name", "fakeToken")
+
 		// Generate enrolment request
 		var rr u2f.RegisterRequestMessage
-		client.BindTest(t).TestGet("/u2f/enrol", 200).TestParseJson(&rr)
+		client.BindTest(t).TestGetWithParams("/u2f/enrol", 200, v).TestParseJson(&rr)
 
 		// Check AppId is set correctly
 		if rr.AppID != c.Address {

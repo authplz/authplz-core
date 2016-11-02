@@ -65,6 +65,21 @@ func (tc *TestClient) TestGet(path string, statusCode int) *TestResponse {
 	return tr
 }
 
+func (tc *TestClient) TestGetWithParams(path string, statusCode int, v url.Values) *TestResponse {
+	queryPath := tc.basePath + path
+
+	req, _ := http.NewRequest("GET", queryPath, nil)
+
+	req.URL.RawQuery = v.Encode()
+
+	resp, err := tc.Do(req)
+	tc.testHandleErr(resp, err, queryPath, statusCode)
+
+	tr := &TestResponse{resp, err, tc.t}
+
+	return tr
+}
+
 // Post a form to an api endpoint
 func (tc *TestClient) TestPostForm(path string, statusCode int, v url.Values) *TestResponse {
 	queryPath := tc.basePath + path
