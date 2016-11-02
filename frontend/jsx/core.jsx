@@ -3,8 +3,8 @@ import { render } from 'react-dom'
 import { Router, Route, Link, IndexRoute, hashHistory } from 'react-router'
 import { BrowserHistory } from 'react-history'
 
-import LoginForm from './loginform.jsx'
-import CreateUserForm from './createform.jsx'
+import { LoginForm } from './loginform.jsx'
+import { CreateUserForm } from './createform.jsx'
 
 // Then we delete a bunch of code from App and
 // add some <Link> elements...

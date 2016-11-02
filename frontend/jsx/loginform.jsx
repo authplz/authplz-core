@@ -5,8 +5,11 @@ import { render } from 'react-dom'
 import { Router, Route, Link, IndexRoute, hashHistory } from 'react-router'
 import { BrowserHistory } from 'react-history'
 
+import { Col, Form, FormGroup, ControlLabel, FormControl, Checkbox, Button, Alert } from 'react-bootstrap';
+import { AuthPlz } from '../js/authplz';
+
 // Login form component
-export class LoginForm extends React.Component {
+class LoginForm extends React.Component {
   constructor(props) {
     super(props);
     // Create form state
@@ -32,9 +35,8 @@ export class LoginForm extends React.Component {
 
   // Handle submit events
   handleSubmit(event) {
-    alert('Text field value is: ' + this.state.email);
+    console.log('Text field value is: ' + this.state.email);
   }
-
 
   render() {
     return (
@@ -86,3 +88,5 @@ export class LoginForm extends React.Component {
   }
 
 }
+
+export {LoginForm}

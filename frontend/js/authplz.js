@@ -69,6 +69,6 @@ class AuthPlzApi {
 
 }
 
-console.log("Loading AuthPlz API")
 const AuthPlz = new AuthPlzApi()
+export {AuthPlz, AuthPlzApi}
 

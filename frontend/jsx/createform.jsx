@@ -4,9 +4,13 @@ import React from 'react'
 import { render } from 'react-dom'
 import { Router, Route, Link, IndexRoute, hashHistory } from 'react-router'
 import { BrowserHistory } from 'react-history'
+import validator from 'validator';
+import { AuthPlz } from '../js/authplz';
+
+import { Col, Form, FormGroup, ControlLabel, FormControl, Checkbox, Button, Alert, HelpBlock } from 'react-bootstrap';
 
 // Create user form component
-export class CreateUserForm extends React.Component {
+class CreateUserForm extends React.Component {
   constructor(props) {
     super(props);
     // Create form state
@@ -63,6 +67,7 @@ export class CreateUserForm extends React.Component {
 
   // Handle submit events
   handleSubmit(event) {
+    this.setState({successMessage: '', errorMessage: ''})
     if(this.state.passwordOne !== this.state.passwordTwo) {
       console.log("Password mismatch")
       return
@@ -139,4 +144,4 @@ export class CreateUserForm extends React.Component {
   }
 }
 
-
+export {CreateUserForm}
