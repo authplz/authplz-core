@@ -15,6 +15,7 @@ const ApiResultOk string = "ok"
 const ApiResultError string = "error"
 
 // API status message container
+// Represents all available API instances
 type ApiMessageContainer struct {
     CreateUserSuccess string
     PasswordComplexityTooLow string
@@ -57,8 +58,10 @@ var ApiMessageEn = ApiMessageContainer {
     TokenNameRequired: "U2F token name required",
 }
 
+// Default locale for external use
 var DefaultLocale string = "en"
 
+// Fetch the APIMessageContainer for a given language to provide locale specific response messages
 func GetApiLocale(lang string) (* ApiMessageContainer) {
     switch(lang) {
     case "en":
@@ -70,6 +73,7 @@ func GetApiLocale(lang string) (* ApiMessageContainer) {
 }
 
 // API Response instances
+// TODO: deprecate these
 var ApiResponseLoginSuccess = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).LoginSuccessful}
 var ApiResponseLogoutSuccess = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).LogoutSuccessful}
 var ApiResponseActivationSuccessful = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).ActivationSuccessful}
