@@ -18,6 +18,7 @@ import "github.com/ryankurte/authplz/api"
 type AuthPlzGlobalCtx struct {
 	port            string
 	address         string
+	url 			string
 	userController  *usercontroller.UserController
 	tokenController *token.TokenController
 	sessionStore    *sessions.CookieStore
@@ -64,8 +65,17 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	// Load user from session if set
 	// TODO: this will be replaced with sessions when implemented
 	if session.Values["userId"] != nil {
-		//TODO: find user account
-		ctx.userid = session.Values["userId"].(string)
+
+		// Check user account exists
+		// TODO: this is inefficient, but, bad shit happens if an account is deleted between API calls
+		// Need better session management
+		u, err := ctx.global.userController.GetUser(ctx.userid);
+		if (err != nil) || (u == nil) {
+			log.Printf("Session middleware: user token invalid %s", ctx.userid)
+			session.Options.MaxAge = -1
+		} else {
+			ctx.userid = session.Values["userId"].(string)
+		}
 	}
 
 	session.Save(req.Request, rw)

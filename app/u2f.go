@@ -30,7 +30,7 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	var registeredKeys []u2f.Registration
 
 	// Build U2F challenge
-	challenge, _ := u2f.NewChallenge(c.global.address, []string{c.global.address}, registeredKeys)
+	challenge, _ := u2f.NewChallenge(c.global.url, []string{c.global.url}, registeredKeys)
 	u2fReq := challenge.RegisterRequest()
 
 	c.session.Values["u2f-register-challenge"] = challenge
@@ -151,7 +151,7 @@ func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request)
 	}
 
 	// Build U2F challenge
-	challenge, err := u2f.NewChallenge(c.global.address, []string{c.global.address}, registeredKeys)
+	challenge, err := u2f.NewChallenge(c.global.url, []string{c.global.url}, registeredKeys)
 	if err != nil {
 		log.Printf("Error creating U2F sign request %s", err)
 		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)

@@ -318,6 +318,11 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 		return nil, ErrorUserNotFound
 	}
 
+	if u == nil {
+		log.Println("Error, user not found %s", extId)
+		return nil, ErrorUserNotFound
+	}
+
 	// Attempt to add tokens
 	u, err = userController.tokenStore.AddFidoToken(u, token)
 	if err != nil {

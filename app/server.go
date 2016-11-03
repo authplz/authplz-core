@@ -69,8 +69,15 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	//log.Printf("Token secret: %s\n", TokenSecret)
 	tc := token.NewTokenController(server.config.Address, string(tokenSecret))
 
+	var url string
+	if config.NoTls == false {
+		url = "https://" + config.Address + ":" + config.Port
+	} else {
+		url = "http://" + config.Address + ":" + config.Port
+	}
+
 	// Create a global context object
-	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, &uc, &tc, sessionStore}
+	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, &uc, &tc, sessionStore}
 
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).
