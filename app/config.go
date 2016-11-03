@@ -29,7 +29,7 @@ func generateSecret(len int) (string, error) {
 		return "", errors.New("Config: RNG failed")
 	}
 
-	return base64.StdEncoding.EncodeToString(data), nil
+	return base64.URLEncoding.EncodeToString(data), nil
 }
 
 // Generate default configuration

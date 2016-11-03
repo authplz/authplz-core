@@ -79,6 +79,9 @@ func (ds *DataStore) ForceSync() {
 	db = db.AutoMigrate(&FidoToken{})
 	db = db.AutoMigrate(&TotpToken{})
 	db = db.AutoMigrate(&AuditEvent{})
+
+	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
+	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")
 }
 
 func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
@@ -94,7 +97,8 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 		Enabled:   true,
 		Activated: false,
 		Locked:    false,
-		Admin:     false}
+		Admin:     false,
+	}
 
 	dataStore.db = dataStore.db.Create(user)
 	err := dataStore.db.Error

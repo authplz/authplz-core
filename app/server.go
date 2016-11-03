@@ -43,15 +43,17 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Attempt database connection
 	ds, err := datastore.NewDataStore(config.Database)
 	if err != nil {
-		panic("Error opening database")
+		log.Panic("Error opening database")
 	}
 	server.ds = ds
 
 	// Create session store
-	cookieSecret, err := base64.StdEncoding.DecodeString(config.CookieSecret)
+	cookieSecret, err := base64.URLEncoding.DecodeString(config.CookieSecret)
 	if err != nil {
-		panic("Error decoding cookie secret")
+		log.Println(err)
+		log.Panic("Error decoding cookie secret")
 	}
+	//log.Printf("Cookie secret: %s\n", CookieSecret)
 	sessionStore := sessions.NewCookieStore(cookieSecret)
 
 	// TODO: Create CSRF middleware
@@ -59,10 +61,12 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create controllers
 	uc := usercontroller.NewUserController(server.ds, server.ds, nil)
 
-	tokenSecret, err := base64.StdEncoding.DecodeString(config.TokenSecret)
+	tokenSecret, err := base64.URLEncoding.DecodeString(config.TokenSecret)
 	if err != nil {
-		panic("Error decoding token secret")
+		log.Println(err)
+		log.Panic("Error decoding token secret")
 	}
+	//log.Printf("Token secret: %s\n", TokenSecret)
 	tc := token.NewTokenController(server.config.Address, string(tokenSecret))
 
 	// Create a global context object

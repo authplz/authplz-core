@@ -56,7 +56,8 @@ var LoginDisabled = LoginStatus{LoginCodeDisabled, "User account disabled"}
 
 var loginError = errors.New("internal server error")
 
-const minimumPasswordLength = 12
+//TODO: change this to enforce actual complexity
+const minimumPasswordLength = 6
 
 type UserController struct {
 	userStore UserStoreInterface
@@ -262,6 +263,12 @@ func (userController *UserController) GetUser(extId string) (user *datastore.Use
 		return nil, ErrorUserNotFound
 	}
 
+	if u == nil {
+		// Userstore error, wrap
+		log.Printf("Error: user not found %s", extId)
+		return nil, ErrorUserNotFound
+	}
+
 	return sanatizeUser(u), nil
 }
 
@@ -364,6 +371,8 @@ func sanatizeUser (u *datastore.User) *datastore.User {
 		Locked:    u.Locked,
 		Admin:     u.Admin,
 		LastLogin: u.LastLogin,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
 	}
 	return &sanatizedUser
 }

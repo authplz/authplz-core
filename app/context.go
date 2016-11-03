@@ -1,6 +1,7 @@
 package app
 
 import "net"
+import "log"
 
 import "github.com/gorilla/sessions"
 
@@ -48,7 +49,10 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	session, err := ctx.global.sessionStore.Get(req.Request, "user-session")
 	if err != nil {
-		next(rw, req)
+		log.Printf("Error binding session, %s", err)
+		// Poison invalid session so next request will succeed
+		session.Options.MaxAge = -1
+		session.Save(req.Request, rw)
 		return
 	}
 
@@ -87,6 +91,10 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 
 // Helper function to login a user
 func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
+	if c.session == nil {
+		log.Printf("Error logging in user, no session found")
+		return
+	}
 	c.session.Values["userId"] = u.ExtId
 	c.session.Save(req.Request, rw)
 	c.userid = u.ExtId

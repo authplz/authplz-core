@@ -132,6 +132,10 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	if c.userid != "" {
+		c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageAlreadyAuthenticated)
+	}
+
 	// Attempt login
 	l, u, e := c.global.userController.Login(email, password)
 	if e != nil {

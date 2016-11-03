@@ -2,11 +2,12 @@ package datastore
 
 import "time"
 
-import "github.com/jinzhu/gorm"
-
 // User object
 type User struct {
-	gorm.Model
+	ID      	 uint  	`gorm:"primary_key"`
+	CreatedAt	 time.Time
+	UpdatedAt	 time.Time
+	DeletedAt *time.Time
 	ExtId        string `gorm:"not null;unique"`
 	Email        string `gorm:"not null;unique"`
 	Password     string `gorm:"not null"`

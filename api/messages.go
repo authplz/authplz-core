@@ -19,6 +19,7 @@ const ApiMessageLogoutSuccess string = "Logout successful"
 const ApiMessageActivationSuccessful string = "Account activation successful"
 const ApiMessageUnlockSuccessful string = "Account unlock successful"
 const ApiMessagePasswordUpdated string = "Password Updated"
+const ApiMessageAlreadyAuthenticated string = "Already logged in, please log out to change accounts"
 
 const ApiMessageUnauthorized string = "You must be logged in to view this page"
 const ApiMessageInvalidToken string = "Invalid token"
