@@ -3,11 +3,11 @@
 
 # Core Functions
 
-# Install dependencies
-install: install-go
-
 # Build backend and frontend components
 build: build-go 
+
+# Install dependencies
+install: install-go
 
 # Run application
 run: run-go

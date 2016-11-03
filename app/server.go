@@ -8,6 +8,7 @@ import "path"
 import "net/http"
 
 import "encoding/gob"
+import "encoding/base64"
 
 import "github.com/gocraft/web"
 
@@ -47,13 +48,22 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.ds = ds
 
 	// Create session store
-	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
+	cookieSecret, err := base64.StdEncoding.DecodeString(config.CookieSecret)
+	if err != nil {
+		panic("Error decoding cookie secret")
+	}
+	sessionStore := sessions.NewCookieStore(cookieSecret)
 
 	// TODO: Create CSRF middleware
 
 	// Create controllers
 	uc := usercontroller.NewUserController(server.ds, server.ds, nil)
-	tc := token.NewTokenController(server.config.Address, config.TokenSecret)
+
+	tokenSecret, err := base64.StdEncoding.DecodeString(config.TokenSecret)
+	if err != nil {
+		panic("Error decoding token secret")
+	}
+	tc := token.NewTokenController(server.config.Address, string(tokenSecret))
 
 	// Create a global context object
 	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, &uc, &tc, sessionStore}
@@ -67,8 +77,10 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
         Middleware((*AuthPlzCtx).GetIPMiddleware)
 
 	// Enable static file hosting
-	currentRoot, _ := os.Getwd()
-	server.router.Middleware(web.StaticMiddleware(path.Join(currentRoot, config.StaticDir), web.StaticOption{IndexFile: "index.html"}))
+	_, _ = os.Getwd()
+	staticPath := path.Clean(config.StaticDir)
+	log.Printf("Loading static content from: %s\n", staticPath)
+	server.router.Middleware(web.StaticMiddleware(staticPath, web.StaticOption{IndexFile: "index.html"}))
 
 	// Create API router
 	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
