@@ -1,9 +1,10 @@
 # authplz
 
-A simple Authentication and User Management microservice, designed to avoid having to write another authentication or user management service.  
-This is intended to provide common user management features (creation/login/logout/password update & reset/token enrolment & validation) required for a web application (or web application suite) with the minum possible complexity.  
+A simple Authentication and User Management microservice, designed to avoid having to write another authentication or user management service.
 
-This provides an alternative to hosted solutions such as [StormPath](https://stormpath.com/) and [AuthRocket](https://authrocket.com/) for companies that prefer (or require) locally hosted identity providers. For a well supported locally hosted alternative you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).  
+This is intended to provide common user management features (creation/login/logout/password update & reset/token enrolment & validation) required for a web application (or web application suite) with the minum possible complexity.
+
+This provides an alternative to hosted solutions such as [StormPath](https://stormpath.com/) and [AuthRocket](https://authrocket.com/) for companies that prefer (or require) locally hosted identity providers. For a well supported locally hosted alternative you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
 
 ## Status
 
@@ -12,6 +13,10 @@ Early WIP.
 [![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz)
 
 ## Usage
+
+Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project. Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
+
+For development purposes, it may be convenient to add these variables to your environment (`~/.bashrc` or `~/.bash_profile`).
 
 ### Running
 1. Run `make install` to install dependencies
@@ -37,10 +42,7 @@ Early WIP.
 
 ## Project Layout
 
-## Frontend
 
-- [frontend](frontend) contains raw frontend components
-- 
 
 ------
 
