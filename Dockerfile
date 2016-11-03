@@ -12,5 +12,7 @@ RUN make install
 # Build app
 RUN make build
 
+# TODO: install UI
+
 # Install app
 RUN go install -v

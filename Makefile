@@ -4,10 +4,10 @@
 # Core Functions
 
 # Install dependencies
-install: install-go install-frontend
+install: install-go
 
 # Build backend and frontend components
-build: build-frontend build-go 
+build: build-go 
 
 # Run application
 run: run-go
@@ -34,15 +34,7 @@ test-go:
 	go test -p=1 ./...
 
 
-# Frontend commands
-
-install-frontend:
-	npm install
-
-build-frontend:
-	@echo "Building frontend packages"
-	@./node_modules/webpack/bin/webpack.js --config webpack.config.js --progress --profile --colors
-
+# Frontend components now in authplz-ui package
 
 # Utilities
 
