@@ -12,22 +12,22 @@ func main() {
 	// Fetch default configuration
 	c, err := app.DefaultConfig()
 	if err != nil {
-        log.Fatal(err.Error())
-    }
+		log.Fatal(err.Error())
+	}
 
 	// Parse config structure through environment
-    err = envconfig.Process("authplz", c)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	err = envconfig.Process("authplz", c)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-    // Override environment with command line args
-    _, err = flags.Parse(c)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	// Override environment with command line args
+	_, err = flags.Parse(c)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-    // Create server instance
+	// Create server instance
 	server := app.NewServer(*c)
 
 	// Launch server

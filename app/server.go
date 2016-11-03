@@ -78,7 +78,8 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 		//Middleware(web.LoggerMiddleware).
 		//Middleware(web.ShowErrorsMiddleware).
 		Middleware((*AuthPlzCtx).SessionMiddleware).
-        Middleware((*AuthPlzCtx).GetIPMiddleware)
+		Middleware((*AuthPlzCtx).GetIPMiddleware).
+		Middleware((*AuthPlzCtx).GetLocaleMiddleware)
 
 	// Enable static file hosting
 	_, _ = os.Getwd()
@@ -104,7 +105,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).U2FEnrolPost)
 	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)
 	apiRouter.Post("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticatePost)
-    apiRouter.Get("/u2f/tokens", (*AuthPlzCtx).U2FTokensGet)
+	apiRouter.Get("/u2f/tokens", (*AuthPlzCtx).U2FTokensGet)
 
 	return &server
 }
@@ -114,7 +115,6 @@ func (server *AuthPlzServer) Start() {
 
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
-	
 
 	// Create GoCraft handler
 	handler := context.ClearHandler(server.router)

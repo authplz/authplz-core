@@ -19,6 +19,8 @@ paths:
       responses:
         200:
           description:
+          schema:
+            $ref: '#/definitions/ApiResponse'
 
   /login:
     post:
@@ -28,12 +30,11 @@ paths:
         200:
           description: Login success
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/ApiResponse'
         202:
           description: Further Authorization Required
           schema:
-            $ref: '#/definitions/SecondFactorReq'
-              
+            $ref: '#/definitions/ApiResponse'
         404:
           description: Unauthorized or user not found
         429:
@@ -41,40 +42,7 @@ paths:
         default:
           description: Unexpected error
           schema:
-            $ref: '#/definitions/Error'
-            
-
-
-
-  /login/github:
-    post:
-      summary: Github login endpoint
-      description: Endpoint to initiate Github federated login
-      responses:
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-            
-  /login/google:
-    post:
-      summary: Google login endpoint
-      description: Endpoint to initiate Google federated login
-      responses:
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-        
-  /reset:
-    post:
-      summary: Password Reset endpoint
-      description: Endpoint to initiate a password reset
-      responses:
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/ApiResponse'
 
   /logout:
     post:
@@ -83,14 +51,16 @@ paths:
       responses:
         200:
           description: Logout success
+          schema:
+            $ref: '#/definitions/ApiResponse'
         401:
           description: Unauthorized
         default:
           description: Unexpected error
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/ApiResponse'
 
-  /me:
+  /account:
     get:
       summary: User Profile
       description: The User Profile endpoint returns information about the Uber user that has authorized with the application.
@@ -99,10 +69,14 @@ paths:
           description: Profile information for a user
           schema:
             $ref: '#/definitions/User'
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiResponse'
         default:
           description: Unexpected error
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/ApiResponse'
             
   /history:
     get:
@@ -177,48 +151,32 @@ parameters:
     
             
 definitions:
+  ApiResponse:
+    type: object
+    properties:
+      result:
+        type: string
+        description: API result, "ok" for success and "error" for failure
+      message:
+        type: string
+        description: Message containing information about call success/failure
 
   User:
     type: object
     properties:
-      email:
+      ExtId:
         type: string
-        description: User email address.
-      display_name: 
+        description: External user ID
+      Email:
         type: string
-        description: User display name.
-      last_login:
+        description: User email address
+      CreatedAt: 
         type: string
-        description: Last name of the Uber user.
+        description: Account creation date
+      LastLogin: 
+        type: string
+        description: Last login time
         
-  SecondFactor:
-    type: object
-    description: Second Factor Token
-    properties:
-      name:
-        type: string
-      type:
-        type: string
-        enum:
-          - totp
-          - hotp
-          - u2f
-          - sms
-          - email
-  
-  SecondFactors:
-    type: array
-    items:
-      $ref: '#/definitions/SecondFactor' 
-        
-  SecondFactorReq:
-    type: object
-    properties:
-      available:
-        type: array
-        description: Available 2fa methods 
-        items:
-           $ref: '#/definitions/SecondFactor'
         
   UserEvent:
     type: object
@@ -238,14 +196,4 @@ definitions:
     items:
       $ref: '#/definitions/UserEvent'
       
-  Error:
-    type: object
-    properties:
-      code:
-        type: integer
-        format: int32
-      message:
-        type: string
-      fields:
-        type: string
 

@@ -12,6 +12,7 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
+
 // Application global context
 // TODO: this could be split and bound by module
 type AuthPlzGlobalCtx struct {
@@ -24,12 +25,13 @@ type AuthPlzGlobalCtx struct {
 
 // Application handler context
 type AuthPlzCtx struct {
-	global  *AuthPlzGlobalCtx
-	session *sessions.Session
-	userid  string
-	message string
-	remoteAddr string
+	global       *AuthPlzGlobalCtx
+	session      *sessions.Session
+	userid       string
+	message      string
+	remoteAddr   string
 	forwardedFor string
+	locale 		 string
 }
 
 // Convenience type to describe middleware functions
@@ -70,14 +72,35 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	next(rw, req)
 }
 
-
 // Middleware to grab IP & forwarding headers and store in session
-func (ctx *AuthPlzCtx) GetIPMiddleware (rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+func (ctx *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	ctx.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
 	ctx.forwardedFor = req.Header.Get("x-forwarded-for")
 
 	next(rw, req)
 }
+
+// Middleware to grab locale query string or cookies for use in API responses
+func (c *AuthPlzCtx) GetLocaleMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	queryLocale := req.URL.Query().Get("locale")
+	if queryLocale != "" {
+		// Update session locale
+		c.locale = queryLocale;
+		c.session.Values["locale"] = queryLocale
+		c.session.Save(req.Request, rw)
+	} else {
+		// Fetch and save locale to context
+		sessionLocale := c.session.Values["locale"]
+		if sessionLocale != nil {
+			c.locale = sessionLocale.(string)
+		} else {
+			c.locale = api.DefaultLocale
+		}
+	}
+
+	next(rw, req)
+}
+
 
 // Middleware to ensure only logged in access to an endpoint
 func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -87,7 +110,6 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 		next(rw, req)
 	}
 }
-
 
 // Helper function to login a user
 func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
@@ -106,7 +128,6 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Save(req.Request, rw)
 	c.userid = ""
 }
-
 
 // Helper function to set a flash message for display to the user
 func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {

@@ -13,6 +13,7 @@ import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
 
+
 func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
 	tc.BindTest(t).TestPostForm(path, http.StatusOK, v).TestParseJson(responseInst)
 }
@@ -84,7 +85,7 @@ func TestMain(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
 	t.Run("Create User", func(t *testing.T) {
@@ -127,7 +128,7 @@ func TestMain(t *testing.T) {
 		client2.BindTest(t).TestPostForm("/login", http.StatusUnauthorized, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
@@ -151,7 +152,7 @@ func TestMain(t *testing.T) {
 		client2.BindTest(t).TestPostForm("/login", http.StatusOK, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 	})
 
 	t.Run("Activated users can login", func(t *testing.T) {
@@ -163,7 +164,7 @@ func TestMain(t *testing.T) {
 		client.BindTest(t).TestPostForm("/login", http.StatusOK, v)
 
 		// Check user status
-		client.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
+		client.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 	})
 
 	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
@@ -180,7 +181,7 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 
 		// Set to correct password
 		v.Set("email", fakeEmail)
@@ -211,7 +212,7 @@ func TestMain(t *testing.T) {
 		client2.BindTest(t).TestPostForm("/login", http.StatusUnauthorized, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
 	t.Run("Locked accounts can be unlocked", func(t *testing.T) {
@@ -235,7 +236,7 @@ func TestMain(t *testing.T) {
 		client2.BindTest(t).TestPostForm("/login", http.StatusOK, v)
 
 		// Check user status
-		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 	})
 
 	t.Run("Logged in users can get account info", func(t *testing.T) {
@@ -258,7 +259,7 @@ func TestMain(t *testing.T) {
 
 		var status api.ApiResponse
 		client.BindTest(t).TestPostForm("/account", http.StatusOK, v).TestParseJson(&status)
-		client.TestCheckApiResponse(t, status, api.ApiResultOk, api.ApiMessagePasswordUpdated)
+		client.TestCheckApiResponse(t, status, api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).PasswordUpdated)
 
 		fakePass = newPass
 	})
@@ -288,7 +289,7 @@ func TestMain(t *testing.T) {
 		}
 
 		// Post registration response back
-		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
+		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).U2FRegistrationComplete)
 	})
 
 	t.Run("Logged in users can list tokens", func(t *testing.T) {
@@ -308,7 +309,7 @@ func TestMain(t *testing.T) {
 		v.Set("password", fakePass)
 
 		client2.BindTest(t).TestPostForm("/login", http.StatusAccepted, v)
-		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
 	t.Run("Second factor allows login", func(t *testing.T) {
@@ -338,18 +339,18 @@ func TestMain(t *testing.T) {
 		}
 
 		// Post response and check login status
-		client2.TestPostJsonCheckApiResponse(t, "/u2f/authenticate", resp, api.ApiResultOk, api.ApiMessageLoginSuccess)
-		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.ApiMessageLoginSuccess)
+		client2.TestPostJsonCheckApiResponse(t, "/u2f/authenticate", resp, api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 
 	})
 
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout
-		client.TestGetApiResponse(t, "/logout", api.ApiResultOk, api.ApiMessageLogoutSuccess)
+		client.TestGetApiResponse(t, "/logout", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LogoutSuccessful)
 
 		// Check user status
-		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.ApiMessageUnauthorized)
+		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
 }

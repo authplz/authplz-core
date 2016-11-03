@@ -17,8 +17,8 @@ type FidoToken struct {
 	KeyHandle   string
 	PublicKey   string
 	Certificate string
-	Counter  	uint
-	LastUsed time.Time
+	Counter     uint
+	LastUsed    time.Time
 }
 
 // Time based One Time Password Token object
@@ -28,15 +28,15 @@ type TotpToken struct {
 	Name       string
 	Secret     string
 	UsageCount uint
-	LastUsed time.Time
+	LastUsed   time.Time
 }
 
 // Audit events for a login account
 type AuditEvent struct {
 	gorm.Model
-	UserID    uint
-	EventType string
-	OriginIP  string
+	UserID       uint
+	EventType    string
+	OriginIP     string
 	ForwardedFor string
 }
 

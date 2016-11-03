@@ -12,10 +12,11 @@ import "github.com/ryankurte/go-u2f"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
+
 func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.userid == "" {
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).Unauthorized)
 		return
 	}
 
@@ -36,7 +37,7 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.session.Values["u2f-register-name"] = tokenName
 	c.session.Save(req.Request, rw)
 
-	log.Println("api.U2FEnrolGet: Fetched enrolment challenge")
+	log.Println("U2FEnrolGet: Fetched enrolment challenge")
 
 	c.WriteJson(rw, *u2fReq)
 }
@@ -45,7 +46,7 @@ func (c *AuthPlzCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.userid == "" {
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).Unauthorized)
 		return
 	}
 
@@ -73,7 +74,7 @@ func (c *AuthPlzCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	if err != nil {
 		// Registration failed.
 		log.Println(err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageU2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).U2FRegistrationFailed)
 		return
 	}
 
@@ -90,19 +91,19 @@ func (c *AuthPlzCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	if err != nil {
 		// Registration failed.
 		log.Println(err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
 	log.Printf("Enrolled U2F token for account %s\n", c.userid)
-	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageU2FRegistrationComplete)
+	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).U2FRegistrationComplete)
 }
 
 func (c *AuthPlzCtx) U2FBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 1 %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -116,7 +117,7 @@ func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request)
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 2 %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -133,7 +134,7 @@ func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request)
 	tokens, err := c.global.userController.GetFidoTokens(userid)
 	if err != nil {
 		log.Printf("Error fetching U2F tokens %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -153,7 +154,7 @@ func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request)
 	challenge, err := u2f.NewChallenge(c.global.address, []string{c.global.address}, registeredKeys)
 	if err != nil {
 		log.Printf("Error creating U2F sign request %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -170,7 +171,7 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 3  %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -206,7 +207,7 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	u, err := c.global.userController.GetUser(userid)
 	if err != nil {
 		log.Println(err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
@@ -215,63 +216,63 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	if err != nil {
 		// Registration failed.
 		log.Println(err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageU2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).U2FRegistrationFailed)
 		return
 	}
 
-    // Fetch existing keys
-    tokens, err := c.global.userController.GetFidoTokens(userid)
-    if err != nil {
-        log.Printf("Error fetching U2F tokens %s", err)
-        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
-        return
-    }
+	// Fetch existing keys
+	tokens, err := c.global.userController.GetFidoTokens(userid)
+	if err != nil {
+		log.Printf("Error fetching U2F tokens %s", err)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
+		return
+	}
 
-    // Match with registration token
-    var token *datastore.FidoToken = nil
-    for _, t := range tokens {
-        if t.KeyHandle == reg.KeyHandle {
-            token = &t
-        }
-    }
-    if token == nil {
-        log.Printf("Matching U2F token not found")
-        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageNoU2FTokenFound)
-        return
-    }
+	// Match with registration token
+	var token *datastore.FidoToken = nil
+	for _, t := range tokens {
+		if t.KeyHandle == reg.KeyHandle {
+			token = &t
+		}
+	}
+	if token == nil {
+		log.Printf("Matching U2F token not found")
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).NoU2FTokenFound)
+		return
+	}
 
-    // Update token counter / last used
-    token.Counter = reg.Counter
-    token.LastUsed = time.Now()
+	// Update token counter / last used
+	token.Counter = reg.Counter
+	token.LastUsed = time.Now()
 
 	// Save updated token against user
 	err = c.global.userController.UpdateFidoToken(token)
 	if err != nil {
 		// Registration failed.
 		log.Println(err)
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
 		return
 	}
 
 	log.Printf("Valid U2F login for account %s\n", userid)
 	c.LoginUser(u, rw, req)
-	c.WriteApiResult(rw, api.ApiResultOk, api.ApiMessageLoginSuccess)
+	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).LoginSuccessful)
 }
 
 func (c *AuthPlzCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
-    // Check if user is logged in
-    if c.userid == "" {
-        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageUnauthorized)
-        return
-    }
+	// Check if user is logged in
+	if c.userid == "" {
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).Unauthorized)
+		return
+	}
 
-    tokens, err := c.global.userController.GetFidoTokens(c.userid)
-    if err != nil {
-        log.Printf("Error fetching U2F tokens %s", err)
-        c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageInternalError)
-        return
-    }
+	tokens, err := c.global.userController.GetFidoTokens(c.userid)
+	if err != nil {
+		log.Printf("Error fetching U2F tokens %s", err)
+		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
+		return
+	}
 
-    c.WriteJson(rw, tokens)
+	c.WriteJson(rw, tokens)
 }

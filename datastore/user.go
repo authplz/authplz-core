@@ -2,25 +2,25 @@ package datastore
 
 import "time"
 
-// User object
+// User represents the user for this application
 type User struct {
-	ID      	 uint  	`gorm:"primary_key"`
-	CreatedAt	 time.Time
-	UpdatedAt	 time.Time
-	DeletedAt *time.Time
-	ExtId        string `gorm:"not null;unique"`
-	Email        string `gorm:"not null;unique"`
-	Password     string `gorm:"not null"`
+	ID              uint      `gorm:"primary_key" description:"External user ID"`
+	CreatedAt       time.Time `description:"User creation time"`
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
+	ExtId           string `gorm:"not null;unique"`
+	Email           string `gorm:"not null;unique"`
+	Password        string `gorm:"not null"`
 	PasswordChanged time.Time
-	Activated    bool   `gorm:"not null; default:false"`
-	Enabled      bool   `gorm:"not null; default:false"`
-	Locked       bool   `gorm:"not null; default:false"`
-	Admin        bool   `gorm:"not null; default:false"`
-	LoginRetries uint   `gorm:"not null; default:0"`
-	LastLogin    time.Time
-	FidoTokens   []FidoToken
-	TotpTokens   []TotpToken
-	AuditEvents  []AuditEvent
+	Activated       bool `gorm:"not null; default:false"`
+	Enabled         bool `gorm:"not null; default:false"`
+	Locked          bool `gorm:"not null; default:false"`
+	Admin           bool `gorm:"not null; default:false"`
+	LoginRetries    uint `gorm:"not null; default:0"`
+	LastLogin       time.Time
+	FidoTokens      []FidoToken
+	TotpTokens      []TotpToken
+	AuditEvents     []AuditEvent
 }
 
 func (u *User) FetchSecondFactors() bool {

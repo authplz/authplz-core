@@ -6,17 +6,17 @@ import "encoding/base64"
 
 // AuthPlz configuration structure
 type AuthPlzConfig struct {
-	Address      			string	`short:"a" long:"address" description:"Set server address"`
-	Port         			string	`short:"p" long:"port" description:"Set server port"`
-	Database     			string	`short:"d" long:"database" description:"Database connection string"`
-	CookieSecret 			string	`long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
-	TokenSecret  			string	`long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
-	TlsCert      			string	`short:"c" long:"tls-cert" description:"TLS Certificate file"`
-	TlsKey       			string	`short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTls        			bool	`long:"disable-tls" description:"Disable TLS for testing or reverse proxying"`
-	StaticDir	 			string	`short:"s" long:"static-dir" description:"Directory to load static assets from"`
-	TemplateDir	 			string	`short:"t" long:"template-dir" description:"Directory to load templates from"`
-	MinimumPasswordLength 	int	
+	Address               string `short:"a" long:"address" description:"Set server address"`
+	Port                  string `short:"p" long:"port" description:"Set server port"`
+	Database              string `short:"d" long:"database" description:"Database connection string"`
+	CookieSecret          string `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
+	TokenSecret           string `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
+	TlsCert               string `short:"c" long:"tls-cert" description:"TLS Certificate file"`
+	TlsKey                string `short:"k" long:"tls-key" description:"TLS Key File"`
+	NoTls                 bool   `long:"disable-tls" description:"Disable TLS for testing or reverse proxying"`
+	StaticDir             string `short:"s" long:"static-dir" description:"Directory to load static assets from"`
+	TemplateDir           string `short:"t" long:"template-dir" description:"Directory to load templates from"`
+	MinimumPasswordLength int
 }
 
 func generateSecret(len int) (string, error) {

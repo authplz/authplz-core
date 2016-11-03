@@ -3,34 +3,25 @@
 
 # Core Functions
 
-# Build backend and frontend components
-build: build-go 
+default: build
 
 # Install dependencies
-install: install-go
-
-# Run application
-run: run-go
-
-# Test application
-test: test-go
-
-
-# Go Commands
-
-install-go:
+install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/lint/golint
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get ./...
 
-build-go:
+# Build backend and frontend components
+build:
 	go build
 
-run-go: build-go
+# Run application
+run: build
 	./authplz
 
-test-go:
+# Test application
+test:
 	go test -p=1 ./...
 
 
@@ -48,8 +39,9 @@ validate:
 	swagger validate swagger.yml
 
 coverage:
-	go test -cover
+	go test -p=1 -cover ./...
 	
+checks: format lint coverage
 
 # Container control
 

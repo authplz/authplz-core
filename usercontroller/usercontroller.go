@@ -60,9 +60,9 @@ var loginError = errors.New("internal server error")
 const minimumPasswordLength = 6
 
 type UserController struct {
-	userStore UserStoreInterface
+	userStore  UserStoreInterface
 	tokenStore TokenStoreInterface
-	mail      MailInterface
+	mail       MailInterface
 	hashRounds int
 }
 
@@ -309,8 +309,6 @@ func (userController *UserController) UpdatePassword(extId string, old string, n
 	return sanatizeUser(u), nil
 }
 
-
-
 func (userController *UserController) AddFidoToken(extId string, token *datastore.FidoToken) (user *datastore.User, err error) {
 	// Attempt to fetch user
 	u, err := userController.userStore.GetUserByExtId(extId)
@@ -321,7 +319,7 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 	}
 
 	// Attempt to add tokens
-	u, err = userController.tokenStore.AddFidoToken(u, token);
+	u, err = userController.tokenStore.AddFidoToken(u, token)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -332,7 +330,7 @@ func (userController *UserController) AddFidoToken(extId string, token *datastor
 }
 
 func (userController *UserController) GetFidoTokens(extId string) ([]datastore.FidoToken, error) {
-		// Attempt to fetch user
+	// Attempt to fetch user
 	u, err := userController.userStore.GetUserByExtId(extId)
 	if err != nil {
 		// Userstore error, wrap
@@ -341,7 +339,7 @@ func (userController *UserController) GetFidoTokens(extId string) ([]datastore.F
 	}
 
 	// Attempt to add tokens
-	tokens, err := userController.tokenStore.GetFidoTokens(u);
+	tokens, err := userController.tokenStore.GetFidoTokens(u)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -362,9 +360,9 @@ func (userController *UserController) UpdateFidoToken(token *datastore.FidoToken
 }
 
 // Internal function to remove non-public user fields prior to returning user objects
-func sanatizeUser (u *datastore.User) *datastore.User {
+func sanatizeUser(u *datastore.User) *datastore.User {
 	sanatizedUser := datastore.User{
-		ExtId:	   u.ExtId,
+		ExtId:     u.ExtId,
 		Email:     u.Email,
 		Activated: u.Activated,
 		Enabled:   u.Enabled,
@@ -376,4 +374,3 @@ func sanatizeUser (u *datastore.User) *datastore.User {
 	}
 	return &sanatizedUser
 }
-
