@@ -19,6 +19,7 @@ type AuthPlzConfig struct {
 	MinimumPasswordLength int
 }
 
+// Helper to generate a default secret to use
 func generateSecret(len int) (string, error) {
 	data := make([]byte, len)
 	n, err := rand.Read(data)
@@ -44,7 +45,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	c.TlsCert = "server.pem"
 	c.TlsKey = "server.key"
 	c.NoTls = false
-	c.StaticDir = "./static"
+	c.StaticDir = "../authplz-ui"
 	c.TemplateDir = "./templates"
 
 	c.MinimumPasswordLength = 12
