@@ -1,6 +1,12 @@
 package datastore
 
 import "time"
+import "fmt"
+
+import "github.com/jinzhu/gorm"
+
+import "github.com/satori/go.uuid"
+import "github.com/asaskevich/govalidator"
 
 // User represents the user for this application
 type User struct {
@@ -23,43 +29,6 @@ type User struct {
 	AuditEvents     []AuditEvent
 }
 
-func (u *User) FetchSecondFactors() bool {
-	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
-}
-
-func (u *User) SecondFactors() bool {
-	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
-}
-
-// It really frustrates me that I have to depend on the datastore.User type from usercontroller
-// especially because the actual datastore can be an interface :-/
-
-//type UserStoreInterface interface {
-//    AddUser(email string, pass string) (user *datastore.User, err error)
-//}
-
-// The Go standard method seems to be to create a usercontroller user struct and include it in the database user struct
-// However there does not seem to be a way to achieve this without requiring sql information / recursive inclusions :-/
-
-// So I tried creating an interface and working with that, but it's also not a thing...
-// It turns out you can't throw interfaces around as objects in the definition of interfaces
-// Or, I can't work out how :-(
-type UserInterface interface {
-	GetExId() string
-	GetEmail() string
-	GetPassword() string
-	SetPassword(pass string)
-	GetActivated() bool
-	SetActivated(activated bool)
-	GetEnabled() bool
-	SetEnabled(enabled bool)
-	GetLocked() bool
-	SetLocked(locked bool)
-	GetAdmin() bool
-	SetAdmin(admin bool)
-	GetLoginRetries() uint
-	ClearLoginRetries()
-}
 
 // Getters and Setters
 func (u *User) GetExId() string             { return u.ExtId }
@@ -76,3 +45,84 @@ func (u *User) GetAdmin() bool              { return u.Admin }
 func (u *User) SetAdmin(admin bool)         { u.Admin = admin }
 func (u *User) GetLoginRetries() uint       { return u.LoginRetries }
 func (u *User) ClearLoginRetries()          { u.LoginRetries = 0 }
+
+
+// Check if a user has attached second factors
+func (u *User) SecondFactors() bool {
+	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
+}
+
+// Add a user to the datastore
+func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
+
+	if !govalidator.IsEmail(email) {
+		return nil, fmt.Errorf("invalid email address %s", email)
+	}
+
+	user := &User{
+		Email:     email,
+		Password:  pass,
+		ExtId:     uuid.NewV4().String(),
+		Enabled:   true,
+		Activated: false,
+		Locked:    false,
+		Admin:     false,
+	}
+
+	dataStore.db = dataStore.db.Create(user)
+	err := dataStore.db.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// Fetch a user account by email
+func (dataStore *DataStore) GetUserByEmail(email string) (*User, error) {
+
+	var user User
+	err := dataStore.db.Where(&User{Email: email}).First(&user).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &user, nil
+}
+
+// Fetch a user account by external id
+func (dataStore *DataStore) GetUserByExtId(extId string) (*User, error) {
+
+	var user User
+	err := dataStore.db.Where(&User{ExtId: extId}).First(&user).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &user, nil
+}
+
+// Update a user object
+func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
+	err := dataStore.db.Save(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// Fetch tokens attached to a user account
+func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
+	var err error
+
+	u.FidoTokens, err = dataStore.GetFidoTokens(u)
+	u.TotpTokens, err = dataStore.GetTotpTokens(u)
+
+	return u, err
+}
+
