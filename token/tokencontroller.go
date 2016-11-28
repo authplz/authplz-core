@@ -1,3 +1,6 @@
+// Implements JWT token building and parsing
+// This is used for actions such as user activation, login, account unlock.
+
 package token
 
 import "time"
@@ -12,21 +15,25 @@ type TokenClaims struct {
 	jwt.StandardClaims
 }
 
+// Token actions
 const TokenActionActivate string = "activate"
 const TokenActionUnlock string = "unlock"
 
-// User object
+// TokenController instance
 type TokenController struct {
 	address    string
 	hmacSecret []byte
 }
 
+// Default signing method
 var signingMethod jwt.SigningMethod = jwt.SigningMethodHS256
 
+//TokenController constructor
 func NewTokenController(address string, hmacSecret string) TokenController {
 	return TokenController{address: address, hmacSecret: []byte(hmacSecret)}
 }
 
+// Generate an action token
 func (tc *TokenController) BuildToken(userid string, action string, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
@@ -48,6 +55,7 @@ func (tc *TokenController) BuildToken(userid string, action string, duration tim
 	return tokenString, err
 }
 
+// Parse and validate an action token
 func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
