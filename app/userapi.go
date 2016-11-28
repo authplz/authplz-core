@@ -35,7 +35,6 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 //
 // Create a user account
 //
-//
 //     Consumes:
 //     - application/x-www-form-urlencoded
 //
@@ -263,6 +262,7 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
+// Fetch a user object
 func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -281,7 +281,7 @@ func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
-// Get user object
+// Update user object
 func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -324,13 +324,5 @@ func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 
 // Test endpoint
 func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
-	// Get the previously flashes, if any.
-	if flashes := c.session.Flashes(); len(flashes) > 0 {
-		log.Printf("Flashes: %+v\n", flashes)
-	} else {
-		// Set a new flash.
-		c.session.AddFlash("Hello, flash messages world!")
-	}
-	c.session.Save(req.Request, rw)
 	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
