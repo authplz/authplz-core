@@ -29,7 +29,6 @@ type User struct {
 	AuditEvents     []AuditEvent
 }
 
-
 // Getters and Setters
 func (u *User) GetExId() string             { return u.ExtId }
 func (u *User) GetEmail() string            { return u.Email }
@@ -45,7 +44,6 @@ func (u *User) GetAdmin() bool              { return u.Admin }
 func (u *User) SetAdmin(admin bool)         { u.Admin = admin }
 func (u *User) GetLoginRetries() uint       { return u.LoginRetries }
 func (u *User) ClearLoginRetries()          { u.LoginRetries = 0 }
-
 
 // Check if a user has attached second factors
 func (u *User) SecondFactors() bool {
@@ -125,4 +123,3 @@ func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
 
 	return u, err
 }
-

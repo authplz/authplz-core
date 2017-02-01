@@ -10,4 +10,3 @@ type AuditEvent struct {
 	OriginIP     string
 	ForwardedFor string
 }
-

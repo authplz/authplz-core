@@ -13,7 +13,6 @@ import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
 
-
 func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
 	tc.BindTest(t).TestPostForm(path, http.StatusOK, v).TestParseJson(responseInst)
 }

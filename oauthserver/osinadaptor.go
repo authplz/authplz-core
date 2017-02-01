@@ -6,7 +6,6 @@ package oauthserver
 import "github.com/RangelReale/osin"
 
 type OauthStore interface {
-
 }
 
 type OauthServerClient struct {
@@ -19,10 +18,8 @@ type OsinAdaptor struct {
 
 func NewOsinAdaptor(store *OauthStore) *OsinAdaptor {
 
-
 	return OsinAdaptor{store}
 }
-
 
 func (o *OsinAdaptor) Clone() {
 	return o
@@ -30,7 +27,6 @@ func (o *OsinAdaptor) Clone() {
 
 func (o *OsinAdaptor) Close() {
 }
-
 
 func (o *OsinAdaptor) GetClient(id string) (osin.Client, error) {
 	fmt.Printf("GetClient: %s\n", id)

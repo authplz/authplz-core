@@ -1,4 +1,4 @@
-package app
+package u2f
 
 import "fmt"
 import "log"
@@ -12,8 +12,27 @@ import "github.com/ryankurte/go-u2f"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
+type U2FControl struct {
+}
 
-func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
+type U2FCtx interface {
+}
+
+func NewU2FModule() *U2FControl {
+
+}
+
+func (u *U2FControl) Bind(router *web.Router) {
+	apiRouter := server.router.Subrouter(U2FCtx{}, "/api")
+
+	router.Get("/u2f/enrol", (*U2FCtx).U2FEnrolGet)
+	router.Post("/u2f/enrol", (*U2FCtx).U2FEnrolPost)
+	router.Get("/u2f/authenticate", (*U2FCtx).U2FAuthenticateGet)
+	router.Post("/u2f/authenticate", (*U2FCtx).U2FAuthenticatePost)
+	router.Get("/u2f/tokens", (*U2FCtx).U2FTokensGet)
+}
+
+func U2FEnrolGet(c *U2FCtx, rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).Unauthorized)
@@ -42,7 +61,7 @@ func (c *AuthPlzCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, *u2fReq)
 }
 
-func (c *AuthPlzCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *U2FCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.userid == "" {
@@ -99,7 +118,7 @@ func (c *AuthPlzCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).U2FRegistrationComplete)
 }
 
-func (c *AuthPlzCtx) U2FBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
+func (c *U2FCtx) U2FBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 1 %s", err)
@@ -113,7 +132,7 @@ func (c *AuthPlzCtx) U2FBindAuthenticationRequest(rw web.ResponseWriter, req *we
 	u2fSession.Save(req.Request, rw)
 }
 
-func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *U2FCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 2 %s", err)
@@ -166,7 +185,7 @@ func (c *AuthPlzCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request)
 	c.WriteJson(rw, *u2fSignReq)
 }
 
-func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+func (c *U2FCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	u2fSession, err := c.global.sessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
@@ -259,7 +278,7 @@ func (c *AuthPlzCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request
 	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).LoginSuccessful)
 }
 
-func (c *AuthPlzCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
+func (c *U2FCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.userid == "" {

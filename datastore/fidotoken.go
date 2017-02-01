@@ -16,7 +16,6 @@ type FidoToken struct {
 	LastUsed    time.Time
 }
 
-
 func (ds *DataStore) AddFidoToken(u *User, fidoToken *FidoToken) (user *User, err error) {
 	u.FidoTokens = append(u.FidoTokens, *fidoToken)
 	u, err = ds.UpdateUser(u)
@@ -40,4 +39,3 @@ func (dataStore *DataStore) UpdateFidoToken(token *FidoToken) (*FidoToken, error
 
 	return token, nil
 }
-

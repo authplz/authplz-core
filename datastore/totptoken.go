@@ -4,7 +4,6 @@ import "time"
 
 import "github.com/jinzhu/gorm"
 
-
 // Time based One Time Password Token object
 type TotpToken struct {
 	gorm.Model
@@ -15,13 +14,11 @@ type TotpToken struct {
 	LastUsed   time.Time
 }
 
-
 func (ds *DataStore) AddTotpToken(u *User, totpToken *TotpToken) (user *User, err error) {
 	u.TotpTokens = append(u.TotpTokens, *totpToken)
 	u, err = ds.UpdateUser(u)
 	return u, err
 }
-
 
 func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
 	var totpTokens []TotpToken
@@ -30,4 +27,3 @@ func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
 
 	return totpTokens, err
 }
-

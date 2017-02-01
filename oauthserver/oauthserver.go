@@ -13,4 +13,3 @@ func NewOauthServer() {
 	// Create server object
 	server := osin.NewServer(osin.NewServerConfig(), &TestStorage{})
 }
-

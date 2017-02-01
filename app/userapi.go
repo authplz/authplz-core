@@ -13,38 +13,6 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
-// Helper to write objects out as JSON
-func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
-	js, err := json.Marshal(i)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
-}
-
-// Helper to write API results out
-func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := api.ApiResponse{Result: result, Message: message}
-	ctx.WriteJson(w, apiResp)
-}
-
-// swagger:route POST /create createUser
-//
-// Create a user account
-//
-//     Consumes:
-//     - application/x-www-form-urlencoded
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       200: apiResponse
-//       400: badRequestResponse
-//		 401: unauthorizedResponse
 func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
@@ -84,15 +52,6 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	log.Println("Create: Create OK")
 
 	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).CreateUserSuccess)
-}
-
-// Parameters for the create user endpoint
-// swagger:parameters createUser
-type CreateUserParams struct {
-	// required: true
-	email string
-	// required: true
-	password string
 }
 
 // Handle an action token
