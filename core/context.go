@@ -1,7 +1,11 @@
-package app
+package core
 
-import "net"
-import "log"
+import (
+	"encoding/json"
+	"log"
+	"net"
+	"net/http"
+)
 
 import (
 	"github.com/gocraft/web"
