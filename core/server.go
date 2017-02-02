@@ -1,27 +1,24 @@
-package app
+package core
 
-import "os"
+import (
+	"encoding/base64"
+	//"encoding/gob"
+	"log"
+	"net/http"
+	"os"
+	"path"
+)
 
-//import "strings"
-import "log"
-import "path"
-import "net/http"
+import (
+	"github.com/gocraft/web"
+	"github.com/gorilla/context"
+	"github.com/gorilla/sessions"
+	//"github.com/ryankurte/go-u2f"
 
-import "encoding/gob"
-import "encoding/base64"
-
-import "github.com/gocraft/web"
-
-//import "github.com/kataras/iris"
-import "github.com/gorilla/sessions"
-import "github.com/gorilla/context"
-
-//import "github.com/gorilla/csrf"
-import "github.com/ryankurte/go-u2f"
-
-import "github.com/ryankurte/authplz/usercontroller"
-import "github.com/ryankurte/authplz/token"
-import "github.com/ryankurte/authplz/datastore"
+	"github.com/ryankurte/authplz/datastore"
+	//"github.com/ryankurte/authplz/token"
+	//"github.com/ryankurte/authplz/usercontroller"
+)
 
 type AuthPlzServer struct {
 	address string
@@ -37,9 +34,6 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	server.config = config
 
-	gob.Register(&token.TokenClaims{})
-	gob.Register(&u2f.Challenge{})
-
 	// Attempt database connection
 	ds, err := datastore.NewDataStore(config.Database)
 	if err != nil {
@@ -47,27 +41,24 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 	server.ds = ds
 
-	// Create session store
+	// Parse secrets
 	cookieSecret, err := base64.URLEncoding.DecodeString(config.CookieSecret)
 	if err != nil {
 		log.Println(err)
 		log.Panic("Error decoding cookie secret")
 	}
-	//log.Printf("Cookie secret: %s\n", CookieSecret)
+
+	// Create session store
 	sessionStore := sessions.NewCookieStore(cookieSecret)
 
 	// TODO: Create CSRF middleware
 
 	// Create controllers
-	uc := usercontroller.NewUserController(server.ds, server.ds, nil)
+	//uc := usercontroller.NewUserController(server.ds, server.ds, nil)
 
-	tokenSecret, err := base64.URLEncoding.DecodeString(config.TokenSecret)
-	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding token secret")
-	}
+
 	//log.Printf("Token secret: %s\n", TokenSecret)
-	tc := token.NewTokenController(server.config.Address, string(tokenSecret))
+	//tc := token.NewTokenController(server.config.Address, string(tokenSecret))
 
 	var url string
 	if config.NoTls == false {
@@ -77,7 +68,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 
 	// Create a global context object
-	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, &uc, &tc, sessionStore}
+	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, sessionStore}
 
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).
@@ -96,8 +87,9 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// Create API router
 	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
-	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
 
+/*
+	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
 	apiRouter.Post("/create", (*AuthPlzCtx).Create)
 	apiRouter.Post("/login", (*AuthPlzCtx).Login)
 	apiRouter.Post("/action", (*AuthPlzCtx).Action)
@@ -113,7 +105,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)
 	apiRouter.Post("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticatePost)
 	apiRouter.Get("/u2f/tokens", (*AuthPlzCtx).U2FTokensGet)
-
+*/
 	return &server
 }
 

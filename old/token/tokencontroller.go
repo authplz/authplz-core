@@ -28,6 +28,10 @@ type TokenController struct {
 // Default signing method
 var signingMethod jwt.SigningMethod = jwt.SigningMethodHS256
 
+func init() {
+	gob.Register(&TokenClaims{})
+}
+
 //TokenController constructor
 func NewTokenController(address string, hmacSecret string) TokenController {
 	return TokenController{address: address, hmacSecret: []byte(hmacSecret)}

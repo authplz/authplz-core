@@ -10,22 +10,16 @@ import (
 import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
-
 	"github.com/ryankurte/authplz/api"
-	"github.com/ryankurte/authplz/datastore"
-	"github.com/ryankurte/authplz/token"
-	"github.com/ryankurte/authplz/usercontroller"
 )
 
 // Application global context
 // TODO: this should probably be split and bound by module
 type AuthPlzGlobalCtx struct {
-	port            string
-	address         string
-	url             string
-	userController  *usercontroller.UserController
-	tokenController *token.TokenController
-	sessionStore    *sessions.CookieStore
+	port         string
+	address      string
+	url          string
+	sessionStore *sessions.CookieStore
 }
 
 // Application handler context
@@ -37,6 +31,10 @@ type AuthPlzCtx struct {
 	remoteAddr   string
 	forwardedFor string
 	locale       string
+}
+
+type User interface {
+	GetId() string
 }
 
 // Convenience type to describe middleware functions
@@ -84,21 +82,7 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	// Save session for further use
 	ctx.session = session
 
-	// Load user from session if set
-	// TODO: this will be replaced with sessions when implemented
-	if session.Values["userId"] != nil {
-
-		// Check user account exists
-		// TODO: this is inefficient, but, bad shit happens if an account is deleted between API calls
-		// Need better session management
-		u, err := ctx.global.userController.GetUser(ctx.userid)
-		if (err != nil) || (u == nil) {
-			log.Printf("Session middleware: user token invalid %s", ctx.userid)
-			session.Options.MaxAge = -1
-		} else {
-			ctx.userid = session.Values["userId"].(string)
-		}
-	}
+	// TODO: load user from session
 
 	session.Save(req.Request, rw)
 	next(rw, req)
@@ -143,14 +127,14 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 }
 
 // Helper function to login a user
-func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCtx) LoginUser(u User, rw web.ResponseWriter, req *web.Request) {
 	if c.session == nil {
 		log.Printf("Error logging in user, no session found")
 		return
 	}
-	c.session.Values["userId"] = u.ExtId
+	c.session.Values["userId"] = u.GetId()
 	c.session.Save(req.Request, rw)
-	c.userid = u.ExtId
+	c.userid = u.GetId()
 }
 
 // Helper function to logout a user

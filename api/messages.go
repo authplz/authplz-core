@@ -1,6 +1,12 @@
 package api
 
-import "log"
+import (
+	"log"
+)
+
+// API result types
+const ApiResultOk string = "ok"
+const ApiResultError string = "error"
 
 // Common API response object
 type ApiResponse struct {
@@ -9,10 +15,6 @@ type ApiResponse struct {
 	// Message corresponding to response status
 	Message string `json:"message"`
 }
-
-// API result types
-const ApiResultOk string = "ok"
-const ApiResultError string = "error"
 
 // API status message container
 // Represents all available API instances
@@ -82,3 +84,4 @@ var ApiResponseUnlockSuccessful = ApiResponse{ApiResultOk, GetApiLocale(DefaultL
 var ApiResponseUnauthorized = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).Unauthorized}
 var ApiResponseInvalidToken = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InvalidToken}
 var ApiResponseInternalError = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InternalError}
+

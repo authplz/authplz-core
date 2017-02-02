@@ -1,8 +1,16 @@
-package app
+package core
 
-import "errors"
-import "crypto/rand"
-import "encoding/base64"
+import (
+	"log"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+)
+
+import (
+	"github.com/kelseyhightower/envconfig"
+	"github.com/jessevdk/go-flags"
+)
 
 // AuthPlz configuration structure
 type AuthPlzConfig struct {
@@ -63,3 +71,29 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
 	return &c, nil
 }
+
+func GetConfig() *AuthPlzConfig {
+
+	// Fetch default configuration
+	c, err := DefaultConfig()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Parse config structure through environment
+	err = envconfig.Process("authplz", c)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Override environment with command line args
+	_, err = flags.Parse(c)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	
+	return c;
+}
+
+
+

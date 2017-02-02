@@ -1,13 +1,13 @@
 package core
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 )
 
 import (
-	"github.com/gocraft/web"
 	"github.com/asaskevich/govalidator"
+	"github.com/gocraft/web"
 )
 
 // Auth status for module pre/post auth handlers
@@ -15,59 +15,47 @@ type AuthStatus string
 
 const (
 	// Module authentication OK
-	AuthOk      AuthStatus = "ok"
+	AuthOk AuthStatus = "ok"
 	// Module authentication pending
 	// The module returning this must redirect the requester and complete authentication
 	AuthPending AuthStatus = "pending"
 	// Module authentication failed
 	// The module returning this must return an to the requester
-	AuthFailed  AuthStatus = "failed"
+	AuthFailed AuthStatus = "failed"
 )
-
-type AuthResult map[string]AuthStatus
-
-func (ar *AuthResult) containsResult(status AuthStatus) bool {
-	for _, v := range(ar) {
-		if v == status {
-			return true
-		}
-	}
-	return false
-}
-
-func (ar *AuthResult) Failed() bool {
-	return ar.containsResult(AuthFailed)
-}
-
-func (ar *AuthResult) Pending() bool {
-	return !ar.containsResult(AuthFailed) && ar.containsResult(AuthPending)
-}
-
-func (ar *AuthResult) Success() bool {
-	return !ar.containsResult(AuthFailed) && !ar.containsResult(AuthPending)
-}
 
 type Module interface {
 	// Pre-auth handlers for pre user rate limiting / IP blocking etc.
+	// These are run prior to user identification
 	PreAuth(rw web.ResponseWriter, req *web.Request) (bool, error)
+	// Post-auth handlers for further modules, ie. mailing, analytics.
+	// These are run after user password has been accepted
+	PostAuth(userid string, rw web.ResponseWriter, req *web.Request) (bool, error)
+}
+
+type PreAuthHandler interface {
+	// Pre-auth handlers for pre user rate limiting / IP blocking etc.
+	PreAuth(rw web.ResponseWriter, req *web.Request) (bool, error)
+}
+
+type PostAuthHandler interface {
 	// Post-auth handlers for further modules, ie. U2F, logging.
-	// These handlers can intercept and continue the login flow later
-	PostAuth(userid string, rw web.ResponseWriter, req *web.Request) (AuthStatus, error)
+	PostAuth(userid string, rw web.ResponseWriter, req *web.Request) (bool, error)
 }
 
 // Basic login control interface
 type LoginControl interface {
-	// Delegated login call, this must return true/false for password failure/success 
+	// Delegated login call, this must return true/false for password failure/success
 	// as well as the user object if found
-	Login(email string, password string) (bool, *User, error)
+	Login(email string, password string) (bool, User, error)
 }
 
-type User interface {
-	GetId() string
+type SecondFactor interface {
+	CanAuthenticate(userid string) (bool, error)
 }
 
 const (
-	StatusOk 	string = "ok"
+	StatusOk    string = "ok"
 	StatusError string = "error"
 )
 
@@ -82,13 +70,13 @@ type ModuleResponse struct {
 
 type ModuleManager struct {
 	// Base login control
-	lc *LoginControl
+	lc LoginControl
 	// Modules bound into the manager
 	modules map[string]Module
 }
 
 // Create a new module manager instance
-func NewModuleManager(lc* LoginControl) *ModuleManager {
+func NewModuleManager(lc LoginControl) *ModuleManager {
 	modules := make(map[string]Module)
 	return &ModuleManager{lc, modules}
 }
@@ -114,13 +102,13 @@ func (m *ModuleManager) Login(rw web.ResponseWriter, req *web.Request) {
 	for name, module := range m.modules {
 		ok, err := module.PreAuth(rw, req)
 		if err != nil {
-			rw.WriteHeader(http.StatusInternalError)
-			log.Printf("ModuleManager module: %s error: %s\n", name, err);
+			rw.WriteHeader(http.StatusInternalServerError)
+			log.Printf("ModuleManager module: %s error: %s\n", name, err)
 			return
 		}
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
-			log.Printf("ModuleManager pre-auth blocked by module %s\n", name);
+			log.Printf("ModuleManager pre-auth blocked by module %s\n", name)
 			return
 		}
 	}
@@ -142,87 +130,24 @@ func (m *ModuleManager) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	// Run post-login hooks
-	postAuth := make(AuthResult)
+	// Run post-auth hooks
 	for name, module := range m.modules {
-		res, err := module.PostAuth(rw, req)
+		res, err := module.PostAuth(u.GetId(), rw, req)
 		if err != nil {
-			rw.WriteHeader(http.StatusInternalError)
-			log.Printf("ModuleManager post-auth module: %s error: %s\n", name, err);
+			rw.WriteHeader(http.StatusInternalServerError)
+			log.Printf("ModuleManager post-auth module: %s error: %s\n", name, err)
 			return
 		}
-		postAuth[name] = res;
+		if !res {
+			rw.WriteHeader(http.StatusUnauthorized)
+			log.Printf("ModuleManager post-auth blocked by module %s\n", name)
+			return
+		}
 	}
 
-	// Check for failures
-	if postAuth.Failed() {
-		rw.WriteHeader(http.StatusUnauthorized)
-		log.Printf("ModuleManager: post-auth blocked\n")
-	}
-
-	// Check for pending components
-	if postAuth.Pending() {
-
-	}
-
-	//
+	// TODO: enact login
 	log.Printf("ModuleManager: auth failed (unknown path)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 
-func (m *ModuleManager) PostLogin(rw web.ResponseWriter, req *web.Request) {
-	// For each bound module
-	for name, module := range m.modules {
-		res, err := module.PostAuth(rw, req)
-		if err != nil {
-			rw.WriteHeader(http.StatusInternalError)
-			log.Printf("ModuleManager post-auth module: %s error: %s\n", name, err);
-			return
-		}
-		if res == AuthFailed {
-			rw.WriteHeader(http.StatusUnauthorized)
-			log.Printf("ModuleManager post-auth blocked by module %s\n", name);
-			return;
-		}
-		if res == AuthPending {
-			//TODO: cache auth state for future completion
-			return;
-		}
-	}
-
-	log.Printf("Login: Login failed\n")
-	rw.WriteHeader(http.StatusUnauthorized)
-}
-
-type FidoModule struct {
-	authUrl string
-	registerUrl string
-}
-
-func (f *FidoModule) PreAuth(rw web.ResponseWriter, req *web.Request) (bool, error) {
-	// Stub implementation (not required)
-	return true, nil
-}
-
-func (f *FidoModule) PostAuth(userid string, rw web.ResponseWriter, req *web.Request) (LoginStatus, error) {
-	// If the user has tokens attached, redirect to u2f endpoint
-
-
-	return AuthPending
-
-	// If the user has no tokens, return ok
-	return AuthOk
-}
-
-func (f *FidoModule) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
-	// Return challenges to user
-}
-
-func (f *FidoModule) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
-	// Check submitted response
-
-	// Fail login if invalid
-
-	// Continue login if valid
-}
 

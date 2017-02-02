@@ -25,10 +25,6 @@ type TokenStoreInterface interface {
 	UpdateFidoToken(t *datastore.FidoToken) (*datastore.FidoToken, error)
 }
 
-type MailInterface interface {
-	Send(email string, subject string, body string)
-}
-
 // Login status return objects
 type LoginStatus struct {
 	Code    uint64
@@ -62,12 +58,11 @@ const minimumPasswordLength = 6
 type UserController struct {
 	userStore  UserStoreInterface
 	tokenStore TokenStoreInterface
-	mail       MailInterface
 	hashRounds int
 }
 
-func NewUserController(userStore UserStoreInterface, tokenStore TokenStoreInterface, mail MailInterface) UserController {
-	return UserController{userStore, tokenStore, mail, 8}
+func NewUserController(userStore UserStoreInterface, tokenStore TokenStoreInterface) UserController {
+	return UserController{userStore, tokenStore, 8}
 }
 
 func (userController *UserController) Create(email string, pass string) (user *datastore.User, err error) {
