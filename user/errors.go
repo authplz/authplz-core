@@ -1,7 +1,8 @@
-package usercontroller
+package user
 
 import "errors"
 
+// User control errors
 var (
 	ErrorPasswordTooShort     = errors.New("User Controller: password does not meet complexity requirements")
 	ErrorPasswordHashTooShort = errors.New("User Controller: password hash too short")

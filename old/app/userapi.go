@@ -13,47 +13,6 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
-func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
-	email := req.FormValue("email")
-	if !govalidator.IsEmail(email) {
-		log.Printf("Create: email parameter required")
-		rw.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	password := req.FormValue("password")
-	if password == "" {
-		log.Printf("Create: password parameter required")
-		rw.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	u, e := c.global.userController.Create(email, password)
-	if e != nil {
-		log.Printf("Create: user creation failed with %s", e)
-
-		if e == usercontroller.ErrorDuplicateAccount {
-			c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).CreateUserSuccess)
-			return
-		} else if e == usercontroller.ErrorPasswordTooShort {
-			c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).PasswordComplexityTooLow)
-			return
-		}
-
-		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
-		return
-	}
-
-	if u == nil {
-		log.Printf("Create: user creation failed")
-		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
-		return
-	}
-
-	log.Println("Create: Create OK")
-
-	c.WriteApiResult(rw, api.ApiResultOk, api.GetApiLocale(c.locale).CreateUserSuccess)
-}
-
 // Handle an action token
 func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
 

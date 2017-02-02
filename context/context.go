@@ -1,4 +1,4 @@
-package core
+package context
 
 import (
 	"encoding/json"
@@ -115,6 +115,11 @@ func (c *AuthPlzCtx) GetLocaleMiddleware(rw web.ResponseWriter, req *web.Request
 	}
 
 	next(rw, req)
+}
+
+// Fetch the APIMessageContainer for a given language to provide locale specific response messages
+func (c *AuthPlzCtx) GetApiMessageInst() *api.ApiMessageContainer {
+	return api.GetApiLocale(c.locale)
 }
 
 // Middleware to ensure only logged in access to an endpoint

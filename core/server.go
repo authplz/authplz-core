@@ -2,7 +2,6 @@ package core
 
 import (
 	"encoding/base64"
-	//"encoding/gob"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +14,10 @@ import (
 	"github.com/gorilla/sessions"
 	//"github.com/ryankurte/go-u2f"
 
+	"github.com/ryankurte/authplz/context"
 	"github.com/ryankurte/authplz/datastore"
+
+	"github.com/ryankurte/authplz/user"
 	//"github.com/ryankurte/authplz/token"
 	//"github.com/ryankurte/authplz/usercontroller"
 )
@@ -53,13 +55,14 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// TODO: Create CSRF middleware
 
-	// Create controllers
-	//uc := usercontroller.NewUserController(server.ds, server.ds, nil)
-
+	// Create shared controllers
 
 	//log.Printf("Token secret: %s\n", TokenSecret)
 	//tc := token.NewTokenController(server.config.Address, string(tokenSecret))
 
+	userModule := user.NewUserModule(ds);
+
+	// Generate URL string
 	var url string
 	if config.NoTls == false {
 		url = "https://" + config.Address + ":" + config.Port
@@ -68,7 +71,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 
 	// Create a global context object
-	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, sessionStore}
+	server.ctx = context.AuthPlzGlobalCtx{config.Port, config.Address, url, sessionStore}
 
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).
