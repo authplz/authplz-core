@@ -96,7 +96,9 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create API router
 	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
 
-/*
+	//userModule.Bind(server.router)
+
+
 	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
 	apiRouter.Post("/create", (*AuthPlzCtx).Create)
 	apiRouter.Post("/login", (*AuthPlzCtx).Login)
@@ -107,7 +109,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	apiRouter.Get("/account", (*AuthPlzCtx).AccountGet)
 	apiRouter.Post("/account", (*AuthPlzCtx).AccountPost)
 	apiRouter.Get("/test", (*AuthPlzCtx).Test)
-
+/*
 	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).U2FEnrolGet)
 	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).U2FEnrolPost)
 	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)

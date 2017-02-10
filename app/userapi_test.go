@@ -207,7 +207,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionUnlock, d)
+		at, _ := server.ctx.tokenController.BuildToken("bad user id", token.TokenActionUnlock, d)
 
 		// Post activation token
 		v := url.Values{}

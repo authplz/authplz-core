@@ -57,6 +57,47 @@ func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWrit
 	}
 }
 
+func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
+    email := req.FormValue("email")
+    if !govalidator.IsEmail(email) {
+        log.Printf("Create: email parameter required")
+        rw.WriteHeader(http.StatusBadRequest)
+        return
+    }
+    password := req.FormValue("password")
+    if password == "" {
+        log.Printf("Create: password parameter required")
+        rw.WriteHeader(http.StatusBadRequest)
+        return
+    }
+
+    u, e := c.global.userController.Create(email, password)
+    if e != nil {
+        log.Printf("Create: user creation failed with %s", e)
+
+        if e == user.ErrorDuplicateAccount {
+            c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().CreateUserSuccess)
+            return
+        } else if e == user.ErrorPasswordTooShort {
+            c.WriteApiResult(rw, api.ApiResultError, c.GetApiMessageInst().PasswordComplexityTooLow)
+            return
+        }
+
+        c.WriteApiResult(rw, api.ApiResultError, c.GetApiMessageInst().InternalError)
+        return
+    }
+
+    if u == nil {
+        log.Printf("Create: user creation failed")
+        c.WriteApiResult(rw, api.ApiResultError, c.GetApiMessageInst().InternalError)
+        return
+    }
+
+    log.Println("Create: Create OK")
+
+    c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().CreateUserSuccess)
+}
+
 // Login to a user account
 func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters

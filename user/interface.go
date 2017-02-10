@@ -19,10 +19,10 @@ type User interface {
     IsEnabled() bool
     SetEnabled(locked bool)
 
-    GetLoginRetries() int
-    SetLoginRetries(retries int)
+    GetLoginRetries() uint
+    SetLoginRetries(retries uint)
 
-    GetLastLogin() bool
+    GetLastLogin() time.Time
     SetLastLogin(t time.Time)
 
     IsLocked() bool

@@ -45,6 +45,8 @@ func (u *User) SetAdmin(admin bool)         { u.Admin = admin }
 func (u *User) GetLoginRetries() uint       { return u.LoginRetries }
 func (u *User) SetLoginRetries(retries uint){ u.LoginRetries = retries }
 func (u *User) ClearLoginRetries()          { u.LoginRetries = 0 }
+func (u *User) GetLastLogin() time.Time     { return u.LastLogin }
+func (u *User) SetLastLogin(t time.Time)	{ u.LastLogin = t }
 
 // Check if a user has attached second factors
 func (u *User) SecondFactors() bool {

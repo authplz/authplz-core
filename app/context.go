@@ -68,6 +68,11 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 	ctx.WriteJson(w, apiResp)
 }
 
+// Fetch the APIMessageContainer for a given language to provide locale specific response messages
+func (c *AuthPlzCtx) GetApiMessageInst() *api.ApiMessageContainer {
+	return api.GetApiLocale(c.locale)
+}
+
 // User session layer
 // Middleware matches user session if it exists and saves userid to the session object
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
