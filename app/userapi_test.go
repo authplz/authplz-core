@@ -62,6 +62,7 @@ func TestMain(t *testing.T) {
 	// Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123"
+	var userId = ""
 
 	// Attempt database connection
 	c.NoTls = true
@@ -78,7 +79,6 @@ func TestMain(t *testing.T) {
 	apiPath := "http://" + c.Address + ":" + c.Port + "/api"
 
 	client := NewTestClient(apiPath)
-	var user *datastore.User
 
 	vt, _ := u2f.NewVirtualKey()
 
@@ -95,7 +95,17 @@ func TestMain(t *testing.T) {
 
 		client.BindTest(t).TestPostForm("/create", http.StatusOK, v)
 
-		user, _ = server.ds.GetUserByEmail(fakeEmail)
+		u, _ := server.ds.GetUserByEmail(fakeEmail)
+
+		user := u.(*datastore.User)
+		userId = user.GetExtId()
+	})
+
+	t.Run("User loaded", func(t *testing.T) {
+		if userId == "" {
+			t.Errorf("User loading failed")
+			t.FailNow()
+		}
 	})
 
 	t.Run("Login fails prior to activation", func(t *testing.T) {
@@ -134,7 +144,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(user.ExtId, token.TokenActionActivate, d)
+		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)
@@ -197,7 +207,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionUnlock, d)
+		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionUnlock, d)
 
 		// Post activation token
 		v := url.Values{}
@@ -218,7 +228,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(user.ExtId, token.TokenActionUnlock, d)
+		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionUnlock, d)
 
 		// Use a separate test client instance
 		client2 := NewTestClient(apiPath)

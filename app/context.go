@@ -12,9 +12,8 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/ryankurte/authplz/api"
-	"github.com/ryankurte/authplz/datastore"
 	"github.com/ryankurte/authplz/token"
-	"github.com/ryankurte/authplz/usercontroller"
+	"github.com/ryankurte/authplz/user"
 )
 
 // Application global context
@@ -23,7 +22,7 @@ type AuthPlzGlobalCtx struct {
 	port            string
 	address         string
 	url             string
-	userController  *usercontroller.UserController
+	userController  *user.UserModule
 	tokenController *token.TokenController
 	sessionStore    *sessions.CookieStore
 }
@@ -142,15 +141,20 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 	}
 }
 
+type User interface {
+	GetExtId() string
+	GetEmail() string
+}
+
 // Helper function to login a user
-func (c *AuthPlzCtx) LoginUser(u *datastore.User, rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCtx) LoginUser(u User, rw web.ResponseWriter, req *web.Request) {
 	if c.session == nil {
 		log.Printf("Error logging in user, no session found")
 		return
 	}
-	c.session.Values["userId"] = u.ExtId
+	c.session.Values["userId"] = u.GetExtId()
 	c.session.Save(req.Request, rw)
-	c.userid = u.ExtId
+	c.userid = u.GetExtId()
 }
 
 // Helper function to logout a user

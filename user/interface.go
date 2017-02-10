@@ -2,21 +2,39 @@ package user;
 
 import (
     "time"
+    "errors"
 )
 
 // Defines the User object interface required by this module
 type User interface {
-    GetId() string
+    GetExtId() string
+    GetEmail() string
+
+    GetPassword() string
     SetPassword(pass string)
-    SetPasswordUpdated(t time.Time)
+
+    IsActivated() bool
+    SetActivated(activated bool)
+
+    IsEnabled() bool
+    SetEnabled(locked bool)
+
+    GetLoginRetries() int
+    SetLoginRetries(retries int)
+
+    GetLastLogin() bool
+    SetLastLogin(t time.Time)
+
+    IsLocked() bool
+    SetLocked(locked bool)
 }
 
 // Defines the required store interfaces for the user module
 type UserStoreInterface interface {
-    AddUser(email string, pass string) (user User, err error)
-    GetUserByExtId(userid string) (user User, err error)
-    GetUserByEmail(email string) (user User, err error)
-    UpdateUser(user interface{}) (User, error)
+    AddUser(email string, pass string) (interface{}, error)
+    GetUserByExtId(userid string) (interface{}, error)
+    GetUserByEmail(email string) (interface{}, error)
+    UpdateUser(user interface{}) (interface{}, error)
 }
 
 // Login status return objects

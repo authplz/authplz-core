@@ -5,6 +5,7 @@ package token
 
 import "time"
 import "fmt"
+import "encoding/gob"
 
 import "github.com/dgrijalva/jwt-go"
 import "github.com/satori/go.uuid"
@@ -33,8 +34,8 @@ func init() {
 }
 
 //TokenController constructor
-func NewTokenController(address string, hmacSecret string) TokenController {
-	return TokenController{address: address, hmacSecret: []byte(hmacSecret)}
+func NewTokenController(address string, hmacSecret string) *TokenController {
+	return &TokenController{address: address, hmacSecret: []byte(hmacSecret)}
 }
 
 // Generate an action token

@@ -14,14 +14,18 @@ type TotpToken struct {
 	LastUsed   time.Time
 }
 
-func (ds *DataStore) AddTotpToken(u *User, totpToken *TotpToken) (user *User, err error) {
+func (ds *DataStore) AddTotpToken(u *User, totpToken *TotpToken) (*User, error) {
+	//u := user.(*User)
+
 	u.TotpTokens = append(u.TotpTokens, *totpToken)
-	u, err = ds.UpdateUser(u)
+	_, err := ds.UpdateUser(u)
 	return u, err
 }
 
 func (dataStore *DataStore) GetTotpTokens(u *User) ([]TotpToken, error) {
 	var totpTokens []TotpToken
+
+	//u := user.(*User)
 
 	err := dataStore.db.Model(u).Related(&totpTokens).Error
 

@@ -53,6 +53,7 @@ func (ds *DataStore) ForceSync() {
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")
 }
 
+/*
 func (ds *DataStore) AddAuditEvent(u *User, auditEvent *AuditEvent) (user *User, err error) {
 	u.AuditEvents = append(u.AuditEvents, *auditEvent)
 	u, err = ds.UpdateUser(u)
@@ -66,3 +67,4 @@ func (dataStore *DataStore) GetAuditEvents(u *User) ([]AuditEvent, error) {
 
 	return auditEvents, err
 }
+*/

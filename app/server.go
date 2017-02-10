@@ -1,4 +1,4 @@
-package core
+package app
 
 import (
 	"encoding/base64"
@@ -14,11 +14,11 @@ import (
 	"github.com/gorilla/sessions"
 	//"github.com/ryankurte/go-u2f"
 
-	"github.com/ryankurte/authplz/context"
+//	"github.com/ryankurte/authplz/context"
 	"github.com/ryankurte/authplz/datastore"
 
 	"github.com/ryankurte/authplz/user"
-	//"github.com/ryankurte/authplz/token"
+	"github.com/ryankurte/authplz/token"
 	//"github.com/ryankurte/authplz/usercontroller"
 )
 
@@ -58,7 +58,12 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create shared controllers
 
 	//log.Printf("Token secret: %s\n", TokenSecret)
-	//tc := token.NewTokenController(server.config.Address, string(tokenSecret))
+	tokenSecret, err := base64.URLEncoding.DecodeString(config.TokenSecret)
+	if err != nil {
+		log.Println(err)
+		log.Panic("Error decoding cookie secret")
+	}
+	tokenController := token.NewTokenController(server.config.Address, string(tokenSecret))
 
 	userModule := user.NewUserModule(ds);
 
@@ -71,7 +76,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 
 	// Create a global context object
-	server.ctx = context.AuthPlzGlobalCtx{config.Port, config.Address, url, sessionStore}
+	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, userModule, tokenController, sessionStore}
 
 	// Create router
 	server.router = web.New(AuthPlzCtx{}).

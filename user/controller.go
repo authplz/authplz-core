@@ -14,14 +14,15 @@ import(
 
 //TODO: change this to enforce actual complexity
 const minimumPasswordLength = 12
+const hashRounds = 8
 
 type UserModule struct {
 	userStore  UserStoreInterface
 	hashRounds int
 }
 
-func NewUserModule(userStore UserStoreInterface) UserModule {
-	return UserModule{userStore, 8}
+func NewUserModule(userStore UserStoreInterface) *UserModule {
+	return &UserModule{userStore, hashRounds}
 }
 
 func (userModule *UserModule) Bind(router *web.Router) {
@@ -35,7 +36,7 @@ func (userModule *UserModule) Bind(router *web.Router) {
 }
 
 // Create a new user account
-func (userModule *UserModule) Create(email string, pass string) (user *User, err error) {
+func (userModule *UserModule) Create(email string, pass string) (user User, err error) {
 
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userModule.hashRounds)
@@ -60,6 +61,7 @@ func (userModule *UserModule) Create(email string, pass string) (user *User, err
 		return nil, ErrorDuplicateAccount
 	}
 
+
 	// Add user to database (disabled)
 	u, err = userModule.userStore.AddUser(email, string(hash))
 	if err != nil {
@@ -68,14 +70,16 @@ func (userModule *UserModule) Create(email string, pass string) (user *User, err
 		return nil, ErrorCreatingUser
 	}
 
+	user = u.(User)
+
 	// TODO: emit user creation event
 
-	log.Printf("UserModule.Create: User %s created\r\n", u.GetId())
+	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtId())
 
-	return u, nil
+	return user, nil
 }
 
-func (userModule *UserModule) Activate(email string) (user *User, err error) {
+func (userModule *UserModule) Activate(email string) (user User, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -85,21 +89,26 @@ func (userModule *UserModule) Activate(email string) (user *User, err error) {
 		return nil, loginError
 	}
 
-	u.Activated = true
 
-	u, err = userModule.userStore.UpdateUser(u)
+	user = u.(User)
+
+	user.SetActivated(true)
+
+	u, err = userModule.userStore.UpdateUser(user)
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
 		return nil, loginError
 	}
 
-	log.Printf("UserModule.Activate: User %s account activated\r\n", u.GetId())
+	user = u.(User)
 
-	return u, nil
+	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtId())
+
+	return user, nil
 }
 
-func (userModule *UserModule) Unlock(email string) (user *User, err error) {
+func (userModule *UserModule) Unlock(email string) (user User, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -109,22 +118,26 @@ func (userModule *UserModule) Unlock(email string) (user *User, err error) {
 		return nil, loginError
 	}
 
-	u.Locked = false
+	user = u.(User)
 
-	u, err = userModule.userStore.UpdateUser(u)
+	user.SetLocked(false)
+
+	u, err = userModule.userStore.UpdateUser(user)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
 		return nil, loginError
 	}
 
-	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", u.GetId())
+	user = u.(User)
 
-	return u, nil
+	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtId())
+
+	return user, nil
 }
 
 //TODO: differentiate between login states and internal errors
-func (userModule *UserModule) Login(email string, pass string) (status *LoginStatus, user *User, err error) {
+func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, User, error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -138,29 +151,32 @@ func (userModule *UserModule) Login(email string, pass string) (status *LoginSta
 	// Avoids leaking account info by login timing
 	hash := "fake password hash"
 	if u != nil {
-		hash = u.Password
+		user := u.(User)
+		hash = user.GetPassword()
 	}
 
 	// Generate password hash
 	hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 	if hashErr != nil {
-
 		if u != nil {
-			u.LoginRetries++
+			user := u.(User)
+			retries := user.GetLoginRetries()
 
-			if (u.LoginRetries > 5) && (u.Locked == false) {
-				log.Printf("UserModule.Login: Locking user %s", u.GetId())
-				u.Locked = true
+			user.SetLoginRetries(retries + 1)
+
+			if (retries > 5) && (user.IsLocked() == false) {
+				log.Printf("UserModule.Login: Locking user %s", user.GetExtId())
+				user.SetLocked(true)
 			}
 
-			u, err = userModule.userStore.UpdateUser(u)
+			u, err = userModule.userStore.UpdateUser(user)
 			if err != nil {
 				// Userstore error, wrap
 				log.Println(err)
 				return nil, nil, loginError
 			}
 
-			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", u.GetId())
+			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
 		} else {
 			log.Printf("UserModule.Login: Login failed, unrecognised account\r\n")
 		}
@@ -171,53 +187,54 @@ func (userModule *UserModule) Login(email string, pass string) (status *LoginSta
 
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
+		user := u.(User)
 
-		u.FidoTokens, _ = userModule.tokenStore.GetFidoTokens(u)
+		//u.FidoTokens, _ = userModule.tokenStore.GetFidoTokens(u)
 		//TotpTokens, _ := userModule.tokenStore.GetTotpTokens(u)
 
-		if u.Enabled == false {
+		if user.IsEnabled() == false {
 			//TODO: handle disabled error
-			log.Printf("UserModule.Login: User %s login failed, account disabled\r\n", u.GetId())
-			return &LoginDisabled, u, nil
+			log.Printf("UserModule.Login: User %s login failed, account disabled\r\n", user.GetExtId())
+			return &LoginDisabled, user, nil
 		}
 
-		if u.Activated == false {
+		if user.IsActivated() == false {
 			//TODO: handle un-activated error
-			log.Printf("UserModule.Login: User %s login failed, account deactivated\r\n", u.GetId())
-			return &LoginUnactivated, u, nil
+			log.Printf("UserModule.Login: User %s login failed, account deactivated\r\n", user.GetExtId())
+			return &LoginUnactivated, user, nil
 		}
 
-		if u.Locked == true {
+		if user.IsLocked() == true {
 			//TODO: handle locked error
-			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", u.GetId())
-			return &LoginLocked, u, nil
+			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", user.GetExtId())
+			return &LoginLocked, user, nil
 		}
-
+/*
 		if u.SecondFactors() == true {
 			// Prompt for second factor login
-			log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetId())
+			log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetExtId())
 			return &LoginPartial, u, nil
 		}
-
-		log.Printf("UserModule.Login: User %s login successful\r\n", u.GetId())
+*/
+		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
 
 		// Update login time etc.
-		u.LastLogin = time.Now()
-		_, err = userModule.userStore.UpdateUser(u)
+		user.SetLastLogin(time.Now())
+		_, err = userModule.userStore.UpdateUser(user)
 		if err != nil {
 			log.Println(err)
 			return &LoginFailure, nil, nil
 		}
 
-		return &LoginSuccess, u, nil
+		return &LoginSuccess, user, nil
 	}
 
 	return &LoginFailure, nil, nil
 }
 
-func (userModule *UserModule) GetUser(extId string) (user *User, err error) {
+func (userModule *UserModule) GetUser(extId string) (User, error) {
 	// Attempt to fetch user
-	u, err := userModule.userStore.GetUserByGetId()(extId)
+	u, err := userModule.userStore.GetUserByExtId(extId)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -230,21 +247,28 @@ func (userModule *UserModule) GetUser(extId string) (user *User, err error) {
 		return nil, ErrorUserNotFound
 	}
 
-	return sanatizeUser(u), nil
+	return u.(User), nil
 }
 
-func (userModule *UserModule) UpdatePassword(extId string, old string, new string) (user *User, err error) {
+func (userModule *UserModule) UpdatePassword(extId string, old string, new string) (User, error) {
 
 	// Fetch user
-	u, err := userModule.userStore.GetUserByGetId()(extId)
+	u, err := userModule.userStore.GetUserByExtId(extId)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
 		return nil, ErrorUserNotFound
 	}
 
+	if u == nil {
+		log.Println("UpdatePassword error, user not found")
+		return nil, ErrorUserNotFound
+	}
+
+	user := u.(User)
+
 	// Check password
-	hashErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(old))
+	hashErr := bcrypt.CompareHashAndPassword([]byte(user.GetPassword()), []byte(old))
 	if hashErr != nil {
 		return nil, ErrorPasswordMismatch
 	}
@@ -256,9 +280,8 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 	}
 
 	// Update user object
-	u.SetPassword(string(hash))
-	u.SetPasswordChanged(time.Now())
-	u, err = userModule.userStore.UpdateUser(u)
+	user.SetPassword(string(hash))
+	u, err = userModule.userStore.UpdateUser(user)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -267,22 +290,7 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 
 	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", extId)
 
-	return sanatizeUser(u), nil
+	return user, nil
 }
 
 
-// Internal function to remove non-public user fields prior to returning user objects
-func sanatizeUser(u *User) *User {
-	sanatizedUser := User{
-		GetId():     u.GetId(),
-		Email:     u.Email,
-		Activated: u.Activated,
-		Enabled:   u.Enabled,
-		Locked:    u.Locked,
-		Admin:     u.Admin,
-		LastLogin: u.LastLogin,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-	}
-	return &sanatizedUser
-}

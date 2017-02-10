@@ -3,18 +3,17 @@ package app
 import "fmt"
 import "log"
 import "net/http"
-import "encoding/json"
+//import "encoding/json"
 
 import "github.com/gocraft/web"
 import "github.com/asaskevich/govalidator"
 
-import "github.com/ryankurte/authplz/usercontroller"
+import "github.com/ryankurte/authplz/user"
 import "github.com/ryankurte/authplz/token"
-import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/api"
 
 // Handle an action token
-func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
+func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
 
 	// Check token validity
 	claims, err := c.global.tokenController.ParseToken(tokenString)
@@ -24,7 +23,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 		return fmt.Errorf("Invalid or expired token")
 	}
 
-	if u.ExtId != claims.Subject {
+	if u.GetExtId() != claims.Subject {
 		log.Println("HandleToken: Token subject does not match user id")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return fmt.Errorf("Token subject does not match user id")
@@ -34,7 +33,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 	case token.TokenActionUnlock:
 		log.Printf("HandleToken: Unlocking user\n")
 
-		c.global.userController.Unlock(u.Email)
+		c.global.userController.Unlock(u.GetEmail())
 
 		// Create session
 		c.LoginUser(u, rw, req)
@@ -44,7 +43,7 @@ func (c *AuthPlzCtx) HandleToken(u *datastore.User, tokenString string, rw web.R
 	case token.TokenActionActivate:
 		log.Printf("HandleToken: Activating user\n")
 
-		c.global.userController.Activate(u.Email)
+		c.global.userController.Activate(u.GetEmail())
 
 		// Create session
 		c.LoginUser(u, rw, req)
@@ -85,7 +84,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Handle simple logins
-	if l == &usercontroller.LoginSuccess {
+	if l == &user.LoginSuccess {
 		log.Println("Login: Login OK")
 
 		// Create session
@@ -110,16 +109,16 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Handle not yet activated accounts
-	if l == &usercontroller.LoginUnactivated {
+	if l == &user.LoginUnactivated {
 		log.Println("Login: Account not activated")
 		//TODO: prompt for activation (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
-		//c.WriteApiResult(rw, api.ApiResultError, usercontroller.LoginUnactivated.Message);
+		//c.WriteApiResult(rw, api.ApiResultError, user.LoginUnactivated.Message);
 		return
 	}
 
 	// TODO: handle locked accounts
-	if l == &usercontroller.LoginLocked {
+	if l == &user.LoginLocked {
 		log.Println("Login: Account locked")
 		//TODO: prompt for unlock (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -127,10 +126,10 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Handle partial logins (2FA)
-	if l == &usercontroller.LoginPartial {
+	if l == &user.LoginPartial {
 		log.Println("Login: Partial login")
 		//TODO: fetch tokens and set flash for 2FA
-		c.U2FBindAuthenticationRequest(rw, req, u.ExtId)
+		//c.U2FBindAuthenticationRequest(rw, req, u.GetExtId())
 		rw.WriteHeader(http.StatusAccepted)
 		//c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).2FARequired);
 		return

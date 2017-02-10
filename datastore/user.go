@@ -30,19 +30,20 @@ type User struct {
 }
 
 // Getters and Setters
-func (u *User) GetExId() string             { return u.ExtId }
+func (u *User) GetExtId() string            { return u.ExtId }
 func (u *User) GetEmail() string            { return u.Email }
 func (u *User) GetPassword() string         { return u.Password }
 func (u *User) SetPassword(pass string)     { u.Password = pass }
-func (u *User) GetActivated() bool          { return u.Activated }
+func (u *User) IsActivated() bool           { return u.Activated }
 func (u *User) SetActivated(activated bool) { u.Activated = activated }
-func (u *User) GetEnabled() bool            { return u.Enabled }
+func (u *User) IsEnabled() bool             { return u.Enabled }
 func (u *User) SetEnabled(enabled bool)     { u.Enabled = enabled }
-func (u *User) GetLocked() bool             { return u.Locked }
+func (u *User) IsLocked() bool              { return u.Locked }
 func (u *User) SetLocked(locked bool)       { u.Locked = locked }
-func (u *User) GetAdmin() bool              { return u.Admin }
+func (u *User) IsAdmin() bool               { return u.Admin }
 func (u *User) SetAdmin(admin bool)         { u.Admin = admin }
 func (u *User) GetLoginRetries() uint       { return u.LoginRetries }
+func (u *User) SetLoginRetries(retries uint){ u.LoginRetries = retries }
 func (u *User) ClearLoginRetries()          { u.LoginRetries = 0 }
 
 // Check if a user has attached second factors
@@ -51,7 +52,7 @@ func (u *User) SecondFactors() bool {
 }
 
 // Add a user to the datastore
-func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
+func (dataStore *DataStore) AddUser(email string, pass string) (interface{}, error) {
 
 	if !govalidator.IsEmail(email) {
 		return nil, fmt.Errorf("invalid email address %s", email)
@@ -77,7 +78,7 @@ func (dataStore *DataStore) AddUser(email string, pass string) (*User, error) {
 }
 
 // Fetch a user account by email
-func (dataStore *DataStore) GetUserByEmail(email string) (*User, error) {
+func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 
 	var user User
 	err := dataStore.db.Where(&User{Email: email}).First(&user).Error
@@ -91,7 +92,7 @@ func (dataStore *DataStore) GetUserByEmail(email string) (*User, error) {
 }
 
 // Fetch a user account by external id
-func (dataStore *DataStore) GetUserByExtId(extId string) (*User, error) {
+func (dataStore *DataStore) GetUserByExtId(extId string) (interface{}, error) {
 
 	var user User
 	err := dataStore.db.Where(&User{ExtId: extId}).First(&user).Error
@@ -105,8 +106,10 @@ func (dataStore *DataStore) GetUserByExtId(extId string) (*User, error) {
 }
 
 // Update a user object
-func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
-	err := dataStore.db.Save(&user).Error
+func (dataStore *DataStore) UpdateUser(user interface{}) (interface{}, error) {
+	u := user.(*User)
+
+	err := dataStore.db.Save(&u).Error
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +118,10 @@ func (dataStore *DataStore) UpdateUser(user *User) (*User, error) {
 }
 
 // Fetch tokens attached to a user account
-func (dataStore *DataStore) GetTokens(u *User) (*User, error) {
+func (dataStore *DataStore) GetTokens(user interface{}) (interface{}, error) {
 	var err error
+
+	u := user.(*User)
 
 	u.FidoTokens, err = dataStore.GetFidoTokens(u)
 	u.TotpTokens, err = dataStore.GetTotpTokens(u)
