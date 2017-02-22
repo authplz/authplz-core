@@ -44,7 +44,9 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		if u2.Email != fakeEmail {
+		u2inst := u2.(*User)
+
+		if u2inst.GetEmail()!= fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -70,8 +72,9 @@ func TestDatastore(t *testing.T) {
 			t.Error("User find by email failed")
 			return
 		}
+		userInst := u.(*User)
 
-		if u.Email != fakeEmail {
+		if userInst.GetEmail()!= fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -89,7 +92,9 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		u, err = ds.GetUserByExtId(u.ExtId)
+		userInst := u.(*User)
+
+		u, err = ds.GetUserByExtId(userInst.GetExtId())
 		if err != nil {
 			t.Error(err)
 			return
@@ -99,7 +104,9 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		if u.Email != fakeEmail {
+		userInst = u.(*User)
+
+		if userInst.GetEmail()!= fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -117,15 +124,17 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		if u.Password != fakePass {
+		userInst := u.(*User)
+
+		if userInst.GetPassword()!= fakePass {
 			t.Error("Initial password mismatch")
 			return
 		}
 
 		newPassword := "NewPassword"
-		u.Password = newPassword
+		userInst.SetPassword(newPassword)
 
-		u, err = ds.UpdateUser(u)
+		_, err = ds.UpdateUser(userInst)
 		if err != nil {
 			t.Error(err)
 			return
@@ -137,7 +146,9 @@ func TestDatastore(t *testing.T) {
 			return
 		}
 
-		if u.Password != newPassword {
+		userInst = u.(*User)
+
+		if userInst.GetPassword()!= newPassword {
 			t.Error("Initial password mismatch")
 			return
 		}
@@ -169,7 +180,9 @@ func TestDatastore(t *testing.T) {
 
 		fmt.Printf("%+v", u)
 
-		if u.SecondFactors() == false {
+		userInst := u.(*User)
+
+		if userInst.SecondFactors() == false {
 			t.Error("No second factors found")
 			return
 		}
