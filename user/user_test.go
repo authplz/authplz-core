@@ -20,7 +20,7 @@ func TestUserController(t *testing.T) {
 	ds.ForceSync()
 
 	// Create controllers
-	uc := NewUserController(ds, ds, nil)
+	uc := NewUserModule(ds)
 
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)
@@ -98,8 +98,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.LastLogin == u2.LastLogin {
-			t.Errorf("Login times match (initial: %v new: %v)", u1.LastLogin, u2.LastLogin)
+		if u1.(User).GetLastLogin() == u2.(User).GetLastLogin() {
+			t.Errorf("Login times match (initial: %v new: %v)", u1.(User).GetLastLogin(), u2.(User).GetLastLogin())
 			t.FailNow()
 		}
 	})
@@ -140,7 +140,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u.Enabled = false
+		u.(User).SetEnabled(false)
 		uc.userStore.UpdateUser(u)
 
 		res, _, err := uc.Login(fakeEmail, fakePass)
@@ -156,7 +156,7 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		u.Enabled = true
+		u.(User).SetEnabled(true)
 		uc.userStore.UpdateUser(u)
 	})
 
@@ -206,7 +206,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u1, err := uc.GetUser(u.ExtId)
+		u1, err := uc.GetUser(u.(User).GetExtId())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -223,7 +223,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.ExtId, fakePass, newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -253,7 +253,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password &$#%"
 
-		_, err := uc.UpdatePassword(u1.ExtId, fakePass, newPass)
+		_, err := uc.UpdatePassword(u1.(User).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -265,8 +265,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.PasswordChanged == u2.PasswordChanged {
-			t.Errorf("Password changed times match (initial: %v new: %v)", u1.PasswordChanged, u2.PasswordChanged)
+		if u1.(User).GetPasswordChanged() == u2.(User).GetPasswordChanged() {
+			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(User).GetPasswordChanged(), u2.(User).GetPasswordChanged())
 			t.FailNow()
 		}
 	})
@@ -277,7 +277,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.ExtId, "wrongPass", newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtId(), "wrongPass", newPass)
 		if err == nil {
 			t.Error(err)
 			t.FailNow()

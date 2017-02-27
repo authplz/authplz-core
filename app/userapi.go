@@ -13,10 +13,10 @@ import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
 
 // Handle an action token
-func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
+func (c *AuthPlzTempCtx) HandleToken(u user.User, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
 
 	// Check token validity
-	claims, err := c.global.tokenController.ParseToken(tokenString)
+	claims, err := c.Global.tokenController.ParseToken(tokenString)
 	if err != nil {
 		fmt.Println("HandleToken: Invalid or expired token")
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -33,7 +33,7 @@ func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWrit
 	case token.TokenActionUnlock:
 		log.Printf("HandleToken: Unlocking user\n")
 
-		c.global.userController.Unlock(u.GetEmail())
+		c.Global.userController.Unlock(u.GetEmail())
 
 		// Create session
 		c.LoginUser(u, rw, req)
@@ -43,7 +43,7 @@ func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWrit
 	case token.TokenActionActivate:
 		log.Printf("HandleToken: Activating user\n")
 
-		c.global.userController.Activate(u.GetEmail())
+		c.Global.userController.Activate(u.GetEmail())
 
 		// Create session
 		c.LoginUser(u, rw, req)
@@ -57,7 +57,7 @@ func (c *AuthPlzCtx) HandleToken(u User, tokenString string, rw web.ResponseWrit
 	}
 }
 
-func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Create(rw web.ResponseWriter, req *web.Request) {
     email := req.FormValue("email")
     if !govalidator.IsEmail(email) {
         log.Printf("Create: email parameter required")
@@ -71,7 +71,7 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
         return
     }
 
-    u, e := c.global.userController.Create(email, password)
+    u, e := c.Global.userController.Create(email, password)
     if e != nil {
         log.Printf("Create: user creation failed with %s", e)
 
@@ -99,7 +99,7 @@ func (c *AuthPlzCtx) Create(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Login to a user account
-func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
@@ -117,7 +117,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Attempt login
-	l, u, e := c.global.userController.Login(email, password)
+	l, u, e := c.Global.userController.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		log.Printf("Login: user controller error %s\n", e)
@@ -181,7 +181,7 @@ func (c *AuthPlzCtx) Login(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Handle an action token (both get and post calls)
-func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	// Grab token string from get or post request
 	var tokenString string
 	tokenString = req.FormValue("token")
@@ -212,7 +212,7 @@ func (c *AuthPlzCtx) Action(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Get user login status
-func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).Unauthorized)
 	} else {
@@ -221,14 +221,14 @@ func (c *AuthPlzCtx) Status(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Fetch a user object
-func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 
 	} else {
 		// Fetch user from user controller
-		u, err := c.global.userController.GetUser(c.userid)
+		u, err := c.Global.userController.GetUser(c.userid)
 		if err != nil {
 			log.Print(err)
 			c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
@@ -240,7 +240,7 @@ func (c *AuthPlzCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Update user object
-func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
@@ -259,7 +259,7 @@ func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Update password
-	_, err := c.global.userController.UpdatePassword(c.userid, oldPass, newPass)
+	_, err := c.Global.userController.UpdatePassword(c.userid, oldPass, newPass)
 	if err != nil {
 		log.Print(err)
 		c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).InternalError)
@@ -270,7 +270,7 @@ func (c *AuthPlzCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 }
 
 // End a user session
-func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.userid == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
@@ -281,6 +281,6 @@ func (c *AuthPlzCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Test endpoint
-func (c *AuthPlzCtx) Test(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }

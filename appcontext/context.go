@@ -1,4 +1,4 @@
-package context
+package appcontext
 
 import (
 	"encoding/json"
@@ -19,12 +19,16 @@ type AuthPlzGlobalCtx struct {
 	port         string
 	address      string
 	url          string
-	sessionStore *sessions.CookieStore
+	SessionStore *sessions.CookieStore
+}
+
+func NewGlobalCtx(port, address, url string, sessionStore *sessions.CookieStore) AuthPlzGlobalCtx {
+	return AuthPlzGlobalCtx{port, address, url, sessionStore}
 }
 
 // Application handler context
 type AuthPlzCtx struct {
-	global       *AuthPlzGlobalCtx
+	Global       *AuthPlzGlobalCtx
 	session      *sessions.Session
 	userid       string
 	message      string
@@ -44,7 +48,7 @@ type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Reques
 // This is a closure to run over an instance of the global context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-		ctx.global = globalCtx
+		ctx.Global = globalCtx
 		next(rw, req)
 	}
 }
@@ -70,7 +74,7 @@ func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, mess
 // User session layer
 // Middleware matches user session if it exists and saves userid to the session object
 func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	session, err := ctx.global.sessionStore.Get(req.Request, "user-session")
+	session, err := ctx.Global.SessionStore.Get(req.Request, "user-session")
 	if err != nil {
 		log.Printf("Error binding session, %s", err)
 		// Poison invalid session so next request will succeed
@@ -151,7 +155,7 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 
 // Helper function to set a flash message for display to the user
 func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {
-	session, err := c.global.sessionStore.Get(req.Request, "user-message")
+	session, err := c.Global.SessionStore.Get(req.Request, "user-message")
 	if err != nil {
 		return
 	}
@@ -162,7 +166,7 @@ func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req 
 
 // Helper function to get a flash message to display to the user
 func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string {
-	session, err := c.global.sessionStore.Get(req.Request, "user-message")
+	session, err := c.Global.SessionStore.Get(req.Request, "user-message")
 	if err != nil {
 		return ""
 	}

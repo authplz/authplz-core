@@ -33,7 +33,7 @@ type User struct {
 func (u *User) GetExtId() string            { return u.ExtId }
 func (u *User) GetEmail() string            { return u.Email }
 func (u *User) GetPassword() string         { return u.Password }
-func (u *User) SetPassword(pass string)     { u.Password = pass }
+func (u *User) GetPasswordChanged() time.Time { return u.PasswordChanged }
 func (u *User) IsActivated() bool           { return u.Activated }
 func (u *User) SetActivated(activated bool) { u.Activated = activated }
 func (u *User) IsEnabled() bool             { return u.Enabled }
@@ -51,6 +51,11 @@ func (u *User) SetLastLogin(t time.Time)	{ u.LastLogin = t }
 // Check if a user has attached second factors
 func (u *User) SecondFactors() bool {
 	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
+}
+
+func (u *User) SetPassword(pass string) { 
+	u.Password = pass
+	u.PasswordChanged = time.Now()
 }
 
 // Add a user to the datastore

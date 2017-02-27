@@ -4,22 +4,22 @@ import "net/http"
 
 import "github.com/gocraft/web"
 
-func (c *AuthPlzCtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzCtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzCtx) TOTPBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
+func (c *AuthPlzTempCtx) TOTPBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzCtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzCtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzTempCtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }

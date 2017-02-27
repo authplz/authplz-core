@@ -9,14 +9,14 @@ import(
 
 import(
     "github.com/ryankurte/authplz/api"
-    "github.com/ryankurte/authplz/context"
+    "github.com/ryankurte/authplz/appcontext"
     "github.com/gocraft/web"
     "github.com/asaskevich/govalidator"
 )
 
 // API context instance
 type UserApiCtx struct {
-    *context.AuthPlzCtx
+    *appcontext.AuthPlzCtx
     um *UserModule
 }
 
@@ -60,3 +60,5 @@ func (c *UserApiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
     c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().CreateUserSuccess)
 }
+
+

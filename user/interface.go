@@ -12,6 +12,7 @@ type User interface {
 
     GetPassword() string
     SetPassword(pass string)
+    GetPasswordChanged() time.Time
 
     IsActivated() bool
     SetActivated(activated bool)

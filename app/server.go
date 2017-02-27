@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/sessions"
 	//"github.com/ryankurte/go-u2f"
 
-//	"github.com/ryankurte/authplz/context"
+	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/datastore"
 
 	"github.com/ryankurte/authplz/user"
@@ -27,9 +27,12 @@ type AuthPlzServer struct {
 	port    string
 	config  AuthPlzConfig
 	ds      *datastore.DataStore
-	ctx     AuthPlzGlobalCtx
+	ctx     appcontext.AuthPlzGlobalCtx
 	router  *web.Router
 }
+
+// Temporary mapping between contexts
+type AuthPlzTempCtx appcontext.AuthPlzCtx
 
 func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server := AuthPlzServer{}
@@ -76,16 +79,16 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 
 	// Create a global context object
-	server.ctx = AuthPlzGlobalCtx{config.Port, config.Address, url, userModule, tokenController, sessionStore}
+	server.ctx = appcontext.NewGlobalCtx(config.Port, config.Address, url, sessionStore)
 
 	// Create router
-	server.router = web.New(AuthPlzCtx{}).
-		Middleware(BindContext(&server.ctx)).
+	server.router = web.New(AuthPlzTempCtx{}).
+		Middleware(appcontext.BindContext(&server.ctx)).
 		//Middleware(web.LoggerMiddleware).
 		//Middleware(web.ShowErrorsMiddleware).
-		Middleware((*AuthPlzCtx).SessionMiddleware).
-		Middleware((*AuthPlzCtx).GetIPMiddleware).
-		Middleware((*AuthPlzCtx).GetLocaleMiddleware)
+		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
+		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
+		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
 
 	// Enable static file hosting
 	_, _ = os.Getwd()
@@ -94,27 +97,27 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.router.Middleware(web.StaticMiddleware(staticPath, web.StaticOption{IndexFile: "index.html"}))
 
 	// Create API router
-	// TODO: this can probably be a separate module, but would require AuthPlzCtx/AuthPlzGlobalCtx to be in a package
+	// TODO: this can probably be a separate module, but would require AuthPlzTempCtx/AuthPlzGlobalCtx to be in a package
 
-	//userModule.Bind(server.router)
+	userModule.Bind(server.router)
 
 
-	apiRouter := server.router.Subrouter(AuthPlzCtx{}, "/api")
-	apiRouter.Post("/create", (*AuthPlzCtx).Create)
-	apiRouter.Post("/login", (*AuthPlzCtx).Login)
-	apiRouter.Post("/action", (*AuthPlzCtx).Action)
-	apiRouter.Get("/action", (*AuthPlzCtx).Action)
-	apiRouter.Get("/logout", (*AuthPlzCtx).Logout)
-	apiRouter.Get("/status", (*AuthPlzCtx).Status)
-	apiRouter.Get("/account", (*AuthPlzCtx).AccountGet)
-	apiRouter.Post("/account", (*AuthPlzCtx).AccountPost)
-	apiRouter.Get("/test", (*AuthPlzCtx).Test)
+	apiRouter := server.router.Subrouter(AuthPlzTempCtx{}, "/api")
+	//apiRouter.Post("/create", (*AuthPlzTempCtx).Create)
+	apiRouter.Post("/login", (*AuthPlzTempCtx).Login)
+	apiRouter.Post("/action", (*AuthPlzTempCtx).Action)
+	apiRouter.Get("/action", (*AuthPlzTempCtx).Action)
+	apiRouter.Get("/logout", (*AuthPlzTempCtx).Logout)
+	apiRouter.Get("/status", (*AuthPlzTempCtx).Status)
+	apiRouter.Get("/account", (*AuthPlzTempCtx).AccountGet)
+	apiRouter.Post("/account", (*AuthPlzTempCtx).AccountPost)
+	apiRouter.Get("/test", (*AuthPlzTempCtx).Test)
 /*
-	apiRouter.Get("/u2f/enrol", (*AuthPlzCtx).U2FEnrolGet)
-	apiRouter.Post("/u2f/enrol", (*AuthPlzCtx).U2FEnrolPost)
-	apiRouter.Get("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticateGet)
-	apiRouter.Post("/u2f/authenticate", (*AuthPlzCtx).U2FAuthenticatePost)
-	apiRouter.Get("/u2f/tokens", (*AuthPlzCtx).U2FTokensGet)
+	apiRouter.Get("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolGet)
+	apiRouter.Post("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolPost)
+	apiRouter.Get("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticateGet)
+	apiRouter.Post("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticatePost)
+	apiRouter.Get("/u2f/tokens", (*AuthPlzTempCtx).U2FTokensGet)
 */
 	return &server
 }
