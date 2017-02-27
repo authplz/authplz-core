@@ -161,7 +161,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Lock accounts after N logins", func(t *testing.T) {
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 6; i++ {
 			uc.Login(fakeEmail, "Wrong password")
 		}
 

@@ -89,7 +89,6 @@ func (userModule *UserModule) Activate(email string) (user User, err error) {
 		return nil, loginError
 	}
 
-
 	user = u.(User)
 
 	user.SetActivated(true)
@@ -162,8 +161,8 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 			user := u.(User)
 			retries := user.GetLoginRetries()
 
+			// Handle account lock after N retries
 			user.SetLoginRetries(retries + 1)
-
 			if (retries > 5) && (user.IsLocked() == false) {
 				log.Printf("UserModule.Login: Locking user %s", user.GetExtId())
 				user.SetLocked(true)
