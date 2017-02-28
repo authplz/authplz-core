@@ -1,15 +1,21 @@
-package app
+package test
 
 import "testing"
 
 //import "fmt"
 
-import "bytes"
-import "net/http"
-import "net/url"
-import "net/http/cookiejar"
+import (
+"bytes"
+ "net/http"
+ "net/url"
+ "net/http/cookiejar"
 
-import "encoding/json"
+ "encoding/json"
+ )
+
+import (
+"github.com/ryankurte/authplz/api"
+)
 
 // Test client instance
 // Handles cookies as well as API base addresses to simplify testing
@@ -121,4 +127,42 @@ func (tc *TestResponse) TestParseJson(inst interface{}) interface{} {
 		}
 	}
 	return inst
+}
+
+func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
+	tc.BindTest(t).TestPostForm(path, http.StatusOK, v).TestParseJson(responseInst)
+}
+
+func (tc *TestClient) TestPostJsonGetJson(t *testing.T, path string, requestInst interface{}, responseInst interface{}) {
+	tc.BindTest(t).TestPostJson(path, http.StatusOK, requestInst).TestParseJson(responseInst)
+}
+
+func (tc *TestClient) TestCheckApiResponse(t *testing.T, status api.ApiResponse, result string, message string) {
+	if status.Result != result {
+		t.Errorf("Incorrect API result, expected: %s received: %s message: %s", result, status.Result, status.Message)
+		t.FailNow()
+	}
+
+	if status.Message != message {
+		t.Errorf("Incorrect API message, expected: %s received: %s", message, status.Message)
+		t.FailNow()
+	}
+}
+
+func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
+	var status api.ApiResponse
+	tc.BindTest(t).TestGet(path, http.StatusOK).TestParseJson(&status)
+	tc.TestCheckApiResponse(t, status, result, message)
+}
+
+func (tc *TestClient) TestPostApiResponse(t *testing.T, path string, v url.Values, result string, message string) {
+	var status api.ApiResponse
+	tc.TestPostFormGetJson(t, path, v, &status)
+	tc.TestCheckApiResponse(t, status, result, message)
+}
+
+func (tc *TestClient) TestPostJsonCheckApiResponse(t *testing.T, path string, inst interface{}, result string, message string) {
+	var status api.ApiResponse
+	tc.TestPostJsonGetJson(t, path, inst, &status)
+	tc.TestCheckApiResponse(t, status, result, message)
 }

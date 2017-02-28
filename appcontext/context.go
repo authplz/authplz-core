@@ -38,8 +38,23 @@ type AuthPlzCtx struct {
 }
 
 type User interface {
-	GetId() string
+	GetExtId() string
 }
+
+
+func (ctx *AuthPlzCtx) GetLocale() string {
+	return ctx.locale
+}
+
+func (ctx *AuthPlzCtx) GetUserID() string {
+	return ctx.userid
+}
+
+// Wrapper for API localisation
+func (ctx *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
+	return api.GetApiLocale(ctx.locale)
+}
+
 
 // Convenience type to describe middleware functions
 type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
@@ -141,9 +156,9 @@ func (c *AuthPlzCtx) LoginUser(u User, rw web.ResponseWriter, req *web.Request) 
 		log.Printf("Error logging in user, no session found")
 		return
 	}
-	c.session.Values["userId"] = u.GetId()
+	c.session.Values["userId"] = u.GetExtId()
 	c.session.Save(req.Request, rw)
-	c.userid = u.GetId()
+	c.userid = u.GetExtId()
 }
 
 // Helper function to logout a user

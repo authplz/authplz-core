@@ -28,7 +28,7 @@ type AuthPlzConfig struct {
 }
 
 // Helper to generate a default secret to use
-func generateSecret(len int) (string, error) {
+func GenerateSecret(len int) (string, error) {
     data := make([]byte, len)
     n, err := rand.Read(data)
     if err != nil {
@@ -60,11 +60,11 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
     var err error
 
-    c.CookieSecret, err = generateSecret(32)
+    c.CookieSecret, err = GenerateSecret(32)
     if err != nil {
         return nil, err
     }
-    c.TokenSecret, err = generateSecret(32)
+    c.TokenSecret, err = GenerateSecret(32)
     if err != nil {
         return nil, err
     }

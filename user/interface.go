@@ -1,57 +1,57 @@
-package user;
+package user
 
 import (
-    "time"
-    "errors"
+	"errors"
+	"time"
 )
 
 // Defines the User object interface required by this module
-type User interface {
-    GetExtId() string
-    GetEmail() string
+type UserInterface interface {
+	GetExtId() string
+	GetEmail() string
 
-    GetPassword() string
-    SetPassword(pass string)
-    GetPasswordChanged() time.Time
+	GetPassword() string
+	SetPassword(pass string)
+	GetPasswordChanged() time.Time
 
-    IsActivated() bool
-    SetActivated(activated bool)
+	IsActivated() bool
+	SetActivated(activated bool)
 
-    IsEnabled() bool
-    SetEnabled(locked bool)
+	IsEnabled() bool
+	SetEnabled(locked bool)
 
-    GetLoginRetries() uint
-    SetLoginRetries(retries uint)
+	GetLoginRetries() uint
+	SetLoginRetries(retries uint)
 
-    GetLastLogin() time.Time
-    SetLastLogin(t time.Time)
+	GetLastLogin() time.Time
+	SetLastLogin(t time.Time)
 
-    IsLocked() bool
-    SetLocked(locked bool)
+	IsLocked() bool
+	SetLocked(locked bool)
 }
 
 // Defines the required store interfaces for the user module
 type UserStoreInterface interface {
-    AddUser(email string, pass string) (interface{}, error)
-    GetUserByExtId(userid string) (interface{}, error)
-    GetUserByEmail(email string) (interface{}, error)
-    UpdateUser(user interface{}) (interface{}, error)
+	AddUser(email string, pass string) (interface{}, error)
+	GetUserByExtId(userid string) (interface{}, error)
+	GetUserByEmail(email string) (interface{}, error)
+	UpdateUser(user interface{}) (interface{}, error)
 }
 
 // Login status return objects
 type LoginStatus struct {
-    Code    uint64
-    Message string
+	Code    uint64
+	Message string
 }
 
 // User controller status enumerations
 const (
-    LoginCodeSuccess     = iota // Login complete
-    LoginCodeFailure     = iota // Login failed
-    LoginCodePartial     = iota // Further credentials required
-    LoginCodeLocked      = iota // Account locked
-    LoginCodeUnactivated = iota // Account not yet activated
-    LoginCodeDisabled    = iota // Account disabled
+	LoginCodeSuccess     = iota // Login complete
+	LoginCodeFailure     = iota // Login failed
+	LoginCodePartial     = iota // Further credentials required
+	LoginCodeLocked      = iota // Account locked
+	LoginCodeUnactivated = iota // Account not yet activated
+	LoginCodeDisabled    = iota // Account disabled
 )
 
 // Login return object instances

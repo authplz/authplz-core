@@ -2,7 +2,10 @@ package user
 
 import "testing"
 
-import "github.com/ryankurte/authplz/datastore"
+import (
+	"github.com/ryankurte/authplz/datastore"
+	"github.com/ryankurte/authplz/token"
+)
 
 func TestUserController(t *testing.T) {
 	// Setup user controller for testing
@@ -11,16 +14,17 @@ func TestUserController(t *testing.T) {
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
-	ds, err := datastore.NewDataStore(dbString)
+	dataStore, err := datastore.NewDataStore(dbString)
 	if err != nil {
 		t.Error("Error opening database")
 		t.FailNow()
 	}
 
-	ds.ForceSync()
+	dataStore.ForceSync()
 
 	// Create controllers
-	uc := NewUserModule(ds)
+	tokenController := token.NewTokenController("localhost:3223", "abcDEF123")
+	uc := NewUserModule(dataStore, tokenController)
 
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)
@@ -98,8 +102,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.(User).GetLastLogin() == u2.(User).GetLastLogin() {
-			t.Errorf("Login times match (initial: %v new: %v)", u1.(User).GetLastLogin(), u2.(User).GetLastLogin())
+		if u1.(UserInterface).GetLastLogin() == u2.(UserInterface).GetLastLogin() {
+			t.Errorf("Login times match (initial: %v new: %v)", u1.(UserInterface).GetLastLogin(), u2.(UserInterface).GetLastLogin())
 			t.FailNow()
 		}
 	})
@@ -140,7 +144,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u.(User).SetEnabled(false)
+		u.(UserInterface).SetEnabled(false)
 		uc.userStore.UpdateUser(u)
 
 		res, _, err := uc.Login(fakeEmail, fakePass)
@@ -156,7 +160,7 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		u.(User).SetEnabled(true)
+		u.(UserInterface).SetEnabled(true)
 		uc.userStore.UpdateUser(u)
 	})
 
@@ -206,7 +210,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u1, err := uc.GetUser(u.(User).GetExtId())
+		u1, err := uc.GetUser(u.(UserInterface).GetExtId())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -223,7 +227,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(User).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u.(UserInterface).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -253,7 +257,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password &$#%"
 
-		_, err := uc.UpdatePassword(u1.(User).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u1.(UserInterface).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -265,8 +269,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.(User).GetPasswordChanged() == u2.(User).GetPasswordChanged() {
-			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(User).GetPasswordChanged(), u2.(User).GetPasswordChanged())
+		if u1.(UserInterface).GetPasswordChanged() == u2.(UserInterface).GetPasswordChanged() {
+			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(UserInterface).GetPasswordChanged(), u2.(UserInterface).GetPasswordChanged())
 			t.FailNow()
 		}
 	})
@@ -277,7 +281,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(User).GetExtId(), "wrongPass", newPass)
+		_, err := uc.UpdatePassword(u.(UserInterface).GetExtId(), "wrongPass", newPass)
 		if err == nil {
 			t.Error(err)
 			t.FailNow()

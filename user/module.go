@@ -1,42 +1,32 @@
 package user
 
-import(
+import (
 	"fmt"
 	"log"
 	"time"
-	)
-
-import(
- 	"golang.org/x/crypto/bcrypt"
- 	"github.com/gocraft/web"
 )
 
+import (
+	"github.com/ryankurte/authplz/token"
+	"golang.org/x/crypto/bcrypt"
+)
 
 //TODO: change this to enforce actual complexity
 const minimumPasswordLength = 12
 const hashRounds = 8
 
 type UserModule struct {
-	userStore  UserStoreInterface
-	hashRounds int
+	userStore    UserStoreInterface
+	tokenControl *token.TokenController
+	hashRounds   int
 }
 
-func NewUserModule(userStore UserStoreInterface) *UserModule {
-	return &UserModule{userStore, hashRounds}
-}
-
-func (userModule *UserModule) Bind(router *web.Router) {
-	// Create router for user modules
-	userRouter := router.Subrouter(UserApiCtx{}, "/api")
-
-	// Attach middleware
-
-	// Bind endpoints
-	userRouter.Post("/create", (*UserApiCtx).Create)
+func NewUserModule(userStore UserStoreInterface, tokenControl *token.TokenController) *UserModule {
+	return &UserModule{userStore, tokenControl, hashRounds}
 }
 
 // Create a new user account
-func (userModule *UserModule) Create(email string, pass string) (user User, err error) {
+func (userModule *UserModule) Create(email string, pass string) (user UserInterface, err error) {
 
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userModule.hashRounds)
@@ -61,7 +51,6 @@ func (userModule *UserModule) Create(email string, pass string) (user User, err 
 		return nil, ErrorDuplicateAccount
 	}
 
-
 	// Add user to database (disabled)
 	u, err = userModule.userStore.AddUser(email, string(hash))
 	if err != nil {
@@ -70,7 +59,7 @@ func (userModule *UserModule) Create(email string, pass string) (user User, err 
 		return nil, ErrorCreatingUser
 	}
 
-	user = u.(User)
+	user = u.(UserInterface)
 
 	// TODO: emit user creation event
 
@@ -79,7 +68,7 @@ func (userModule *UserModule) Create(email string, pass string) (user User, err 
 	return user, nil
 }
 
-func (userModule *UserModule) Activate(email string) (user User, err error) {
+func (userModule *UserModule) Activate(email string) (user UserInterface, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -89,7 +78,7 @@ func (userModule *UserModule) Activate(email string) (user User, err error) {
 		return nil, loginError
 	}
 
-	user = u.(User)
+	user = u.(UserInterface)
 
 	user.SetActivated(true)
 
@@ -100,14 +89,14 @@ func (userModule *UserModule) Activate(email string) (user User, err error) {
 		return nil, loginError
 	}
 
-	user = u.(User)
+	user = u.(UserInterface)
 
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtId())
 
 	return user, nil
 }
 
-func (userModule *UserModule) Unlock(email string) (user User, err error) {
+func (userModule *UserModule) Unlock(email string) (user UserInterface, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -117,7 +106,7 @@ func (userModule *UserModule) Unlock(email string) (user User, err error) {
 		return nil, loginError
 	}
 
-	user = u.(User)
+	user = u.(UserInterface)
 
 	user.SetLocked(false)
 
@@ -128,7 +117,7 @@ func (userModule *UserModule) Unlock(email string) (user User, err error) {
 		return nil, loginError
 	}
 
-	user = u.(User)
+	user = u.(UserInterface)
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtId())
 
@@ -136,7 +125,7 @@ func (userModule *UserModule) Unlock(email string) (user User, err error) {
 }
 
 //TODO: differentiate between login states and internal errors
-func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, User, error) {
+func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, UserInterface, error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -150,7 +139,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 	// Avoids leaking account info by login timing
 	hash := "fake password hash"
 	if u != nil {
-		user := u.(User)
+		user := u.(UserInterface)
 		hash = user.GetPassword()
 	}
 
@@ -158,7 +147,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 	hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 	if hashErr != nil {
 		if u != nil {
-			user := u.(User)
+			user := u.(UserInterface)
 			retries := user.GetLoginRetries()
 
 			// Handle account lock after N retries
@@ -186,7 +175,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
-		user := u.(User)
+		user := u.(UserInterface)
 
 		//u.FidoTokens, _ = userModule.tokenStore.GetFidoTokens(u)
 		//TotpTokens, _ := userModule.tokenStore.GetTotpTokens(u)
@@ -208,13 +197,13 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", user.GetExtId())
 			return &LoginLocked, user, nil
 		}
-/*
-		if u.SecondFactors() == true {
-			// Prompt for second factor login
-			log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetExtId())
-			return &LoginPartial, u, nil
-		}
-*/
+		/*
+			if u.SecondFactors() == true {
+				// Prompt for second factor login
+				log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetExtId())
+				return &LoginPartial, u, nil
+			}
+		*/
 		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
 
 		// Update login time etc.
@@ -231,7 +220,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 	return &LoginFailure, nil, nil
 }
 
-func (userModule *UserModule) GetUser(extId string) (User, error) {
+func (userModule *UserModule) GetUser(extId string) (UserInterface, error) {
 	// Attempt to fetch user
 	u, err := userModule.userStore.GetUserByExtId(extId)
 	if err != nil {
@@ -246,10 +235,10 @@ func (userModule *UserModule) GetUser(extId string) (User, error) {
 		return nil, ErrorUserNotFound
 	}
 
-	return u.(User), nil
+	return u.(UserInterface), nil
 }
 
-func (userModule *UserModule) UpdatePassword(extId string, old string, new string) (User, error) {
+func (userModule *UserModule) UpdatePassword(extId string, old string, new string) (UserInterface, error) {
 
 	// Fetch user
 	u, err := userModule.userStore.GetUserByExtId(extId)
@@ -264,7 +253,7 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 		return nil, ErrorUserNotFound
 	}
 
-	user := u.(User)
+	user := u.(UserInterface)
 
 	// Check password
 	hashErr := bcrypt.CompareHashAndPassword([]byte(user.GetPassword()), []byte(old))
@@ -291,5 +280,3 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 
 	return user, nil
 }
-
-
