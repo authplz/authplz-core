@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	//"encoding/json"
@@ -12,7 +11,6 @@ import (
 	"github.com/gocraft/web"
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
-	"github.com/ryankurte/authplz/token"
 )
 
 // API context instance
@@ -35,11 +33,21 @@ func (userModule *UserModule) Bind(router *web.Router) {
 	userRouter := router.Subrouter(UserApiCtx{}, "/api")
 
 	// Attach module context
+	// TODO: not sure whether to bind this into context or closure against methods
+	// to store controller / module
 	userRouter.Middleware(BindUserContext(userModule))
 
 	// Bind endpoints
+	userRouter.Get("/test", (*UserApiCtx).Test)
 	userRouter.Get("/status", (*UserApiCtx).Status)
 	userRouter.Post("/create", (*UserApiCtx).Create)
+	userRouter.Get("/account", (*UserApiCtx).AccountGet)
+	userRouter.Post("/account", (*UserApiCtx).AccountPost)
+}
+
+// Test endpoint
+func (c *UserApiCtx) Test(rw web.ResponseWriter, req *web.Request) {
+	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
 
 // Get user login status
@@ -92,47 +100,51 @@ func (c *UserApiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().CreateUserSuccess)
 }
 
-// Generic method to handle an action token
-func (c *UserApiCtx) HandleToken(u UserInterface, tokenString string, rw web.ResponseWriter, req *web.Request) (err error) {
-
-	// Check token validity
-	claims, err := c.um.tokenControl.ParseToken(tokenString)
-	if err != nil {
-		log.Println("HandleToken: Invalid or expired token")
+// Fetch a user object
+func (c *UserApiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
+	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
-		return fmt.Errorf("Invalid or expired token")
+		return
+
+	} else {
+		// Fetch user from user controller
+		u, err := c.um.GetUser(c.GetUserID())
+		if err != nil {
+			log.Print(err)
+			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+			return
+		}
+
+		c.WriteJson(rw, u)
+	}
+}
+
+// Update user object
+func (c *UserApiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
-	if u.GetExtId() != claims.Subject {
-		log.Println("HandleToken: Token subject does not match user id")
-		rw.WriteHeader(http.StatusUnauthorized)
-		return fmt.Errorf("Token subject does not match user id")
-	}
-
-	switch claims.Action {
-	case token.TokenActionUnlock:
-		log.Printf("HandleToken: Unlocking user\n")
-
-		c.um.Unlock(u.GetEmail())
-
-		// Create session
-		c.LoginUser(u, rw, req)
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().UnlockSuccessful)
-		return nil
-
-	case token.TokenActionActivate:
-		log.Printf("HandleToken: Activating user\n")
-
-		c.um.Activate(u.GetEmail())
-
-		// Create session
-		c.LoginUser(u, rw, req)
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiMessageInst().ActivationSuccessful)
-		return nil
-
-	default:
-		log.Printf("HandleToken: Invalid token action\n")
+	// Fetch password arguments
+	oldPass := req.FormValue("old_password")
+	if oldPass == "" {
 		rw.WriteHeader(http.StatusBadRequest)
-		return fmt.Errorf("Invalid token action")
+		return
 	}
+	newPass := req.FormValue("new_password")
+	if newPass == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Update password
+	_, err := c.um.UpdatePassword(c.GetUserID(), oldPass, newPass)
+	if err != nil {
+		log.Print(err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+
+	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().PasswordUpdated)
 }

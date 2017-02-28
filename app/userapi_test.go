@@ -12,44 +12,7 @@ import "github.com/ryankurte/go-u2f"
 import "github.com/ryankurte/authplz/datastore"
 import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
-
-func (tc *TestClient) TestPostFormGetJson(t *testing.T, path string, v url.Values, responseInst interface{}) {
-	tc.BindTest(t).TestPostForm(path, http.StatusOK, v).TestParseJson(responseInst)
-}
-
-func (tc *TestClient) TestPostJsonGetJson(t *testing.T, path string, requestInst interface{}, responseInst interface{}) {
-	tc.BindTest(t).TestPostJson(path, http.StatusOK, requestInst).TestParseJson(responseInst)
-}
-
-func (tc *TestClient) TestCheckApiResponse(t *testing.T, status api.ApiResponse, result string, message string) {
-	if status.Result != result {
-		t.Errorf("Incorrect API result, expected: %s received: %s message: %s", result, status.Result, status.Message)
-		t.FailNow()
-	}
-
-	if status.Message != message {
-		t.Errorf("Incorrect API message, expected: %s received: %s", message, status.Message)
-		t.FailNow()
-	}
-}
-
-func (tc *TestClient) TestGetApiResponse(t *testing.T, path string, result string, message string) {
-	var status api.ApiResponse
-	tc.BindTest(t).TestGet(path, http.StatusOK).TestParseJson(&status)
-	tc.TestCheckApiResponse(t, status, result, message)
-}
-
-func (tc *TestClient) TestPostApiResponse(t *testing.T, path string, v url.Values, result string, message string) {
-	var status api.ApiResponse
-	tc.TestPostFormGetJson(t, path, v, &status)
-	tc.TestCheckApiResponse(t, status, result, message)
-}
-
-func (tc *TestClient) TestPostJsonCheckApiResponse(t *testing.T, path string, inst interface{}, result string, message string) {
-	var status api.ApiResponse
-	tc.TestPostJsonGetJson(t, path, inst, &status)
-	tc.TestCheckApiResponse(t, status, result, message)
-}
+import "github.com/ryankurte/authplz/test"
 
 func TestMain(t *testing.T) {
 
@@ -78,7 +41,7 @@ func TestMain(t *testing.T) {
 	// Setup test helpers
 	apiPath := "http://" + c.Address + ":" + c.Port + "/api"
 
-	client := NewTestClient(apiPath)
+	client := test.NewTestClient(apiPath)
 
 	vt, _ := u2f.NewVirtualKey()
 
@@ -121,10 +84,10 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken("blah", token.TokenActionActivate, d)
+		at, _ := server.tokenControl.BuildToken("blah", token.TokenActionActivate, d)
 
 		// Use a separate test client instance
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
@@ -144,10 +107,10 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionActivate, d)
+		at, _ := server.tokenControl.BuildToken(userId, token.TokenActionActivate, d)
 
 		// Use a separate test client instance
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		// Post activation token
 		v := url.Values{}
@@ -178,7 +141,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
 
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		v := url.Values{}
 		v.Set("email", fakeEmail)
@@ -203,11 +166,11 @@ func TestMain(t *testing.T) {
 	t.Run("Account unlock requires valid unlock token subject", func(t *testing.T) {
 
 		// Use a separate test client instance
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken("bad user id", token.TokenActionUnlock, d)
+		at, _ := server.tokenControl.BuildToken("bad user id", token.TokenActionUnlock, d)
 
 		// Post activation token
 		v := url.Values{}
@@ -228,10 +191,10 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.ctx.tokenController.BuildToken(userId, token.TokenActionUnlock, d)
+		at, _ := server.tokenControl.BuildToken(userId, token.TokenActionUnlock, d)
 
 		// Use a separate test client instance
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		// Post activation token
 		v := url.Values{}
@@ -311,7 +274,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Second factor required for login", func(t *testing.T) {
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		v := url.Values{}
 		v.Set("email", fakeEmail)
@@ -323,7 +286,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Second factor allows login", func(t *testing.T) {
 
-		client2 := NewTestClient(apiPath)
+		client2 := test.NewTestClient(apiPath)
 
 		// Start login
 		v := url.Values{}

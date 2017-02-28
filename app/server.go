@@ -14,11 +14,12 @@ import (
 	"github.com/gorilla/sessions"
 	//"github.com/ryankurte/go-u2f"
 
+	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/datastore"
 
-	"github.com/ryankurte/authplz/user"
 	"github.com/ryankurte/authplz/token"
+	"github.com/ryankurte/authplz/user"
 	//"github.com/ryankurte/authplz/usercontroller"
 )
 
@@ -32,7 +33,32 @@ type AuthPlzServer struct {
 }
 
 // Temporary mapping between contexts
-type AuthPlzTempCtx appcontext.AuthPlzCtx
+type AuthPlzTempCtx struct {
+	*appcontext.AuthPlzCtx
+	// Token controller for parsing of tokens
+	tokenControl *token.TokenController
+	// User controller interface for login base
+	userControl UserControlInterface
+	// Token handler implementations
+	// This allows token handlers to be bound on a per-module basis using the actions
+	// defined in api.TokenAction. Note that there must not be overlaps in bindings
+	// TODO: this should probably be implemented as a bind function to panic if overlap is attempted
+	tokenHandlers map[api.TokenAction]TokenHandlerInterface
+}
+
+// Interface for a user control module
+type UserControlInterface interface {
+	// Login method, returns api.LoginStatus result, user interface for further use, error in case of failure
+	Login(email, password string) (*api.LoginStatus, interface{}, error)
+}
+
+type TokenHandlerInterface interface {
+	HandleToken(u interface{}, tokenAction api.TokenAction) error
+}
+
+type UserInterface interface {
+	GetExtId() string
+}
 
 func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server := AuthPlzServer{}
@@ -40,11 +66,11 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.config = config
 
 	// Attempt database connection
-	ds, err := datastore.NewDataStore(config.Database)
+	dataStore, err := datastore.NewDataStore(config.Database)
 	if err != nil {
 		log.Panic("Error opening database")
 	}
-	server.ds = ds
+	server.ds = dataStore
 
 	// Parse secrets
 	cookieSecret, err := base64.URLEncoding.DecodeString(config.CookieSecret)
@@ -66,9 +92,13 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 		log.Println(err)
 		log.Panic("Error decoding cookie secret")
 	}
-	tokenController := token.NewTokenController(server.config.Address, string(tokenSecret))
+	tokenControl := token.NewTokenController(server.config.Address, string(tokenSecret))
 
-	userModule := user.NewUserModule(ds);
+	userModule := user.NewUserModule(dataStore)
+
+	tokenHandlers := make(map[api.TokenAction]TokenHandlerInterface)
+	tokenHandlers[api.TokenActionActivate] = userModule
+	tokenHandlers[api.TokenActionUnlock] = userModule
 
 	// Generate URL string
 	var url string
@@ -82,7 +112,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.ctx = appcontext.NewGlobalCtx(config.Port, config.Address, url, sessionStore)
 
 	// Create router
-	server.router = web.New(AuthPlzTempCtx{}).
+	server.router = web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&server.ctx)).
 		//Middleware(web.LoggerMiddleware).
 		//Middleware(web.ShowErrorsMiddleware).
@@ -99,26 +129,32 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create API router
 	// TODO: this can probably be a separate module, but would require AuthPlzTempCtx/AuthPlzGlobalCtx to be in a package
 
+	//baseRouter := router.Subrouter(UserApiCtx{}, "/api")
+
 	userModule.Bind(server.router)
 
-
 	apiRouter := server.router.Subrouter(AuthPlzTempCtx{}, "/api")
+
+	apiRouter.Middleware(func(ctx *AuthPlzTempCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		ctx.userControl = userModule
+		ctx.tokenControl = tokenControl
+		ctx.tokenHandlers = tokenHandlers
+		next(rw, req)
+	})
+
 	//apiRouter.Post("/create", (*AuthPlzTempCtx).Create)
 	apiRouter.Post("/login", (*AuthPlzTempCtx).Login)
-	apiRouter.Post("/action", (*AuthPlzTempCtx).Action)
-	apiRouter.Get("/action", (*AuthPlzTempCtx).Action)
 	apiRouter.Get("/logout", (*AuthPlzTempCtx).Logout)
-	apiRouter.Get("/status", (*AuthPlzTempCtx).Status)
-	apiRouter.Get("/account", (*AuthPlzTempCtx).AccountGet)
-	apiRouter.Post("/account", (*AuthPlzTempCtx).AccountPost)
 	apiRouter.Get("/test", (*AuthPlzTempCtx).Test)
-/*
-	apiRouter.Get("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolGet)
-	apiRouter.Post("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolPost)
-	apiRouter.Get("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticateGet)
-	apiRouter.Post("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticatePost)
-	apiRouter.Get("/u2f/tokens", (*AuthPlzTempCtx).U2FTokensGet)
-*/
+	apiRouter.Get("/action", (*AuthPlzTempCtx).Action)
+	apiRouter.Post("/action", (*AuthPlzTempCtx).Action)
+	/*
+		apiRouter.Get("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolGet)
+		apiRouter.Post("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolPost)
+		apiRouter.Get("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticateGet)
+		apiRouter.Post("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticatePost)
+		apiRouter.Get("/u2f/tokens", (*AuthPlzTempCtx).U2FTokensGet)
+	*/
 	return &server
 }
 

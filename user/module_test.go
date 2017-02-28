@@ -4,7 +4,6 @@ import "testing"
 
 import (
 	"github.com/ryankurte/authplz/datastore"
-	"github.com/ryankurte/authplz/token"
 )
 
 func TestUserController(t *testing.T) {
@@ -23,8 +22,7 @@ func TestUserController(t *testing.T) {
 	dataStore.ForceSync()
 
 	// Create controllers
-	tokenController := token.NewTokenController("localhost:3223", "abcDEF123")
-	uc := NewUserModule(dataStore, tokenController)
+	uc := NewUserModule(dataStore)
 
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)

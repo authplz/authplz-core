@@ -7,7 +7,7 @@ import (
 )
 
 import (
-	"github.com/ryankurte/authplz/token"
+	"github.com/ryankurte/authplz/api"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,12 +17,11 @@ const hashRounds = 8
 
 type UserModule struct {
 	userStore    UserStoreInterface
-	tokenControl *token.TokenController
 	hashRounds   int
 }
 
-func NewUserModule(userStore UserStoreInterface, tokenControl *token.TokenController) *UserModule {
-	return &UserModule{userStore, tokenControl, hashRounds}
+func NewUserModule(userStore UserStoreInterface) *UserModule {
+	return &UserModule{userStore, hashRounds}
 }
 
 // Create a new user account
@@ -75,7 +74,7 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, loginError
+		return nil, api.LoginError
 	}
 
 	user = u.(UserInterface)
@@ -86,7 +85,7 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, loginError
+		return nil, api.LoginError
 	}
 
 	user = u.(UserInterface)
@@ -103,7 +102,7 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, loginError
+		return nil, api.LoginError
 	}
 
 	user = u.(UserInterface)
@@ -114,7 +113,7 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, loginError
+		return nil, api.LoginError
 	}
 
 	user = u.(UserInterface)
@@ -125,14 +124,14 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 }
 
 //TODO: differentiate between login states and internal errors
-func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, UserInterface, error) {
+func (userModule *UserModule) Login(email string, pass string) (*api.LoginStatus, interface{}, error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, nil, loginError
+		return nil, nil, api.LoginError
 	}
 
 	// Fake hash if user does not exist, then make login decision after
@@ -161,7 +160,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 			if err != nil {
 				// Userstore error, wrap
 				log.Println(err)
-				return nil, nil, loginError
+				return nil, nil, api.LoginError
 			}
 
 			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
@@ -170,7 +169,7 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 		}
 
 		// Error in case of hash error
-		return &LoginFailure, nil, nil
+		return api.LoginFailure, nil, nil
 	}
 
 	// Login if user exists and passwords match
@@ -183,25 +182,25 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 		if user.IsEnabled() == false {
 			//TODO: handle disabled error
 			log.Printf("UserModule.Login: User %s login failed, account disabled\r\n", user.GetExtId())
-			return &LoginDisabled, user, nil
+			return api.LoginDisabled, user, nil
 		}
 
 		if user.IsActivated() == false {
 			//TODO: handle un-activated error
 			log.Printf("UserModule.Login: User %s login failed, account deactivated\r\n", user.GetExtId())
-			return &LoginUnactivated, user, nil
+			return api.LoginUnactivated, user, nil
 		}
 
 		if user.IsLocked() == true {
 			//TODO: handle locked error
 			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", user.GetExtId())
-			return &LoginLocked, user, nil
+			return api.LoginLocked, user, nil
 		}
 		/*
 			if u.SecondFactors() == true {
 				// Prompt for second factor login
 				log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetExtId())
-				return &LoginPartial, u, nil
+				return api.LoginPartial, u, nil
 			}
 		*/
 		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
@@ -211,13 +210,13 @@ func (userModule *UserModule) Login(email string, pass string) (*LoginStatus, Us
 		_, err = userModule.userStore.UpdateUser(user)
 		if err != nil {
 			log.Println(err)
-			return &LoginFailure, nil, nil
+			return api.LoginFailure, nil, nil
 		}
 
-		return &LoginSuccess, user, nil
+		return api.LoginSuccess, user, nil
 	}
 
-	return &LoginFailure, nil, nil
+	return api.LoginFailure, nil, nil
 }
 
 func (userModule *UserModule) GetUser(extId string) (UserInterface, error) {
@@ -279,4 +278,26 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", extId)
 
 	return user, nil
+}
+
+// Generic method to handle an action token
+func (userModule *UserModule) HandleToken(u interface{}, action api.TokenAction) (err error) {
+
+	user := u.(UserInterface)
+
+	switch action {
+	case api.TokenActionUnlock:
+		log.Printf("UserModule.HandleToken: Unlocking user\n")
+		userModule.Unlock(user.GetEmail())
+		return nil
+
+	case api.TokenActionActivate:
+		log.Printf("UserModule.HandleToken: Activating user\n")
+		userModule.Activate(user.GetEmail())
+		return nil
+
+	default:
+		log.Printf("UserModule.HandleToken: Invalid token action\n")
+		return api.TokenError
+	}
 }

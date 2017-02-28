@@ -3,16 +3,22 @@
 
 package token
 
-import "time"
-import "fmt"
-import "encoding/gob"
+import (
+	"encoding/gob"
+	"fmt"
+	"log"
+	"time"
+)
 
-import "github.com/dgrijalva/jwt-go"
-import "github.com/satori/go.uuid"
+import (
+	"github.com/dgrijalva/jwt-go"
+	"github.com/ryankurte/authplz/api"
+	"github.com/satori/go.uuid"
+)
 
 // Custom claims object
 type TokenClaims struct {
-	Action string `json:"act"` // Token action
+	Action api.TokenAction `json:"act"` // Token action
 	jwt.StandardClaims
 }
 
@@ -39,7 +45,7 @@ func NewTokenController(address string, hmacSecret string) *TokenController {
 }
 
 // Generate an action token
-func (tc *TokenController) BuildToken(userid string, action string, duration time.Duration) (string, error) {
+func (tc *TokenController) BuildToken(userid string, action api.TokenAction, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
 		Action: action,
@@ -79,4 +85,22 @@ func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) 
 		fmt.Println(err)
 		return nil, err
 	}
+}
+
+func (tc *TokenController) ValidateToken(userId, tokenString string) (*api.TokenAction, error) {
+	// Parse token
+	claims, err := tc.ParseToken(tokenString)
+	if err != nil {
+		log.Println("TokenController.ValidateToken: Invalid or expired token (%s)", err)
+		return nil, err
+	}
+
+	// Check subject matches
+	if claims.Subject != userId {
+		log.Println("TokenController.ValidateToken: Subject ID mismatch")
+		return nil, api.TokenErrorInvalidUser
+	}
+
+	// Return claim
+	return &claims.Action, nil
 }

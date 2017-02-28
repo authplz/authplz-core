@@ -50,6 +50,10 @@ func (ctx *AuthPlzCtx) GetUserID() string {
 	return ctx.userid
 }
 
+func (ctx *AuthPlzCtx) GetSession() *sessions.Session {
+	return ctx.session
+}
+
 // Wrapper for API localisation
 func (ctx *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
 	return api.GetApiLocale(ctx.locale)

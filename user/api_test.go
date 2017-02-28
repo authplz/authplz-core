@@ -10,14 +10,11 @@ import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
-	//"github.com/ryankurte/go-u2f"
 
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/datastore"
 	"github.com/ryankurte/authplz/test"
-	"github.com/ryankurte/authplz/token"
-	//  "github.com/ryankurte/authplz/usercontroller"
 )
 
 func TestUserApi(t *testing.T) {
@@ -37,8 +34,7 @@ func TestUserApi(t *testing.T) {
 
 	// Create controllers
 	sessionStore := sessions.NewCookieStore([]byte("abcDEF123"))
-	tokenController := token.NewTokenController(address, "abcDEF123")
-	userModule := NewUserModule(dataStore, tokenController)
+	userModule := NewUserModule(dataStore)
 
 	ac := appcontext.AuthPlzGlobalCtx{
 		SessionStore: sessionStore,
