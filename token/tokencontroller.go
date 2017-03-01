@@ -22,10 +22,6 @@ type TokenClaims struct {
 	jwt.StandardClaims
 }
 
-// Token actions
-const TokenActionActivate string = "activate"
-const TokenActionUnlock string = "unlock"
-
 // TokenController instance
 type TokenController struct {
 	address    string

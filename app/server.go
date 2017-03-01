@@ -30,6 +30,7 @@ type AuthPlzServer struct {
 	ds      *datastore.DataStore
 	ctx     appcontext.AuthPlzGlobalCtx
 	router  *web.Router
+	tokenControl *token.TokenController
 }
 
 // Temporary mapping between contexts
@@ -58,6 +59,7 @@ type TokenHandlerInterface interface {
 
 type UserInterface interface {
 	GetExtId() string
+	GetEmail() string
 }
 
 func NewServer(config AuthPlzConfig) *AuthPlzServer {
@@ -93,6 +95,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 		log.Panic("Error decoding cookie secret")
 	}
 	tokenControl := token.NewTokenController(server.config.Address, string(tokenSecret))
+	server.tokenControl = tokenControl
 
 	userModule := user.NewUserModule(dataStore)
 

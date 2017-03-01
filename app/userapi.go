@@ -77,28 +77,27 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	user := u.(UserInterface)
+    // TODO: handle UserControl.Login errors
 
-	// Handle simple logins
-	if l == api.LoginSuccess {
-		log.Println("Login: Login OK")
-
-		// Create session
-		c.LoginUser(user, rw, req)
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
-		return
-	}
+    // No user account found
+	user, ok := u.(UserInterface)
+    if l == api.LoginFailure || !ok {
+        log.Println("Login Failure: user account not found")
+        rw.WriteHeader(http.StatusUnauthorized)
+        return
+    }
 
 	// Load flashes and apply actions if they exist
 	flashes := c.GetSession().Flashes()
 	if len(flashes) > 0 {
 		// Fetch token from session flash and validate
 		tokenString := flashes[0].(string)
-		action, err := c.tokenControl.ValidateToken(user.GetUserID(), tokenString)
+		action, err := c.tokenControl.ValidateToken(user.GetExtId(), tokenString)
 		if err != nil {
 			log.Printf("Login: Token error %s\n", err)
-			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
-			return
+			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
+			rw.WriteHeader(http.StatusUnauthorized)
+            return
 		}
 
 		// Locate token handler
@@ -108,13 +107,29 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 
 		// Execute token action
-		err := tokenHandler(user.GetUserID(), action)
+		err = tokenHandler.HandleToken(user, *action)
 		if err != nil {
 			log.Printf("Login: Token action %s handler error %s\n", action, err)
 		}
 
-		// TODO: Reload user?
+        // Reload login state
+        l, _, e = c.userControl.Login(email, password)
+        if e != nil {
+            rw.WriteHeader(http.StatusUnauthorized)
+            log.Printf("Login: user controller error %s\n", e)
+            return
+        }
 	}
+
+    // Handle login success
+    if l == api.LoginSuccess {
+        log.Println("Login: Login OK")
+
+        // Create session
+        c.LoginUser(user, rw, req)
+        c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
+        return
+    }
 
 	// Handle not yet activated accounts
 	if l == api.LoginUnactivated {
@@ -143,7 +158,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Login: Login failed\n")
+	log.Printf("Login: Login failed (unknown)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 

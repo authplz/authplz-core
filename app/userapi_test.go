@@ -10,7 +10,6 @@ import "net/url"
 import "github.com/ryankurte/go-u2f"
 
 import "github.com/ryankurte/authplz/datastore"
-import "github.com/ryankurte/authplz/token"
 import "github.com/ryankurte/authplz/api"
 import "github.com/ryankurte/authplz/test"
 
@@ -84,7 +83,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken("blah", token.TokenActionActivate, d)
+		at, _ := server.tokenControl.BuildToken("blah", api.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)
@@ -107,7 +106,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken(userId, token.TokenActionActivate, d)
+		at, _ := server.tokenControl.BuildToken(userId, api.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)
@@ -170,7 +169,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken("bad user id", token.TokenActionUnlock, d)
+		at, _ := server.tokenControl.BuildToken("bad user id", api.TokenActionUnlock, d)
 
 		// Post activation token
 		v := url.Values{}
@@ -191,7 +190,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken(userId, token.TokenActionUnlock, d)
+		at, _ := server.tokenControl.BuildToken(userId, api.TokenActionUnlock, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)

@@ -46,10 +46,6 @@ func (ctx *AuthPlzCtx) GetLocale() string {
 	return ctx.locale
 }
 
-func (ctx *AuthPlzCtx) GetUserID() string {
-	return ctx.userid
-}
-
 func (ctx *AuthPlzCtx) GetSession() *sessions.Session {
 	return ctx.session
 }
@@ -160,16 +156,30 @@ func (c *AuthPlzCtx) LoginUser(u User, rw web.ResponseWriter, req *web.Request) 
 		log.Printf("Error logging in user, no session found")
 		return
 	}
+
 	c.session.Values["userId"] = u.GetExtId()
 	c.session.Save(req.Request, rw)
 	c.userid = u.GetExtId()
+	log.Printf("Context: logged in user %d", u.GetExtId())
 }
 
 // Helper function to logout a user
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
+	log.Printf("Context: logging out user %d", c.userid)
 	c.session.Options.MaxAge = -1
 	c.session.Save(req.Request, rw)
 	c.userid = ""
+}
+
+// Fetch user id from a session
+// Blank if a user is not logged in
+func (ctx *AuthPlzCtx) GetUserID() string {
+	id := ctx.session.Values["userId"]
+	if id != nil {
+		return id.(string)
+	} else {
+		return ""
+	}
 }
 
 // Helper function to set a flash message for display to the user
