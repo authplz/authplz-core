@@ -14,7 +14,6 @@ import (
 
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
-	"github.com/ryankurte/authplz/controllers/datastore"
 )
 
 type U2FApiCtx struct {
@@ -29,6 +28,8 @@ func init() {
 	gob.Register(&u2f.Challenge{})
 }
 
+// First stage token enrolment (get) handler
+// This creates and caches a challenge for a device to be registered
 func (c *U2FApiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
@@ -58,6 +59,8 @@ func (c *U2FApiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, *u2fReq)
 }
 
+// Second stage token enrolment (post) handler
+// This checks the cached challenge and completes device enrolment
 func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
@@ -94,16 +97,9 @@ func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	// Create datastore token model
-	token := datastore.FidoToken{
-		KeyHandle:   reg.KeyHandle,
-		PublicKey:   reg.PublicKey,
-		Certificate: reg.Certificate,
-		Counter:     reg.Counter,
-	}
-
-	// Save registration against user
-	_, err = c.um.u2fStore.AddFidoToken(c.GetUserID(), &token)
+	// Create and save token
+	// TODO: add token name
+	_, err = c.um.u2fStore.AddFidoToken(c.GetUserID(), "", reg.KeyHandle, reg.PublicKey, reg.Certificate, reg.Counter)
 	if err != nil {
 		// Registration failed.
 		log.Println(err)
@@ -115,34 +111,22 @@ func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().U2FRegistrationComplete)
 }
 
-func (c *U2FApiCtx) U2FBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
-	u2fSession, err := c.Global.SessionStore.Get(req.Request, "u2f-sign-session")
-	if err != nil {
-		log.Printf("Error fetching u2f-sign-session 1 %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return
-	}
-
-	log.Printf("U2F adding authorization flash for user %s\n", userid)
-
-	u2fSession.Values["u2f-sign-userid"] = userid
-	u2fSession.Save(req.Request, rw)
-}
-
 func (c *U2FApiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, "u2f-sign-session")
 	if err != nil {
-		log.Printf("Error fetching u2f-sign-session 2 %s", err)
+		log.Printf("Error fetching u2f-sign-session 3  %s", err)
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
 		return
 	}
 
-	if u2fSession.Values["u2f-sign-userid"] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
-		fmt.Println("No userid found in session flash")
+	// Fetch challenge user ID
+	userid := c.Get2FARequest(rw, req)
+
+	if userid == "" {
+		log.Printf("u2f.U2FAuthenticateGet No pending 2fa requests found")
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
 		return
 	}
-	userid := u2fSession.Values["u2f-sign-userid"].(string)
 
 	log.Printf("U2F Authenticate request for user %s", userid)
 

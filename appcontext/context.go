@@ -207,3 +207,40 @@ func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) st
 
 	return ""
 }
+
+const secondFactorRequestSessionKey = "2fa-request"
+
+// Bind a 2fa request for a user
+// TODO: the request should probably timeout eventually
+func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string) {
+	secondFactorSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+	if err != nil {
+		log.Printf("AuthPlzCtx.Bind2faRequest error fetching %s %s", secondFactorRequestSessionKey, err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+
+	log.Printf("AuthPlzCtx.Bind2faRequest adding authorization flash for user %s\n", userid)
+
+	secondFactorSession.Values[secondFactorRequestSessionKey] = userid
+	secondFactorSession.Save(req.Request, rw)
+}
+
+// Fetch a 2fa request for a user
+func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) string {
+	u2fSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+	if err != nil {
+		log.Printf("AuthPlzCtx.Get2FARequest Error fetching %s %s", secondFactorRequestSessionKey, err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return ""
+	}
+
+	if u2fSession.Values[secondFactorRequestSessionKey] == nil {
+		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
+		log.Printf("AuthPlzCtx.Get2FARequest No userid found in session flash")
+		return ""
+	}
+	userid := u2fSession.Values[secondFactorRequestSessionKey].(string)
+	return userid
+}
+

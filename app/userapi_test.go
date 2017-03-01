@@ -235,7 +235,7 @@ func TestMain(t *testing.T) {
 		fakePass = newPass
 	})
 
-	t.Skip("Users must be logged in to update passwords", func(t *testing.T) {
+	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
 		//TODO
 	})
 
@@ -249,7 +249,7 @@ func TestMain(t *testing.T) {
 
 		// Check AppId is set correctly
 		if rr.AppID != c.Address {
-			t.Errorf("U2F challenge AppId mismatch")
+			t.Errorf("U2F challenge AppId mismatch (expected %s received %s)", c.Address, rr.AppID)
 		}
 
 		// Handle via virtual token

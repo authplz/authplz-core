@@ -20,6 +20,7 @@ import (
 	"github.com/ryankurte/authplz/controllers/token"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
+	"github.com/ryankurte/authplz/modules/2fa/u2f"
 )
 
 // Base AuthPlz server object
@@ -38,6 +39,14 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server := AuthPlzServer{}
 
 	server.config = config
+
+	// Generate URL string
+	var url string
+	if config.NoTls == false {
+		url = "https://" + config.Address + ":" + config.Port
+	} else {
+		url = "http://" + config.Address + ":" + config.Port
+	}
 
 	// Attempt database connection
 	dataStore, err := datastore.NewDataStore(config.Database)
@@ -74,18 +83,13 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// User management module
 	userModule := user.NewUserModule(dataStore)
 
+	u2fModule := u2f.NewU2FModule(config.Address, dataStore)
+
 	// Core module
 	coreModule := core.NewCoreModule(tokenControl, userModule)
 	coreModule.BindActionHandler(api.TokenActionActivate, userModule)
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
-
-	// Generate URL string
-	var url string
-	if config.NoTls == false {
-		url = "https://" + config.Address + ":" + config.Port
-	} else {
-		url = "http://" + config.Address + ":" + config.Port
-	}
+	coreModule.BindSecondFactor("u2f", u2fModule)
 
 	// Create a global context object
 	server.ctx = appcontext.NewGlobalCtx(config.Port, config.Address, url, sessionStore)
@@ -107,14 +111,9 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Bind modules to router
 	coreModule.BindAPI(server.router)
 	userModule.BindAPI(server.router)
+	u2fModule.BindAPI(server.router)
 
-	/*
-		apiRouter.Get("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolGet)
-		apiRouter.Post("/u2f/enrol", (*AuthPlzTempCtx).U2FEnrolPost)
-		apiRouter.Get("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticateGet)
-		apiRouter.Post("/u2f/authenticate", (*AuthPlzTempCtx).U2FAuthenticatePost)
-		apiRouter.Get("/u2f/tokens", (*AuthPlzTempCtx).U2FTokensGet)
-	*/
+
 	return &server
 }
 

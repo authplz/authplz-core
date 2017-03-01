@@ -192,10 +192,12 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 		availableHandlers[key] = supported
 	}
+	log.Printf("Second factors: %+v", availableHandlers)
 
 	// Respond with list of available 2fa components if required
 	if (l == api.LoginSuccess) && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
+		c.Bind2FARequest(rw, req, user.GetExtId())
 		c.WriteJson(rw, availableHandlers)
 		rw.WriteHeader(http.StatusAccepted)
 	}

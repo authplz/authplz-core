@@ -130,8 +130,14 @@ func (dataStore *DataStore) GetTokens(user interface{}) (interface{}, error) {
 
 	u := user.(*User)
 
-	u.FidoTokens, err = dataStore.GetFidoTokens(u)
+	err = dataStore.db.Model(user).Related(u.FidoTokens).Error
+	if err != nil {
+		return nil, err
+	}
 	u.TotpTokens, err = dataStore.GetTotpTokens(u)
+	if err != nil {
+		return nil, err
+	}
 
-	return u, err
+	return u, nil
 }
