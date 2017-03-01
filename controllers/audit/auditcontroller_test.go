@@ -2,7 +2,7 @@ package logcontroller
 
 import "testing"
 
-import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/controllers/datastore"
 
 func TestLogController(t *testing.T) {
 	// Setup user controller for testing

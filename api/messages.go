@@ -1,3 +1,5 @@
+// Defines API messages
+
 package api
 
 import (

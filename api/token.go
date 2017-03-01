@@ -17,5 +17,5 @@ const TokenActionUnlock  TokenAction    = "unlock"
 const TokenActionInvalid TokenAction    = "invalid"
 const TokenActionExpired TokenAction    = "expired"
 
-var TokenError = errors.New("internal server error")
-var TokenErrorInvalidUser = errors.New("invalid user")
+var TokenError                          = errors.New("internal server error")
+var TokenErrorInvalidUser               = errors.New("invalid user")

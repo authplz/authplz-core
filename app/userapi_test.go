@@ -9,7 +9,7 @@ import "net/url"
 
 import "github.com/ryankurte/go-u2f"
 
-import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/controllers/datastore"
 import "github.com/ryankurte/authplz/api"
 import "github.com/ryankurte/authplz/test"
 

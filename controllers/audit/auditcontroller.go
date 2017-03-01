@@ -1,6 +1,6 @@
 package logcontroller
 
-import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/controllers/datastore"
 
 // Interface that datastore must implement to provide audit controller
 type LogStoreInterface interface {

@@ -1,8 +1,7 @@
-package app
+package core
 
 import (
 	"net/http"
-
 	"log"
 )
 
@@ -10,15 +9,50 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
 	"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/appcontext"
 )
 
-func (c *AuthPlzTempCtx) Test(rw web.ResponseWriter, req *web.Request) {
+// Temporary mapping between contexts
+type AuthPlzCoreCtx struct {
+	// Base context for shared components
+	*appcontext.AuthPlzCtx
+
+	// Core module to provide API with required methods
+	cm *CoreModule
+}
+
+// Helper middleware to bind module to API context
+func BindCoreContext(coreModule *CoreModule) func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		ctx.cm = coreModule
+		next(rw, req)
+	}
+}
+
+// Bind the API for the coreModule to the provided router
+func (coreModule *CoreModule) BindAPI(router *web.Router) {
+	// Create router for user modules
+	coreRouter := router.Subrouter(AuthPlzCoreCtx{}, "/api")
+
+	// Attach module context
+	coreRouter.Middleware(BindCoreContext(coreModule))
+
+	// Bind endpoints
+	coreRouter.Post("/login", 	(*AuthPlzCoreCtx).Login)
+	coreRouter.Get("/logout", 	(*AuthPlzCoreCtx).Logout)
+	coreRouter.Get("/test", 	(*AuthPlzCoreCtx).Test)
+	coreRouter.Get("/action", 	(*AuthPlzCoreCtx).Action)
+	coreRouter.Post("/action", 	(*AuthPlzCoreCtx).Action)
+}
+
+// Test endpoint
+func (c *AuthPlzCoreCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
 
 // Handle an action token (both get and post calls)
 // This adds the action token to a session flash for use post-login attempt
-func (c *AuthPlzTempCtx) Action(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCoreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	// Grab token string from get or post request
 	var tokenString string
 	tokenString = req.FormValue("token")
@@ -51,7 +85,7 @@ func (c *AuthPlzTempCtx) Action(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Login to a user account
-func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
@@ -70,7 +104,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Attempt login via UserControl interface
-	l, u, e := c.userControl.Login(email, password)
+	l, u, e := c.cm.userControl.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		log.Printf("Login: user controller error %s\n", e)
@@ -92,7 +126,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if len(flashes) > 0 {
 		// Fetch token from session flash and validate
 		tokenString := flashes[0].(string)
-		action, err := c.tokenControl.ValidateToken(user.GetExtId(), tokenString)
+		action, err := c.cm.tokenControl.ValidateToken(user.GetExtId(), tokenString)
 		if err != nil {
 			log.Printf("Login: Token error %s\n", err)
 			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
@@ -101,7 +135,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 
 		// Locate token handler
-		tokenHandler, ok := c.tokenHandlers[*action]
+		tokenHandler, ok := c.cm.tokenHandlers[*action]
 		if !ok {
 			log.Printf("Login: No token handler found for action %s\n", action)
 		}
@@ -113,7 +147,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 
         // Reload login state
-        l, _, e = c.userControl.Login(email, password)
+        l, _, e = c.cm.userControl.Login(email, password)
         if e != nil {
             rw.WriteHeader(http.StatusUnauthorized)
             log.Printf("Login: user controller error %s\n", e)
@@ -163,7 +197,7 @@ func (c *AuthPlzTempCtx) Login(rw web.ResponseWriter, req *web.Request) {
 }
 
 // End a user session
-func (c *AuthPlzTempCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return

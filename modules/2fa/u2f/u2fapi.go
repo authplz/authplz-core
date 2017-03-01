@@ -9,7 +9,7 @@ import "encoding/json"
 import "github.com/gocraft/web"
 import "github.com/ryankurte/go-u2f"
 
-import "github.com/ryankurte/authplz/datastore"
+import "github.com/ryankurte/authplz/controllers/datastore"
 import "github.com/ryankurte/authplz/api"
 
 type U2FControl struct {

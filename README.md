@@ -2,7 +2,7 @@
 
 A simple Authentication and User Management microservice, designed to avoid having to write another authentication and user management service (ever again).
 
-This is intended to provide common user management features (creation/login/logout/password update & reset/token enrollment & validation/email updates/audit logs/oauth token issue/use/revocation) required for a web application (or web application suite) with the minimum possible complexity.
+This is intended to provide common user management features (creation/login/logout/password update & reset/token enrolment & validation/email updates/audit logs/oauth token issue/use/revocation) required for a web application (or web application suite) with the minimum possible complexity.
 
 This provides an alternative to hosted solutions such as [StormPath](https://stormpath.com/) and [AuthRocket](https://authrocket.com/) for companies that prefer (or require) locally hosted identity providers. For a well supported locally hosted alternative you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
 
@@ -33,10 +33,10 @@ For development purposes, it may be convenient to add these variables to your en
 
 - [X] Account creation
 - [X] Account activation
-- [ ] User login - Partial Support, needs redirects
+- [ ] User login - Partial Support, needs redirects from config
 - [X] Account locking (and token + password based unlocking)
 - [X] User logout
-- [ ] User password update
+- [X] User password update
 - [ ] User Password reset
 - [ ] Email notification - Partial, Mailgun implemented, SMTP to go
 - [ ] Audit / Event logging
@@ -48,6 +48,20 @@ For development purposes, it may be convenient to add these variables to your en
 
 ## Project Layout
 
+- [main.go](main.go) contains the launcher for the AuthPlz server
+- [api/](api/) contains internal and external API definitions
+- [app/](app/) contains the overall application including configuration and wiring (as well as integration tests)
+- [appcontext/](appcontext/) contains the base application context (shared across all API modules)
+- [controllers/](controllers/) contains controllers that can be shared across API modules
+  - [datastore/](datastore/) contains the data storage module and implements the interfaces required by other modules
+  - [token/](controllers/token/) contains a token generator and validator
+- [modules/](modules/) contains functional modules that can be bound into the system (including interface, controller and API)
+  - [core/](modules/core/) contains the core login/logout/action endpoints that further modules are bound into
+  - [user/](modules/user/) contains the user account management module and API
+- [templates/](templates/) contains default template files used by components (ie. mailer)
+- [test/](test/) contains test helpers (and maybe one day integration tests)
+
+Modules are self-binding and should define interfaces required to function rather than including any (non api or appcontext) other modules.
 
 
 ------

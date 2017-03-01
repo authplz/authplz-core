@@ -1,4 +1,4 @@
-// Defines messages and types for login implementations
+// Defines messages and types for login handler implementations
 
 package api
 

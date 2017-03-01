@@ -13,7 +13,7 @@ import (
 
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
-	"github.com/ryankurte/authplz/datastore"
+	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/test"
 )
 
@@ -48,7 +48,7 @@ func TestUserApi(t *testing.T) {
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
 
-	userModule.Bind(router)
+	userModule.BindAPI(router)
 
 	handler := context.ClearHandler(router)
 
@@ -66,5 +66,7 @@ func TestUserApi(t *testing.T) {
 	t.Run("Login status", func(t *testing.T) {
 		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
+
+	// TODO: move user api tests here
 
 }

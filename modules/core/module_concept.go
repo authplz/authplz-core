@@ -47,7 +47,7 @@ type PostAuthHandler interface {
 type LoginControl interface {
 	// Delegated login call, this must return true/false for password failure/success
 	// as well as the user object if found
-	Login(email string, password string) (bool, User, error)
+	Login(email string, password string) (bool, UserInterface, error)
 }
 
 type SecondFactor interface {
@@ -132,7 +132,7 @@ func (m *ModuleManager) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Run post-auth hooks
 	for name, module := range m.modules {
-		res, err := module.PostAuth(u.GetId(), rw, req)
+		res, err := module.PostAuth(u.GetExtId(), rw, req)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			log.Printf("ModuleManager post-auth module: %s error: %s\n", name, err)

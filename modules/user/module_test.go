@@ -3,7 +3,7 @@ package user
 import "testing"
 
 import (
-	"github.com/ryankurte/authplz/datastore"
+	"github.com/ryankurte/authplz/controllers/datastore"
 )
 
 func TestUserController(t *testing.T) {

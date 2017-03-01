@@ -70,4 +70,4 @@ psql:
 	docker run -it --rm --link ap-pg:ap-pg postgres psql -h ap-pg -U postgres	
 
 
-.PHONY: start-env stop-env clean-env frontend
+.PHONY: start-env stop-env clean-env frontend test

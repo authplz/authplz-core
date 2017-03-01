@@ -21,6 +21,7 @@ type UserApiCtx struct {
 	um *UserModule
 }
 
+// Helper middleware to bind module to API context
 func BindUserContext(userModule *UserModule) func(ctx *UserApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	return func(ctx *UserApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.um = userModule
@@ -28,13 +29,11 @@ func BindUserContext(userModule *UserModule) func(ctx *UserApiCtx, rw web.Respon
 	}
 }
 
-func (userModule *UserModule) Bind(router *web.Router) {
+func (userModule *UserModule) BindAPI(router *web.Router) {
 	// Create router for user modules
 	userRouter := router.Subrouter(UserApiCtx{}, "/api")
 
 	// Attach module context
-	// TODO: not sure whether to bind this into context or closure against methods
-	// to store controller / module
 	userRouter.Middleware(BindUserContext(userModule))
 
 	// Bind endpoints
