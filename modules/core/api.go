@@ -1,8 +1,8 @@
 package core
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 )
 
 import (
@@ -38,11 +38,11 @@ func (coreModule *CoreModule) BindAPI(router *web.Router) {
 	coreRouter.Middleware(BindCoreContext(coreModule))
 
 	// Bind endpoints
-	coreRouter.Post("/login", 	(*AuthPlzCoreCtx).Login)
-	coreRouter.Get("/logout", 	(*AuthPlzCoreCtx).Logout)
-	coreRouter.Get("/test", 	(*AuthPlzCoreCtx).Test)
-	coreRouter.Get("/action", 	(*AuthPlzCoreCtx).Action)
-	coreRouter.Post("/action", 	(*AuthPlzCoreCtx).Action)
+	coreRouter.Post("/login", (*AuthPlzCoreCtx).Login)
+	coreRouter.Get("/logout", (*AuthPlzCoreCtx).Logout)
+	coreRouter.Get("/test", (*AuthPlzCoreCtx).Test)
+	coreRouter.Get("/action", (*AuthPlzCoreCtx).Action)
+	coreRouter.Post("/action", (*AuthPlzCoreCtx).Action)
 }
 
 // Test endpoint
@@ -107,19 +107,19 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	l, u, e := c.cm.userControl.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
-		log.Printf("Login: user controller error %s\n", e)
+		log.Printf("Core.Login: user controller error %s\n", e)
 		return
 	}
 
-    // TODO: handle UserControl.Login errors
+	// TODO: handle UserControl.Login errors
 
-    // No user account found
+	// No user account found
 	user, ok := u.(UserInterface)
-    if l == api.LoginFailure || !ok {
-        log.Println("Login Failure: user account not found")
-        rw.WriteHeader(http.StatusUnauthorized)
-        return
-    }
+	if l == api.LoginFailure || !ok {
+		log.Println("Core.Login Failure: user account not found")
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	// Load flashes and apply actions if they exist
 	flashes := c.GetSession().Flashes()
@@ -128,46 +128,36 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		tokenString := flashes[0].(string)
 		action, err := c.cm.tokenControl.ValidateToken(user.GetExtId(), tokenString)
 		if err != nil {
-			log.Printf("Login: Token error %s\n", err)
+			log.Printf("Core.Login: Token error %s\n", err)
 			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
 			rw.WriteHeader(http.StatusUnauthorized)
-            return
+			return
 		}
 
 		// Locate token handler
 		tokenHandler, ok := c.cm.tokenHandlers[*action]
 		if !ok {
-			log.Printf("Login: No token handler found for action %s\n", action)
+			log.Printf("Core.Login: No token handler found for action %s\n", action)
 		}
 
 		// Execute token action
 		err = tokenHandler.HandleToken(user, *action)
 		if err != nil {
-			log.Printf("Login: Token action %s handler error %s\n", action, err)
+			log.Printf("Core.Login: Token action %s handler error %s\n", action, err)
 		}
 
-        // Reload login state
-        l, _, e = c.cm.userControl.Login(email, password)
-        if e != nil {
-            rw.WriteHeader(http.StatusUnauthorized)
-            log.Printf("Login: user controller error %s\n", e)
-            return
-        }
+		// Reload login state
+		l, _, e = c.cm.userControl.Login(email, password)
+		if e != nil {
+			rw.WriteHeader(http.StatusUnauthorized)
+			log.Printf("Core.Login: user controller error %s\n", e)
+			return
+		}
 	}
-
-    // Handle login success
-    if l == api.LoginSuccess {
-        log.Println("Login: Login OK")
-
-        // Create session
-        c.LoginUser(user, rw, req)
-        c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
-        return
-    }
 
 	// Handle not yet activated accounts
 	if l == api.LoginUnactivated {
-		log.Println("Login: Account not activated")
+		log.Println("Core.Login: Account not activated")
 		//TODO: prompt for activation (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
 		//c.WriteApiResult(rw, api.ApiResultError, user.LoginUnactivated.Message);
@@ -176,7 +166,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// TODO: handle locked accounts
 	if l == api.LoginLocked {
-		log.Println("Login: Account locked")
+		log.Println("Core.Login: Account locked")
 		//TODO: prompt for unlock (resend email?)
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
@@ -184,7 +174,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Handle partial logins (2FA)
 	if l == api.LoginPartial {
-		log.Println("Login: Partial login")
+		log.Println("Core.Login: Partial login")
 		//TODO: fetch tokens and set flash for 2FA
 		//c.U2FBindAuthenticationRequest(rw, req, u.GetExtId())
 		rw.WriteHeader(http.StatusAccepted)
@@ -192,7 +182,35 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Login: Login failed (unknown)\n")
+	// Check for available second factors
+	availableHandlers := make(map[string]bool)
+	secondFactorRequired := false
+	for key, handler := range c.cm.secondFactorHandlers {
+		supported := handler.IsSupported(user.GetExtId())
+		if supported {
+			secondFactorRequired = true
+		}
+		availableHandlers[key] = supported
+	}
+
+	// Respond with list of available 2fa components if required
+	if (l == api.LoginSuccess) && secondFactorRequired {
+		log.Println("Core.Login: Partial login (2fa required)")
+		c.WriteJson(rw, availableHandlers)
+		rw.WriteHeader(http.StatusAccepted)
+	}
+
+	// Handle login success
+	if l == api.LoginSuccess {
+		log.Println("Core.Login: Login OK")
+
+		// Create session
+		c.LoginUser(user, rw, req)
+		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
+		return
+	}
+
+	log.Printf("Core.Login: Login failed (unknown)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 

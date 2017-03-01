@@ -149,5 +149,3 @@ func (m *ModuleManager) Login(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("ModuleManager: auth failed (unknown path)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
-
-

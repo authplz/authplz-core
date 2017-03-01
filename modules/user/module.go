@@ -16,8 +16,8 @@ const minimumPasswordLength = 12
 const hashRounds = 8
 
 type UserModule struct {
-	userStore    UserStoreInterface
-	hashRounds   int
+	userStore  UserStoreInterface
+	hashRounds int
 }
 
 func NewUserModule(userStore UserStoreInterface) *UserModule {
@@ -196,13 +196,7 @@ func (userModule *UserModule) Login(email string, pass string) (*api.LoginStatus
 			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", user.GetExtId())
 			return api.LoginLocked, user, nil
 		}
-		/*
-			if u.SecondFactors() == true {
-				// Prompt for second factor login
-				log.Printf("UserModule.Login: User %s login failed, second factor required\r\n", u.GetExtId())
-				return api.LoginPartial, u, nil
-			}
-		*/
+
 		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
 
 		// Update login time etc.

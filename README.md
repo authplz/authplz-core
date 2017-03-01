@@ -12,6 +12,12 @@ Early WIP.
 
 [![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz)
 
+### Tasks
+
+- [ ] Refactor to Modules
+- [ ] Refactor modules to split API + Controller components (API should only use methods on controller)
+
+
 ## Usage
 
 Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project. Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
@@ -19,11 +25,13 @@ Frontend components and templates are now in a [ryankurte/authplz-ui](https://gi
 For development purposes, it may be convenient to add these variables to your environment (`~/.bashrc` or `~/.bash_profile`).
 
 ### Dependencies
+
 - Golang (for building)
 - Docker (for building/running docker images)
 - Postgres (for user information storage)
 
 ### Running
+
 1. Run `make install` to install dependencies
 2. Run `./gencert.sh` to generate TLS certificates
 3. Run `make build-env` and `make start-env` to build and run dependencies
