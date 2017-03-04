@@ -19,16 +19,16 @@ type CoreModule struct {
 	// This allows token handlers to be bound on a per-module basis using the actions
 	// defined in api.TokenAction. Note that there must not be overlaps in bindings
 	// TODO: this should probably be implemented as a bind function to panic if overlap is attempted
-	tokenHandlers        map[api.TokenAction]TokenHandlerInterface
+	tokenHandlers map[api.TokenAction]TokenHandlerInterface
 
 	// 2nd Factor Authentication implementations
 	secondFactorHandlers map[string]SecondFactorInterface
 
 	// Login handler implementations
-	loginHandlers 		 map[string]LoginHandlerInterface
+	loginHandlers map[string]LoginHandlerInterface
 
 	// Event handler implementations
-	eventHandlers 		 map[string]EventHandlerInterface
+	eventHandlers map[string]EventHandlerInterface
 }
 
 // Create a new core module instance
@@ -40,8 +40,8 @@ func NewCoreModule(tokenControl TokenControlInterface, userControl UserControlIn
 		userControl:          userControl,
 		tokenHandlers:        make(map[api.TokenAction]TokenHandlerInterface),
 		secondFactorHandlers: make(map[string]SecondFactorInterface),
-		loginHandlers: 		  make(map[string]LoginHandlerInterface),
-		eventHandlers: 		  make(map[string]EventHandlerInterface),
+		loginHandlers:        make(map[string]LoginHandlerInterface),
+		eventHandlers:        make(map[string]EventHandlerInterface),
 	}
 }
 
@@ -136,7 +136,7 @@ func (coreModule *CoreModule) HandleToken(userid string, user interface{}, token
 }
 
 // Run bound login handlers to accept user logins
-func (coreModule *CoreModule) LoginHandlers(userid string, u interface{}) (bool, error) {
+func (coreModule *CoreModule) PreLogin(userid string, u interface{}) (bool, error) {
 	for key, handler := range coreModule.loginHandlers {
 		ok, err := handler.PreLogin(userid, u)
 		if err != nil {
@@ -151,5 +151,3 @@ func (coreModule *CoreModule) LoginHandlers(userid string, u interface{}) (bool,
 
 	return true, nil
 }
-
-

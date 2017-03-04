@@ -22,7 +22,6 @@ type AuthPlzCoreCtx struct {
 	cm *CoreModule
 }
 
-
 // Helper middleware to bind module to API context
 func BindCoreContext(coreModule *CoreModule) func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	return func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -46,7 +45,6 @@ func (coreModule *CoreModule) BindAPI(router *web.Router) {
 	coreRouter.Get("/action", (*AuthPlzCoreCtx).Action)
 	coreRouter.Post("/action", (*AuthPlzCoreCtx).Action)
 }
-
 
 // Test endpoint
 func (c *AuthPlzCoreCtx) Test(rw web.ResponseWriter, req *web.Request) {
@@ -127,7 +125,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if len(flashes) > 0 {
 		// Fetch token from session flash
 		tokenString := flashes[0].(string)
-		
+
 		// Handle token and call require action
 		ok, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
 		if err != nil {
@@ -163,6 +161,17 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if l == api.LoginLocked {
 		log.Println("Core.Login: Account locked")
 		//TODO: prompt for unlock (resend email?)
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Call PreLogin handlers
+	loginAllowed, err := c.cm.PreLogin(c.GetUserID(), u)
+	if err != nil {
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+	if !loginAllowed {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -224,8 +233,4 @@ func (c *AuthPlzCoreCtx) Recover(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if 2fa tokens are available
 
-
 }
-
-
-
