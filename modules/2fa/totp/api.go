@@ -1,25 +1,52 @@
-package app
+/*
+ * TOTP Module API
+ * This defines the API methods bound to the TOTP module
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
 
-import "net/http"
+package totp
 
-import "github.com/gocraft/web"
+import (
+	"net/http"
+)
 
-func (c *AuthPlzTempCtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
+import (
+	"github.com/gocraft/web"
+	//"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/appcontext"
+)
+
+// U2F API context storage
+type TOTPApiCtx struct {
+	// Base context for shared components
+	*appcontext.AuthPlzCtx
+
+	// U2F controller module
+	totpModule *TOTPModule
+}
+
+func (c *TOTPApiCtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzTempCtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *TOTPApiCtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzTempCtx) TOTPBindAuthenticationRequest(rw web.ResponseWriter, req *web.Request, userid string) {
+func (c *TOTPApiCtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzTempCtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *TOTPApiCtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *AuthPlzTempCtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+func (c *TOTPApiCtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
+	rw.WriteHeader(http.StatusNotImplemented)
+}
+
+func (c *TOTPApiCtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
