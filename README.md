@@ -14,7 +14,7 @@ Early WIP.
 
 ### Tasks
 
-- [ ] Refactor to Modules
+- [X] Refactor to Modules
 - [ ] Refactor modules to split API + Controller components (API should only use methods on controller)
 
 
@@ -52,9 +52,13 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] 2FA token validation - Partial, needs integration with password reset
 - [ ] 2FA token management
 - [ ] OAuth2 delegation
+- [ ] ACL grants
+- [ ] OAuth2 user management
 - [ ] Account linking (google, facebook, github)
 
 ## Project Layout
+
+Checkout [DESIGN.md](DESIGN.md) for design notes and API interaction flows.
 
 - [main.go](main.go) contains the launcher for the AuthPlz server
 - [api/](api/) contains internal and external API definitions
