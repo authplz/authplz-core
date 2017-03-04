@@ -1,4 +1,4 @@
-package mailcontroller
+package mailer
 
 import "testing"
 import "fmt"
@@ -14,7 +14,7 @@ func TestMailController(t *testing.T) {
 
 	// Run tests
 	t.Run("Create mail controller", func(t *testing.T) {
-		lmc, err := NewMailController(mgDomain, mgPriKey, mgApiKey, "../templates")
+		lmc, err := NewMailController(mgDomain, mgPriKey, mgApiKey, "../../templates")
 		if err != nil {
 			fmt.Println(err)
 			t.Error(err)

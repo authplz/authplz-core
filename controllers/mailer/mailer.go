@@ -1,11 +1,23 @@
-package mailcontroller
+/*
+ * Mailer module controller
+ * This defines the API methods bound to the TOTP module
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
 
-import "html/template"
-import "bytes"
-import "fmt"
-import "log"
+package mailer
 
-import "gopkg.in/mailgun/mailgun-go.v1"
+import (
+	"html/template"
+	"bytes"
+	"fmt"
+	"log"
+)
+
+import (
+"gopkg.in/mailgun/mailgun-go.v1"
+)
 
 //import "github.com/asaskevich/govalidator"
 

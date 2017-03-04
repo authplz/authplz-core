@@ -48,7 +48,7 @@ For development purposes, it may be convenient to add these variables to your en
 - [ ] User Password reset
 - [ ] Email notification - Partial, Mailgun implemented, SMTP to go
 - [ ] Audit / Event logging
-- [X] 2FA token enrolment
+- [X] 2FA token enrolment - partial (Fido, TOTP pending)
 - [X] 2FA token validation - Partial, needs integration with password reset
 - [ ] 2FA token management
 - [ ] OAuth2 delegation
