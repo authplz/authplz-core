@@ -114,8 +114,6 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	// TODO: handle UserControl.Login errors
-
 	// No user account found
 	user, ok := u.(UserInterface)
 	if l == api.LoginFailure || !ok {
@@ -151,6 +149,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		}
 	}
 
+	// TODO: both the following checks could be implemented as plugins to simplify the login controller
 	// Handle not yet activated accounts
 	if l == api.LoginUnactivated {
 		log.Println("Core.Login: Account not activated")

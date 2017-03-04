@@ -31,11 +31,11 @@ type TokenHandlerInterface interface {
 	HandleToken(u interface{}, tokenAction api.TokenAction) error
 }
 
-// Interface for login handler modules
-// These modules are called in the login chain and can evaluate (and reject) login
-// attempts.
+// Event Hook Interfaces
+
+// PreLogin hooks may allow or deny login
 type LoginHandlerInterface interface {
-	CheckLogin(userid string, u interface{}) (bool, error)
+	PreLogin(userid string, u interface{}) (bool, error)
 }
 
 // Interface for event handler modules
@@ -43,7 +43,7 @@ type LoginHandlerInterface interface {
 // based on system events.
 // For example, the mailer module accepts a variety of user events and sends mail in response.
 type EventHandlerInterface interface {
-	handleEvent(userid string, u interface{}) error
+	HandleEvent(userid string, u interface{}) error
 }
 
 // Interface for user instances

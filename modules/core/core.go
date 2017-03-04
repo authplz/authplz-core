@@ -135,3 +135,21 @@ func (coreModule *CoreModule) HandleToken(userid string, user interface{}, token
 	return true, nil
 }
 
+// Run bound login handlers to accept user logins
+func (coreModule *CoreModule) LoginHandlers(userid string, u interface{}) (bool, error) {
+	for key, handler := range coreModule.loginHandlers {
+		ok, err := handler.PreLogin(userid, u)
+		if err != nil {
+			log.Printf("CoreModule.LoginHandlers: error in handler %s (%s)", key, err)
+			return false, err
+		}
+		if !ok {
+			log.Printf("CoreModule.LoginHandlers: user %s login blocked by handler %s", userid, err)
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+

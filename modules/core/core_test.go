@@ -21,6 +21,7 @@ type MockHandler struct {
     LoginCallResp *api.LoginStatus
     SecondFactorRequired bool
     TokenAction api.TokenAction
+    LoginAllowed bool
 }
 
 // user controller interface
@@ -40,12 +41,16 @@ func (mh *MockHandler) HandleToken(u interface{}, tokenAction api.TokenAction) e
     return nil
 }
 
+func (mh *MockHandler) PreLogin(userid string, u interface{}) (bool, error) {
+    return mh.LoginAllowed, nil
+}
+
 func TestCoreModule(t *testing.T) {
 
 
     tokenControl := token.NewTokenController("localhost", "ABCD")
     
-    mockHandler := MockHandler{api.LoginSuccess, false, api.TokenActionInvalid}
+    mockHandler := MockHandler{api.LoginSuccess, false, api.TokenActionInvalid, false}
     coreControl := NewCoreModule(tokenControl, &mockHandler)
 
     t.Run("Bind and call token action handlers", func(t *testing.T) {
@@ -94,7 +99,27 @@ func TestCoreModule(t *testing.T) {
     })
 
     t.Run("Bind login handlers", func(t *testing.T) {
-        
+        var u interface{}
+
+        coreControl.BindLoginHandler("mock-login-handler", &mockHandler)
+
+        mockHandler.LoginAllowed = false;
+        ok, err := coreControl.LoginHandlers("", u)
+        if err != nil {
+            t.Error(err)
+        }
+        if ok {
+            t.Errorf("Expected login failure")
+        }
+
+         mockHandler.LoginAllowed = true;
+        ok, err = coreControl.LoginHandlers("", u)
+        if err != nil {
+            t.Error(err)
+        }
+        if !ok {
+            t.Errorf("Expected login success")
+        }
 
     })
 
