@@ -96,7 +96,7 @@ func TestMain(t *testing.T) {
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.BindTest(t).TestPostForm("/login", http.StatusUnauthorized, v)
+		client2.BindTest(t).TestPostForm("/login", http.StatusBadRequest, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
@@ -180,7 +180,7 @@ func TestMain(t *testing.T) {
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		client2.BindTest(t).TestPostForm("/login", http.StatusUnauthorized, v)
+		client2.BindTest(t).TestPostForm("/login", http.StatusBadRequest, v)
 
 		// Check user status
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
@@ -318,8 +318,8 @@ func TestMain(t *testing.T) {
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout
-		client.TestGetApiResponse(t, "/logout", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LogoutSuccessful)
-
+		client.TestGet("/logout", 200)
+		
 		// Check user status
 		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})

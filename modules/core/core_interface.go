@@ -31,17 +31,19 @@ type TokenHandlerInterface interface {
 	HandleToken(u interface{}, tokenAction api.TokenAction) error
 }
 
-// Event Hook Interfaces
+// Core Event Hook Interfaces
 
 // PreLogin hooks may allow or deny login
 type PreLoginInterface interface {
 	PreLogin(u interface{}) (bool, error)
 }
 
+// Post login success hooks called on login success
 type PostLoginSuccessInterface interface {
     PostLoginSuccess(u interface{}) (error)
 }
 
+// Post login failure hooks called on login failure
 type PostLoginFailureInterface interface {
     PostLoginFailure(u interface{}) (error)
 }

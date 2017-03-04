@@ -76,7 +76,7 @@ func (c *AuthPlzCoreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		session.AddFlash(tokenString)
 		session.Save(req.Request, rw)
 
-		c.WriteApiResult(rw, api.ApiResultOk, "Saved token")
+		rw.WriteHeader(http.StatusOK)
 		//TODO: redirect to login
 
 	} else {
@@ -101,12 +101,20 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Check user is not already logged in
 	if c.GetUserID() != "" {
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().AlreadyAuthenticated)
+		rw.WriteHeader(http.StatusOK)
 	}
 
 	// Attempt login via UserControl interface
 	loginOk, u, e := c.cm.userControl.Login(email, password)
 	if e != nil {
+		// Run post login failure handlers
+		err := c.cm.PostLoginFailure(u);
+		if err != nil {
+			log.Printf("Core.Login: PostLoginFailure error (%s)\n", err)
+			rw.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		rw.WriteHeader(http.StatusUnauthorized)
 		log.Printf("Core.Login: user controller error %s\n", e)
 		return
@@ -136,19 +144,18 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		// Handle token and call require action
 		tokenOk, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
 		if err != nil {
-			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+			rw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if !tokenOk {
-			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
-			rw.WriteHeader(http.StatusUnauthorized)
+			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		// Reload login state
 		loginOk, u, e = c.cm.userControl.Login(email, password)
 		if e != nil {
-			rw.WriteHeader(http.StatusUnauthorized)
+			rw.WriteHeader(http.StatusInternalServerError)
 			log.Printf("Core.Login: user controller error %s\n", e)
 			return
 		}
@@ -159,7 +166,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	preLoginOk, err := c.cm.PreLogin(u)
 	if err != nil {
 		log.Printf("Core.Login: PreLogin error (%s)\n", err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !preLoginOk {
@@ -194,7 +201,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		err := c.cm.PostLoginSuccess(u);
 		if err != nil {
 			log.Printf("Core.Login: PostLoginSuccess error (%s)\n", err)
-			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+			rw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -202,7 +209,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 		// Create session
 		c.LoginUser(user.GetExtId(), rw, req)
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
+		rw.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -218,7 +225,7 @@ func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 		return
 	} else {
 		c.LogoutUser(rw, req)
-		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LogoutSuccessful)
+		rw.WriteHeader(http.StatusOK)
 	}
 }
 
