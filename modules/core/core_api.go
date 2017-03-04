@@ -212,3 +212,21 @@ func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LogoutSuccessful)
 	}
 }
+
+// Recover a user account
+func (c *AuthPlzCoreCtx) Recover(rw web.ResponseWriter, req *web.Request) {
+	email := req.FormValue("email")
+	if !govalidator.IsEmail(email) {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Send recovery email
+
+	// Check if 2fa tokens are available
+
+
+}
+
+
+

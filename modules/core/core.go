@@ -20,7 +20,15 @@ type CoreModule struct {
 	// defined in api.TokenAction. Note that there must not be overlaps in bindings
 	// TODO: this should probably be implemented as a bind function to panic if overlap is attempted
 	tokenHandlers        map[api.TokenAction]TokenHandlerInterface
+
+	// 2nd Factor Authentication implementations
 	secondFactorHandlers map[string]SecondFactorInterface
+
+	// Login handler implementations
+	loginHandlers 		 map[string]LoginHandlerInterface
+
+	// Event handler implementations
+	eventHandlers 		 map[string]EventHandlerInterface
 }
 
 // Create a new core module instance
@@ -32,6 +40,8 @@ func NewCoreModule(tokenControl TokenControlInterface, userControl UserControlIn
 		userControl:          userControl,
 		tokenHandlers:        make(map[api.TokenAction]TokenHandlerInterface),
 		secondFactorHandlers: make(map[string]SecondFactorInterface),
+		loginHandlers: 		  make(map[string]LoginHandlerInterface),
+		eventHandlers: 		  make(map[string]EventHandlerInterface),
 	}
 }
 
@@ -50,6 +60,34 @@ func (coreModule *CoreModule) BindActionHandler(action api.TokenAction, thi Toke
 func (coreModule *CoreModule) BindSecondFactor(name string, sfi SecondFactorInterface) {
 	// TODO: check if exists before attaching and throw an error
 	coreModule.secondFactorHandlers[name] = sfi
+}
+
+// Bind a login handler interface to the core module
+// Login handlers are called in the login chain to check login requirements
+func (coreModule *CoreModule) BindLoginHandler(name string, lhi LoginHandlerInterface) {
+	// TODO: check if exists before attaching and throw an error
+	coreModule.loginHandlers[name] = lhi
+}
+
+// Bind an event handler interface into the core module
+// Event handlers are called during a variety of evens
+func (coreModule *CoreModule) BindEventHandler(name string, ehi EventHandlerInterface) {
+	// TODO: check if exists before attaching and throw an error
+	coreModule.eventHandlers[name] = ehi
+}
+
+// Magic binding function, detects interfaces implemented by a given module
+// and binds as appropriate
+func (coreModule *CoreModule) BindModule(name string, mod interface{}) {
+	if i, ok := mod.(SecondFactorInterface); ok {
+		coreModule.BindSecondFactor(name, i)
+	}
+	if i, ok := mod.(LoginHandlerInterface); ok {
+		coreModule.BindLoginHandler(name, i)
+	}
+	if i, ok := mod.(EventHandlerInterface); ok {
+		coreModule.BindEventHandler(name, i)
+	}
 }
 
 // Determine whether a second factor is required for a user
