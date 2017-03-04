@@ -14,6 +14,7 @@ const (
     EventAccountDeleted         string = "account_deleted"
     EventAccountLoginSuccess    string = "login_success"
     EventAccountLoginFailure    string = "login_failure"
+    EventPasswordUpdate         string = "password_update"
 )
 
 type AuthPlzEvent struct {
@@ -28,4 +29,12 @@ func (e* AuthPlzEvent) GetUser() interface{} { return e.User }
 func (e* AuthPlzEvent) GetTime() time.Time { return e.Time }
 func (e* AuthPlzEvent) GetData() map[string]string { return e.Data }
 
+// Create a new AuthPlz event
+func NewEvent(u interface{}, eventType string, data map[string]string) *AuthPlzEvent {
+    return &AuthPlzEvent{u, time.Now(), eventType, data}
+}
 
+// EventEmitter interface for event producers
+type EventEmitter interface {
+    SendEvent(interface{})
+}

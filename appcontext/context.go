@@ -110,6 +110,8 @@ func (ctx *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, 
 	ctx.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
 	ctx.forwardedFor = req.Header.Get("x-forwarded-for")
 
+
+
 	next(rw, req)
 }
 

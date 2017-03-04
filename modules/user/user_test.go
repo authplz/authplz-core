@@ -4,6 +4,7 @@ import "testing"
 
 import (
 	"github.com/ryankurte/authplz/controllers/datastore"
+	"github.com/ryankurte/authplz/test"
 )
 
 func TestUserController(t *testing.T) {
@@ -18,11 +19,12 @@ func TestUserController(t *testing.T) {
 		t.Error("Error opening database")
 		t.FailNow()
 	}
-
 	dataStore.ForceSync()
 
+	mockEventEmitter := test.MockEventEmitter{}
+
 	// Create controllers
-	uc := NewUserModule(dataStore)
+	uc := NewUserModule(dataStore, &mockEventEmitter)
 
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)

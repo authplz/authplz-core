@@ -73,7 +73,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager = async.NewServiceManager()
 
 	// User management module
-	userModule := user.NewUserModule(dataStore)
+	userModule := user.NewUserModule(dataStore, server.serviceManager)
 
 	// Core module
 	coreModule := core.NewCoreModule(tokenControl, userModule)

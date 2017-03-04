@@ -20,11 +20,12 @@ var LoginError = errors.New("internal server error")
 
 type UserModule struct {
 	userStore  UserStoreInterface
+	emitter    api.EventEmitter
 	hashRounds int
 }
 
-func NewUserModule(userStore UserStoreInterface) *UserModule {
-	return &UserModule{userStore, hashRounds}
+func NewUserModule(userStore UserStoreInterface, emitter api.EventEmitter) *UserModule {
+	return &UserModule{userStore, emitter, hashRounds}
 }
 
 // Create a new user account
@@ -63,7 +64,9 @@ func (userModule *UserModule) Create(email string, pass string) (user UserInterf
 
 	user = u.(UserInterface)
 
-	// TODO: emit user creation event
+	// Emit user creation event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountCreated, data))
 
 	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtId())
 
@@ -93,6 +96,10 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 
 	user = u.(UserInterface)
 
+	// Emit user activation event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountActivated, data))
+
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtId())
 
 	return user, nil
@@ -120,6 +127,10 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	}
 
 	user = u.(UserInterface)
+
+	// Emit user unlock event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountUnlocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtId())
 
@@ -241,6 +252,10 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 		log.Println(err)
 		return nil, ErrorUpdatingUser
 	}
+
+	// Emit password update event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
 
 	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", extId)
 

@@ -34,7 +34,8 @@ func TestUserApi(t *testing.T) {
 
 	// Create controllers
 	sessionStore := sessions.NewCookieStore([]byte("abcDEF123"))
-	userModule := NewUserModule(dataStore)
+	mockEventEmitter := test.MockEventEmitter{}
+	userModule := NewUserModule(dataStore, &mockEventEmitter)
 
 	ac := appcontext.AuthPlzGlobalCtx{
 		SessionStore: sessionStore,
