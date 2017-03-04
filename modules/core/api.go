@@ -3,6 +3,7 @@ package core
 import (
 	"log"
 	"net/http"
+	"encoding/json"
 )
 
 import (
@@ -172,16 +173,6 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	// Handle partial logins (2FA)
-	if l == api.LoginPartial {
-		log.Println("Core.Login: Partial login")
-		//TODO: fetch tokens and set flash for 2FA
-		//c.U2FBindAuthenticationRequest(rw, req, u.GetExtId())
-		rw.WriteHeader(http.StatusAccepted)
-		//c.WriteApiResult(rw, api.ApiResultError, api.GetApiLocale(c.locale).2FARequired);
-		return
-	}
-
 	// Check for available second factors
 	availableHandlers := make(map[string]bool)
 	secondFactorRequired := false
@@ -198,8 +189,17 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if (l == api.LoginSuccess) && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
 		c.Bind2FARequest(rw, req, user.GetExtId())
-		c.WriteJson(rw, availableHandlers)
+
 		rw.WriteHeader(http.StatusAccepted)
+		rw.Header().Set("Content-Type", "application/json")
+		js, err := json.Marshal(availableHandlers)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		rw.Write(js)
+		
+		return
 	}
 
 	// Handle login success
@@ -207,7 +207,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		log.Println("Core.Login: Login OK")
 
 		// Create session
-		c.LoginUser(user, rw, req)
+		c.LoginUser(user.GetExtId(), rw, req)
 		c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
 		return
 	}

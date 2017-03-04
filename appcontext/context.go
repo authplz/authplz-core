@@ -151,16 +151,16 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 }
 
 // Helper function to login a user
-func (c *AuthPlzCtx) LoginUser(u User, rw web.ResponseWriter, req *web.Request) {
+func (c *AuthPlzCtx) LoginUser(userid string, rw web.ResponseWriter, req *web.Request) {
 	if c.session == nil {
 		log.Printf("Error logging in user, no session found")
 		return
 	}
 
-	c.session.Values["userId"] = u.GetExtId()
+	c.session.Values["userId"] = userid
 	c.session.Save(req.Request, rw)
-	c.userid = u.GetExtId()
-	log.Printf("Context: logged in user %d", u.GetExtId())
+	c.userid = userid
+	log.Printf("Context: logged in user %d", userid)
 }
 
 // Helper function to logout a user

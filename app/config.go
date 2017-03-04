@@ -91,5 +91,21 @@ func GetConfig() *AuthPlzConfig {
 		log.Fatal(err.Error())
 	}
 
+	// Decode secrets to strings
+	tokenSecret, err := base64.URLEncoding.DecodeString(c.TokenSecret)
+	if err != nil {
+		log.Println(err)
+		log.Panic("Error decoding token secret")
+	}
+
+	cookieSecret, err := base64.URLEncoding.DecodeString(c.CookieSecret)
+	if err != nil {
+		log.Println(err)
+		log.Panic("Error decoding cookie secret")
+	}
+
+	c.TokenSecret = string(tokenSecret)
+	c.CookieSecret = string(cookieSecret)
+
 	return c
 }

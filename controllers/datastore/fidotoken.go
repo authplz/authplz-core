@@ -81,7 +81,7 @@ func (dataStore *DataStore) GetFidoTokens(userid string) ([]interface{}, error) 
 
 func (dataStore *DataStore) UpdateFidoToken(token interface{}) (interface{}, error) {
 
-	err := dataStore.db.Save(&token).Error
+	err := dataStore.db.Save(token).Error
 	if err != nil {
 		return nil, err
 	}

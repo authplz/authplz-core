@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/base64"
 	"log"
 	"net/http"
 	"os"
@@ -18,19 +17,19 @@ import (
 
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/controllers/token"
+	"github.com/ryankurte/authplz/modules/2fa/u2f"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
-	"github.com/ryankurte/authplz/modules/2fa/u2f"
 )
 
 // Base AuthPlz server object
 type AuthPlzServer struct {
-	address string
-	port    string
-	config  AuthPlzConfig
-	ds      *datastore.DataStore
-	ctx     appcontext.AuthPlzGlobalCtx
-	router  *web.Router
+	address      string
+	port         string
+	config       AuthPlzConfig
+	ds           *datastore.DataStore
+	ctx          appcontext.AuthPlzGlobalCtx
+	router       *web.Router
 	tokenControl *token.TokenController
 }
 
@@ -55,27 +54,15 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	}
 	server.ds = dataStore
 
-	// Parse secrets
-	cookieSecret, err := base64.URLEncoding.DecodeString(config.CookieSecret)
-	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding cookie secret")
-	}
-
 	// Create session store
-	sessionStore := sessions.NewCookieStore(cookieSecret)
+	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
 
 	// TODO: Create CSRF middleware
 
 	// Create shared controllers
 
 	// Create token controller
-	tokenSecret, err := base64.URLEncoding.DecodeString(config.TokenSecret)
-	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding cookie secret")
-	}
-	tokenControl := token.NewTokenController(server.config.Address, string(tokenSecret))
+	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret))
 	server.tokenControl = tokenControl
 
 	// Create modules
@@ -112,7 +99,6 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	coreModule.BindAPI(server.router)
 	userModule.BindAPI(server.router)
 	u2fModule.BindAPI(server.router)
-
 
 	return &server
 }
