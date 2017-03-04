@@ -41,19 +41,27 @@ For development purposes, it may be convenient to add these variables to your en
 
 - [X] Account creation
 - [X] Account activation
-- [ ] User login - Partial Support, needs redirects from config
+- [X] User login
 - [X] Account locking (and token + password based unlocking)
 - [X] User logout
 - [X] User password update
 - [ ] User Password reset
-- [ ] Email notification - Partial, Mailgun implemented, SMTP to go
+- [ ] Email notification
 - [ ] Audit / Event logging
-- [X] 2FA token enrolment - partial (Fido, TOTP pending)
-- [X] 2FA token validation - Partial, needs integration with password reset
+- [ ] 2FA token enrolment
+  - [ ] TOTP
+  - [X] FIDO
+- [X] 2FA token validation
+  - [ ] TOTP
+  - [X] FIDO
 - [ ] 2FA token management
-- [ ] OAuth2 delegation
-- [ ] ACL grants
-- [ ] OAuth2 user management
+  - [ ] TOTP
+  - [ ] FIDO
+- [ ] OAuth2
+  - [ ] Authorization Code grant type
+  - [ ] Implicit grant type
+  - [ ] User token management
+- [ ] ACLs
 - [ ] Account linking (google, facebook, github)
 
 ## Project Layout

@@ -1,4 +1,4 @@
-package eventcontroller
+package event
 
 import "sync"
 import "fmt"

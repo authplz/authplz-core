@@ -211,6 +211,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 
+
 // End a user session
 func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {

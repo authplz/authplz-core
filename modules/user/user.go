@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"errors"
 )
 
 import (
@@ -14,6 +15,8 @@ import (
 //TODO: change this to enforce actual complexity
 const minimumPasswordLength = 12
 const hashRounds = 8
+
+var LoginError = errors.New("internal server error")
 
 type UserModule struct {
 	userStore  UserStoreInterface
@@ -74,7 +77,7 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, api.LoginError
+		return nil, LoginError
 	}
 
 	user = u.(UserInterface)
@@ -85,7 +88,7 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, api.LoginError
+		return nil, LoginError
 	}
 
 	user = u.(UserInterface)
@@ -102,7 +105,7 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, api.LoginError
+		return nil, LoginError
 	}
 
 	user = u.(UserInterface)
@@ -113,7 +116,7 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, api.LoginError
+		return nil, LoginError
 	}
 
 	user = u.(UserInterface)
@@ -159,7 +162,7 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 			if err != nil {
 				// Userstore error, wrap
 				log.Println(err)
-				return false, nil, api.LoginError
+				return false, nil, LoginError
 			}
 
 			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
