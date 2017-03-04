@@ -41,14 +41,8 @@ func (coreModule *CoreModule) BindAPI(router *web.Router) {
 	// Bind endpoints
 	coreRouter.Post("/login", (*AuthPlzCoreCtx).Login)
 	coreRouter.Get("/logout", (*AuthPlzCoreCtx).Logout)
-	coreRouter.Get("/test", (*AuthPlzCoreCtx).Test)
 	coreRouter.Get("/action", (*AuthPlzCoreCtx).Action)
 	coreRouter.Post("/action", (*AuthPlzCoreCtx).Action)
-}
-
-// Test endpoint
-func (c *AuthPlzCoreCtx) Test(rw web.ResponseWriter, req *web.Request) {
-	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
 
 // Handle an action token (both get and post calls)
