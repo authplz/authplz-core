@@ -101,7 +101,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	loginOk, u, e := c.cm.userControl.Login(email, password)
 	if e != nil {
 		// Run post login failure handlers
-		err := c.cm.PostLoginFailure(u);
+		err := c.cm.PostLoginFailure(u)
 		if err != nil {
 			log.Printf("Core.Login: PostLoginFailure error (%s)\n", err)
 			rw.WriteHeader(http.StatusUnauthorized)
@@ -191,7 +191,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Handle login success
 	if loginOk && preLoginOk {
 		// Run post login success handlers
-		err := c.cm.PostLoginSuccess(u);
+		err := c.cm.PostLoginSuccess(u)
 		if err != nil {
 			log.Printf("Core.Login: PostLoginSuccess error (%s)\n", err)
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -210,7 +210,6 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("Core.Login: Login failed (unknown)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }
-
 
 // End a user session
 func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {

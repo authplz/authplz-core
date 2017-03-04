@@ -30,10 +30,10 @@ test:
 # Utilities
 
 lint:
-	golint ./..
+	golint ./...
 
 format:
-	gofmt -w -s ./..
+	gofmt -w -s ./...
 
 validate:
 	swagger validate swagger.yml

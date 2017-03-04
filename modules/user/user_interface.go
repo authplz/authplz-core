@@ -38,14 +38,6 @@ type UserStoreInterface interface {
 	UpdateUser(user interface{}) (interface{}, error)
 }
 
-type UserEventInterface interface {
-	AddUser(email string, pass string) (interface{}, error)
-	GetUserByExtId(userid string) (interface{}, error)
-	GetUserByEmail(email string) (interface{}, error)
-	UpdateUser(user interface{}) (interface{}, error)
-}
-
-
 // Login status return objects
 type LoginStatus struct {
 	Code    uint64

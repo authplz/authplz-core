@@ -1,10 +1,16 @@
 package audit
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
-import "github.com/ryankurte/authplz/controllers/datastore"
+import (
+	"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/controllers/datastore"
+)
 
-func TestLogController(t *testing.T) {
+func TestAuditController(t *testing.T) {
 	// Setup user controller for testing
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@"
@@ -19,7 +25,7 @@ func TestLogController(t *testing.T) {
 	ds.ForceSync()
 
 	// Create controllers
-	lc := NewAuditController(ds)
+	ac := NewAuditController(ds)
 
 	// Create fake user
 	u, _ := ds.AddUser(fakeEmail, fakePass)
@@ -27,7 +33,7 @@ func TestLogController(t *testing.T) {
 
 	// Run tests
 	t.Run("Add login event", func(t *testing.T) {
-		err := lc.AddEvent(user.GetExtId(), LoginEvent)
+		err := ac.AddEvent(user, api.EventAccountCreated, time.Now(), make(map[string]string))
 		if err != nil {
 			t.Error(err)
 			return

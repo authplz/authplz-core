@@ -3,21 +3,20 @@ package datastore
 import (
 	"encoding/json"
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 // Audit events for a login account
 type AuditEvent struct {
 	gorm.Model
-	UserID       uint
-	Type         string
-	Message      string
-	Data         string
-	OriginIP     string
-	ForwardedFor string
+	UserID uint
+	Type   string
+	Time   time.Time
+	Data   string
 }
 
 func (ae *AuditEvent) GetType() string    { return ae.Type }
-func (ae *AuditEvent) GetMessage() string { return ae.Message }
+func (ae *AuditEvent) GetTime() time.Time { return ae.Time }
 
 func (ae *AuditEvent) GetData() (map[string]string, error) {
 	data := make(map[string]string)
@@ -27,7 +26,7 @@ func (ae *AuditEvent) GetData() (map[string]string, error) {
 	return data, err
 }
 
-func (dataStore *DataStore) AddAuditEvent(userid, eventType, eventMessage string, data map[string]string) (interface{}, error) {
+func (dataStore *DataStore) AddAuditEvent(userid, eventType string, eventTime time.Time, data map[string]string) (interface{}, error) {
 
 	u, err := dataStore.GetUserByExtId(userid)
 	if err != nil {
@@ -41,10 +40,10 @@ func (dataStore *DataStore) AddAuditEvent(userid, eventType, eventMessage string
 	}
 
 	auditEvent := AuditEvent{
-		UserID:  user.ID,
-		Type:    eventType,
-		Message: eventMessage,
-		Data:    string(encodedData),
+		UserID: user.ID,
+		Type:   eventType,
+		Time:   eventTime,
+		Data:   string(encodedData),
 	}
 
 	user.AuditEvents = append(user.AuditEvents, auditEvent)

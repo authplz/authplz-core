@@ -28,7 +28,7 @@ type CoreModule struct {
 	eventHandlers map[string]EventHandlerInterface
 
 	// Login handler implementations
-	preLogin map[string]PreLoginInterface
+	preLogin         map[string]PreLoginInterface
 	postLoginSuccess map[string]PostLoginSuccessInterface
 	postLoginFailure map[string]PostLoginFailureInterface
 }
@@ -43,10 +43,10 @@ func NewCoreModule(tokenControl TokenControlInterface, userControl UserControlIn
 		tokenHandlers:        make(map[api.TokenAction]TokenHandlerInterface),
 		secondFactorHandlers: make(map[string]SecondFactorInterface),
 
-		preLogin:        	  make(map[string]PreLoginInterface),
-		postLoginSuccess:	  make(map[string]PostLoginSuccessInterface),
-		postLoginFailure:	  make(map[string]PostLoginFailureInterface),
-		eventHandlers:        make(map[string]EventHandlerInterface),
+		preLogin:         make(map[string]PreLoginInterface),
+		postLoginSuccess: make(map[string]PostLoginSuccessInterface),
+		postLoginFailure: make(map[string]PostLoginFailureInterface),
+		eventHandlers:    make(map[string]EventHandlerInterface),
 	}
 }
 
@@ -86,7 +86,6 @@ func (coreModule *CoreModule) BindPostLoginSuccess(name string, plsi PostLoginSu
 func (coreModule *CoreModule) BindPostLoginFailure(name string, plfi PostLoginFailureInterface) {
 	coreModule.postLoginFailure[name] = plfi
 }
-
 
 // Magic binding function, detects interfaces implemented by a given module
 // and binds as appropriate
@@ -193,5 +192,3 @@ func (coreModule *CoreModule) PostLoginFailure(u interface{}) error {
 	}
 	return nil
 }
-
-

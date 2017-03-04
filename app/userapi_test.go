@@ -319,7 +319,7 @@ func TestMain(t *testing.T) {
 
 		// Perform logout
 		client.TestGet("/logout", 200)
-		
+
 		// Check user status
 		client.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})

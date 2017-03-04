@@ -20,17 +20,21 @@ import (
 	"github.com/ryankurte/authplz/modules/2fa/u2f"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
+	"github.com/ryankurte/authplz/modules/audit"
+
+	"github.com/ryankurte/go-async"
 )
 
 // Base AuthPlz server object
 type AuthPlzServer struct {
-	address      string
-	port         string
-	config       AuthPlzConfig
-	ds           *datastore.DataStore
-	ctx          appcontext.AuthPlzGlobalCtx
-	router       *web.Router
-	tokenControl *token.TokenController
+	address        string
+	port           string
+	config         AuthPlzConfig
+	ds             *datastore.DataStore
+	ctx            appcontext.AuthPlzGlobalCtx
+	router         *web.Router
+	tokenControl   *token.TokenController
+	serviceManager *async.ServiceManager
 }
 
 // Create an AuthPlz server instance
@@ -63,23 +67,29 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// TODO: Create CSRF middleware
 
-
 	// Create modules
+
+	// Create service manager
+	server.serviceManager = async.NewServiceManager()
 
 	// User management module
 	userModule := user.NewUserModule(dataStore)
 
 	// Core module
 	coreModule := core.NewCoreModule(tokenControl, userModule)
-	
+
 	coreModule.BindModule("user", userModule)
 	coreModule.BindActionHandler(api.TokenActionActivate, userModule)
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
-	
 
 	// U2F module
-	u2fModule := u2f.NewU2FModule(config.Address, dataStore)	
+	u2fModule := u2f.NewU2FModule(config.Address, dataStore)
 	coreModule.BindSecondFactor("u2f", u2fModule)
+
+	// Audit module (async components)
+	auditModule := audit.NewAuditController(dataStore)
+	auditSvc := async.NewAsyncService(auditModule)
+	server.serviceManager.BindService(&auditSvc)
 
 	// Create a global context object
 	server.ctx = appcontext.NewGlobalCtx(config.Port, config.Address, url, sessionStore)
@@ -102,6 +112,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	coreModule.BindAPI(server.router)
 	userModule.BindAPI(server.router)
 	u2fModule.BindAPI(server.router)
+	auditModule.BindAPI(server.router)
 
 	return &server
 }
@@ -115,6 +126,9 @@ func (server *AuthPlzServer) Start() {
 	// Create GoCraft handler
 	handler := context.ClearHandler(server.router)
 
+	// Start async services
+	server.serviceManager.Run()
+
 	// Start with/without TLS
 	var err error
 	if server.config.NoTls == true {
@@ -127,6 +141,9 @@ func (server *AuthPlzServer) Start() {
 		log.Printf("Listening at: https://%s", address)
 		err = http.ListenAndServeTLS(address, server.config.TlsCert, server.config.TlsKey, handler)
 	}
+
+	// Stop async services
+	server.serviceManager.Exit()
 
 	// Handle errors
 	if err != nil {

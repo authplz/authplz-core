@@ -1,10 +1,10 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
-	"errors"
 )
 
 import (
@@ -295,10 +295,10 @@ func (userModule *UserModule) PreLogin(u interface{}) (bool, error) {
 }
 
 // PostLogin Success actions for the user module
-func (userModule *UserModule) PostLoginSuccess(u interface{}) (error) {
+func (userModule *UserModule) PostLoginSuccess(u interface{}) error {
 
 	user := u.(UserInterface)
-	
+
 	// Update user object
 	user.SetLastLogin(time.Now())
 	_, err := userModule.userStore.UpdateUser(user)
@@ -311,7 +311,7 @@ func (userModule *UserModule) PostLoginSuccess(u interface{}) (error) {
 }
 
 // PostLogin Failure actions for the user module
-func (userModule *UserModule) PostLoginFailure(u interface{}) (error) {
+func (userModule *UserModule) PostLoginFailure(u interface{}) error {
 
 	return nil
 }
