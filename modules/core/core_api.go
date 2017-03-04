@@ -9,7 +9,6 @@ import (
 import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
-	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 )
 
