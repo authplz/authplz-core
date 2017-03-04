@@ -64,7 +64,7 @@ For development purposes, it may be convenient to add these variables to your en
   - [datastore/](datastore/) contains the data storage module and implements the interfaces required by other modules
   - [token/](controllers/token/) contains a token generator and validator
 - [modules/](modules/) contains functional modules that can be bound into the system (including interface, controller and API)
-  - [core/](modules/core/) contains the core login/logout/action endpoints that further modules are bound into
+  - [core/](modules/core/) contains the core login/logout/action endpoints that further modules are bound into. Checkout this module for information on what components / bindings are available.
   - [user/](modules/user/) contains the user account management module and API
 - [templates/](templates/) contains default template files used by components (ie. mailer)
 - [test/](test/) contains test helpers (and maybe one day integration tests)
