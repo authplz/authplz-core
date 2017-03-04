@@ -22,6 +22,7 @@ type AuthPlzCoreCtx struct {
 	cm *CoreModule
 }
 
+
 // Helper middleware to bind module to API context
 func BindCoreContext(coreModule *CoreModule) func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	return func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -45,6 +46,7 @@ func (coreModule *CoreModule) BindAPI(router *web.Router) {
 	coreRouter.Get("/action", (*AuthPlzCoreCtx).Action)
 	coreRouter.Post("/action", (*AuthPlzCoreCtx).Action)
 }
+
 
 // Test endpoint
 func (c *AuthPlzCoreCtx) Test(rw web.ResponseWriter, req *web.Request) {
@@ -125,26 +127,19 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Load flashes and apply actions if they exist
 	flashes := c.GetSession().Flashes()
 	if len(flashes) > 0 {
-		// Fetch token from session flash and validate
+		// Fetch token from session flash
 		tokenString := flashes[0].(string)
-		action, err := c.cm.tokenControl.ValidateToken(user.GetExtId(), tokenString)
+		
+		// Handle token and call require action
+		ok, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
 		if err != nil {
-			log.Printf("Core.Login: Token error %s\n", err)
+			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+			return
+		}
+		if !ok {
 			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
 			rw.WriteHeader(http.StatusUnauthorized)
 			return
-		}
-
-		// Locate token handler
-		tokenHandler, ok := c.cm.tokenHandlers[*action]
-		if !ok {
-			log.Printf("Core.Login: No token handler found for action %s\n", action)
-		}
-
-		// Execute token action
-		err = tokenHandler.HandleToken(user, *action)
-		if err != nil {
-			log.Printf("Core.Login: Token action %s handler error %s\n", action, err)
 		}
 
 		// Reload login state
@@ -174,16 +169,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Check for available second factors
-	availableHandlers := make(map[string]bool)
-	secondFactorRequired := false
-	for key, handler := range c.cm.secondFactorHandlers {
-		supported := handler.IsSupported(user.GetExtId())
-		if supported {
-			secondFactorRequired = true
-		}
-		availableHandlers[key] = supported
-	}
-	log.Printf("Second factors: %+v", availableHandlers)
+	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(c.GetUserID())
 
 	// Respond with list of available 2fa components if required
 	if (l == api.LoginSuccess) && secondFactorRequired {
@@ -192,7 +178,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 		rw.WriteHeader(http.StatusAccepted)
 		rw.Header().Set("Content-Type", "application/json")
-		js, err := json.Marshal(availableHandlers)
+		js, err := json.Marshal(factorsAvailable)
 		if err != nil {
 			log.Print(err)
 			return
