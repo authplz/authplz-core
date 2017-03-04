@@ -27,7 +27,7 @@ For development purposes, it may be convenient to add these variables to your en
 ### Dependencies
 
 - Golang (for building)
-- Docker (for building/running docker images)
+- Docker (for building/running docker images and the dev environment)
 - Postgres (for user information storage)
 
 ### Running
@@ -70,6 +70,8 @@ For development purposes, it may be convenient to add these variables to your en
 - [test/](test/) contains test helpers (and maybe one day integration tests)
 
 Modules are self-binding and should define interfaces required to function rather than including any (non api or appcontext) other modules.
+
+Each module should define the interfaces required, a controller for interaction / data processing, and an API if required by the module. For an example, checkout [modules/2fa/u2f](modules/2fa/u2f).
 
 
 ------
