@@ -5,16 +5,16 @@ import "testing"
 //import "fmt"
 
 import (
-"bytes"
- "net/http"
- "net/url"
- "net/http/cookiejar"
+	"bytes"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 
- "encoding/json"
- )
+	"encoding/json"
+)
 
 import (
-"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/api"
 )
 
 // Test client instance

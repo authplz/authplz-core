@@ -86,4 +86,3 @@ var ApiResponseUnlockSuccessful = ApiResponse{ApiResultOk, GetApiLocale(DefaultL
 var ApiResponseUnauthorized = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).Unauthorized}
 var ApiResponseInvalidToken = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InvalidToken}
 var ApiResponseInternalError = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InternalError}
-

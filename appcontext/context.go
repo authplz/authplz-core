@@ -41,7 +41,6 @@ type User interface {
 	GetExtId() string
 }
 
-
 func (ctx *AuthPlzCtx) GetLocale() string {
 	return ctx.locale
 }
@@ -54,7 +53,6 @@ func (ctx *AuthPlzCtx) GetSession() *sessions.Session {
 func (ctx *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
 	return api.GetApiLocale(ctx.locale)
 }
-
 
 // Convenience type to describe middleware functions
 type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
@@ -243,4 +241,3 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) stri
 	userid := u2fSession.Values[secondFactorRequestSessionKey].(string)
 	return userid
 }
-

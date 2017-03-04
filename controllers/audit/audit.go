@@ -5,15 +5,14 @@ type AuditController struct {
 	store AuditStoreInterface
 }
 
-
 // Constant event types
 type AuditEventType string
-const (
-    CreationEvent           AuditEventType = "creation"
-    LoginEvent              AuditEventType = "login"
-    PasswordChangeEvent     AuditEventType = "password change"
-)
 
+const (
+	CreationEvent       AuditEventType = "creation"
+	LoginEvent          AuditEventType = "login"
+	PasswordChangeEvent AuditEventType = "password change"
+)
 
 // Instantiate an audit controller
 func NewAuditController(store AuditStoreInterface) *AuditController {
@@ -25,4 +24,3 @@ func (ac *AuditController) AddEvent(userid string, eventType AuditEventType) (er
 
 	return nil
 }
-

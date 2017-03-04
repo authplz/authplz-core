@@ -1,9 +1,9 @@
 package core
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
-	"encoding/json"
 )
 
 import (
@@ -198,7 +198,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 			return
 		}
 		rw.Write(js)
-		
+
 		return
 	}
 

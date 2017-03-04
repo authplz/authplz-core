@@ -30,30 +30,30 @@ type User struct {
 }
 
 // Getters and Setters
-func (u *User) GetExtId() string            { return u.ExtId }
-func (u *User) GetEmail() string            { return u.Email }
-func (u *User) GetPassword() string         { return u.Password }
+func (u *User) GetExtId() string              { return u.ExtId }
+func (u *User) GetEmail() string              { return u.Email }
+func (u *User) GetPassword() string           { return u.Password }
 func (u *User) GetPasswordChanged() time.Time { return u.PasswordChanged }
-func (u *User) IsActivated() bool           { return u.Activated }
-func (u *User) SetActivated(activated bool) { u.Activated = activated }
-func (u *User) IsEnabled() bool             { return u.Enabled }
-func (u *User) SetEnabled(enabled bool)     { u.Enabled = enabled }
-func (u *User) IsLocked() bool              { return u.Locked }
-func (u *User) SetLocked(locked bool)       { u.Locked = locked }
-func (u *User) IsAdmin() bool               { return u.Admin }
-func (u *User) SetAdmin(admin bool)         { u.Admin = admin }
-func (u *User) GetLoginRetries() uint       { return u.LoginRetries }
-func (u *User) SetLoginRetries(retries uint){ u.LoginRetries = retries }
-func (u *User) ClearLoginRetries()          { u.LoginRetries = 0 }
-func (u *User) GetLastLogin() time.Time     { return u.LastLogin }
-func (u *User) SetLastLogin(t time.Time)	{ u.LastLogin = t }
+func (u *User) IsActivated() bool             { return u.Activated }
+func (u *User) SetActivated(activated bool)   { u.Activated = activated }
+func (u *User) IsEnabled() bool               { return u.Enabled }
+func (u *User) SetEnabled(enabled bool)       { u.Enabled = enabled }
+func (u *User) IsLocked() bool                { return u.Locked }
+func (u *User) SetLocked(locked bool)         { u.Locked = locked }
+func (u *User) IsAdmin() bool                 { return u.Admin }
+func (u *User) SetAdmin(admin bool)           { u.Admin = admin }
+func (u *User) GetLoginRetries() uint         { return u.LoginRetries }
+func (u *User) SetLoginRetries(retries uint)  { u.LoginRetries = retries }
+func (u *User) ClearLoginRetries()            { u.LoginRetries = 0 }
+func (u *User) GetLastLogin() time.Time       { return u.LastLogin }
+func (u *User) SetLastLogin(t time.Time)      { u.LastLogin = t }
 
 // Check if a user has attached second factors
 func (u *User) SecondFactors() bool {
 	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
 
-func (u *User) SetPassword(pass string) { 
+func (u *User) SetPassword(pass string) {
 	u.Password = pass
 	u.PasswordChanged = time.Now()
 }

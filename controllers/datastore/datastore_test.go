@@ -46,7 +46,7 @@ func TestDatastore(t *testing.T) {
 
 		u2inst := u2.(*User)
 
-		if u2inst.GetEmail()!= fakeEmail {
+		if u2inst.GetEmail() != fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -74,7 +74,7 @@ func TestDatastore(t *testing.T) {
 		}
 		userInst := u.(*User)
 
-		if userInst.GetEmail()!= fakeEmail {
+		if userInst.GetEmail() != fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -106,7 +106,7 @@ func TestDatastore(t *testing.T) {
 
 		userInst = u.(*User)
 
-		if userInst.GetEmail()!= fakeEmail {
+		if userInst.GetEmail() != fakeEmail {
 			t.Error("Email address mismatch")
 			return
 		}
@@ -126,7 +126,7 @@ func TestDatastore(t *testing.T) {
 
 		userInst := u.(*User)
 
-		if userInst.GetPassword()!= fakePass {
+		if userInst.GetPassword() != fakePass {
 			t.Error("Initial password mismatch")
 			return
 		}
@@ -148,7 +148,7 @@ func TestDatastore(t *testing.T) {
 
 		userInst = u.(*User)
 
-		if userInst.GetPassword()!= newPassword {
+		if userInst.GetPassword() != newPassword {
 			t.Error("Initial password mismatch")
 			return
 		}

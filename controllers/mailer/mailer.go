@@ -9,14 +9,14 @@
 package mailer
 
 import (
-	"html/template"
 	"bytes"
 	"fmt"
+	"html/template"
 	"log"
 )
 
 import (
-"gopkg.in/mailgun/mailgun-go.v1"
+	"gopkg.in/mailgun/mailgun-go.v1"
 )
 
 //import "github.com/asaskevich/govalidator"

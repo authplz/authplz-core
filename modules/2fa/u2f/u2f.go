@@ -48,11 +48,11 @@ func (u2fModule *U2FModule) BindAPI(router *web.Router) {
 	u2frouter.Middleware(BindU2FContext(u2fModule))
 
 	// Bind endpoints
-	u2frouter.Get("/enrol", 		(*U2FApiCtx).U2FEnrolGet)
-	u2frouter.Post("/enrol", 		(*U2FApiCtx).U2FEnrolPost)
-	u2frouter.Get("/authenticate", 	(*U2FApiCtx).U2FAuthenticateGet)
+	u2frouter.Get("/enrol", (*U2FApiCtx).U2FEnrolGet)
+	u2frouter.Post("/enrol", (*U2FApiCtx).U2FEnrolPost)
+	u2frouter.Get("/authenticate", (*U2FApiCtx).U2FAuthenticateGet)
 	u2frouter.Post("/authenticate", (*U2FApiCtx).U2FAuthenticatePost)
-	u2frouter.Get("/tokens", 		(*U2FApiCtx).U2FTokensGet)
+	u2frouter.Get("/tokens", (*U2FApiCtx).U2FTokensGet)
 }
 
 // Check whether u2f is supported for a given user

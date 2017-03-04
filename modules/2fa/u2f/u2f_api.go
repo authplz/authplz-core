@@ -82,7 +82,6 @@ func (c *U2FApiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, *u2fReq)
 }
 
-
 // Second stage token enrolment (post) handler
 // This checks the cached challenge and completes device enrolment
 func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
