@@ -34,17 +34,14 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
-	t.Run("User account requires activation", func(t *testing.T) {
-		res, _, err := uc.Login(fakeEmail, fakePass)
+	t.Run("PreLogin blocks inactivate accounts", func(t *testing.T) {
+		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		res, err := uc.PreLogin(u1)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeUnactivated {
+		if res {
 			t.Error("User login succeeded (and shouldn't have)")
 			t.FailNow()
 		}
@@ -62,36 +59,37 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login user", func(t *testing.T) {
+		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
 		res, _, err := uc.Login(fakeEmail, fakePass)
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
+		if !res {
+			t.Error("User login failed")
+		}
+
+		res, err = uc.PreLogin(u1)
+		if err != nil {
+			t.Error(err)
 			t.FailNow()
 		}
-		if res.Code != LoginCodeSuccess {
-			t.Error("User login failed")
+		if !res {
+			t.Error("User login failed (and shouldn't have)")
+			t.FailNow()
 		}
 	})
 
-	t.Run("Login updates last login time", func(t *testing.T) {
+	t.Run("PostLoginSuccess hook updates last login time", func(t *testing.T) {
 		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
 		if u1 == nil {
 			t.Error("No user found")
 			t.FailNow()
 		}
 
-		res, _, err := uc.Login(fakeEmail, fakePass)
+		err := uc.PostLoginSuccess(u1)
 		if err != nil {
 			t.Error(err)
-		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeSuccess {
-			t.Error("User login failed")
 		}
 
 		u2, _ := uc.userStore.GetUserByEmail(fakeEmail)
@@ -106,54 +104,37 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
-	t.Run("Reject login with invalid password", func(t *testing.T) {
+	t.Run("Login rejects logins with invalid passwords", func(t *testing.T) {
 		res, _, err := uc.Login(fakeEmail, "Wrong password")
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeFailure {
+		if res {
 			t.Error("User login succeeded with incorrect password")
 		}
 	})
 
-	t.Run("Reject login with unknown user", func(t *testing.T) {
+	t.Run("Login rejects logins with unknown user", func(t *testing.T) {
 		res, _, err := uc.Login("not@email.com", fakePass)
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeFailure {
+		if res {
 			t.Error("User login succeeded with unknown email")
 		}
 	})
 
-	t.Run("Reject login with disabled user account", func(t *testing.T) {
-
+	t.Run("PreLogin rejects disabled user accounts", func(t *testing.T) {
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
 
 		u.(UserInterface).SetEnabled(false)
 		uc.userStore.UpdateUser(u)
 
-		res, _, err := uc.Login(fakeEmail, fakePass)
+		res, err := uc.PreLogin(u)
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeDisabled {
+		if res {
 			t.Error("User login succeeded with account disabled")
 		}
 
@@ -162,42 +143,46 @@ func TestUserController(t *testing.T) {
 		uc.userStore.UpdateUser(u)
 	})
 
-	t.Run("Lock accounts after N logins", func(t *testing.T) {
+	t.Run("Login locks accounts after N failed attempts", func(t *testing.T) {
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		if u.(UserInterface).IsLocked() {
+			t.Errorf("Account already locked")
+		}
+
 		for i := 0; i < 6; i++ {
 			uc.Login(fakeEmail, "Wrong password")
 		}
 
-		res, _, err := uc.Login(fakeEmail, fakePass)
+		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
+		if !u.(UserInterface).IsLocked() {
+			t.Errorf("Account not locked")
+		}
+	})
+
+	t.Run("PreLogin blocks locked accounts", func(t *testing.T) {
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
+		res, err := uc.PreLogin(u)
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeLocked {
+		if res {
 			t.Error("User account was not locked", res)
 		}
 	})
 
-	t.Run("Unlock accounts", func(t *testing.T) {
+	t.Run("Unlock unlocks accounts", func(t *testing.T) {
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
 		_, err = uc.Unlock(fakeEmail)
 		if err != nil {
 			t.Error(err)
 		}
 
-		res, _, err := uc.Login(fakeEmail, fakePass)
-		if err != nil {
-			t.Error(err)
+		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
+		if u.(UserInterface).IsLocked() {
+			t.Errorf("Account is still locked")
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeSuccess {
-			t.Error("User account login failed", res)
-		}
-
 	})
 
 	t.Run("Get user", func(t *testing.T) {
@@ -220,7 +205,6 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Update user password", func(t *testing.T) {
-
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
 
 		newPass := "Test new password"
@@ -235,11 +219,7 @@ func TestUserController(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if res == nil {
-			t.Error("No login result")
-			t.FailNow()
-		}
-		if res.Code != LoginCodeSuccess {
+		if !res {
 			t.Error("User account login failed", res)
 		}
 

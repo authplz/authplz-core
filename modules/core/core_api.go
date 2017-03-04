@@ -105,16 +105,23 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Attempt login via UserControl interface
-	l, u, e := c.cm.userControl.Login(email, password)
+	loginOk, u, e := c.cm.userControl.Login(email, password)
 	if e != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		log.Printf("Core.Login: user controller error %s\n", e)
 		return
 	}
 
+	// Reject invalid credentials
+	if !loginOk {
+		log.Printf("Core.Login: invalid credentials\n")
+		rw.WriteHeader(http.StatusUnauthorized)
+	}
+
 	// No user account found
-	user, ok := u.(UserInterface)
-	if l == api.LoginFailure || !ok {
+	// TODO: this cannot fail anymore
+	user, castOk := u.(UserInterface)
+	if !loginOk || !castOk {
 		log.Println("Core.Login Failure: user account not found")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
@@ -127,51 +134,36 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		tokenString := flashes[0].(string)
 
 		// Handle token and call require action
-		ok, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
+		tokenOk, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
 		if err != nil {
 			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
 			return
 		}
-		if !ok {
+		if !tokenOk {
 			//c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InvalidToken)
 			rw.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		// Reload login state
-		l, _, e = c.cm.userControl.Login(email, password)
+		loginOk, u, e = c.cm.userControl.Login(email, password)
 		if e != nil {
 			rw.WriteHeader(http.StatusUnauthorized)
 			log.Printf("Core.Login: user controller error %s\n", e)
 			return
 		}
-	}
-
-	// TODO: both the following checks could be implemented as plugins to simplify the login controller
-	// Handle not yet activated accounts
-	if l == api.LoginUnactivated {
-		log.Println("Core.Login: Account not activated")
-		//TODO: prompt for activation (resend email?)
-		rw.WriteHeader(http.StatusUnauthorized)
-		//c.WriteApiResult(rw, api.ApiResultError, user.LoginUnactivated.Message);
-		return
-	}
-
-	// TODO: handle locked accounts
-	if l == api.LoginLocked {
-		log.Println("Core.Login: Account locked")
-		//TODO: prompt for unlock (resend email?)
-		rw.WriteHeader(http.StatusUnauthorized)
-		return
+		user = u.(UserInterface)
 	}
 
 	// Call PreLogin handlers
-	loginAllowed, err := c.cm.PreLogin(c.GetUserID(), u)
+	preLoginOk, err := c.cm.PreLogin(u)
 	if err != nil {
+		log.Printf("Core.Login: PreLogin error (%s)\n", err)
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
 		return
 	}
-	if !loginAllowed {
+	if !preLoginOk {
+		log.Printf("Core.Login: PreLogin blocked login\n")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -180,7 +172,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(c.GetUserID())
 
 	// Respond with list of available 2fa components if required
-	if (l == api.LoginSuccess) && secondFactorRequired {
+	if loginOk && preLoginOk && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
 		c.Bind2FARequest(rw, req, user.GetExtId())
 
@@ -197,7 +189,15 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Handle login success
-	if l == api.LoginSuccess {
+	if loginOk && preLoginOk {
+		// Run post login success handlers
+		err := c.cm.PostLoginSuccess(u);
+		if err != nil {
+			log.Printf("Core.Login: PostLoginSuccess error (%s)\n", err)
+			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+			return
+		}
+
 		log.Println("Core.Login: Login OK")
 
 		// Create session
@@ -206,6 +206,7 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	// Should be impossible to hit this
 	log.Printf("Core.Login: Login failed (unknown)\n")
 	rw.WriteHeader(http.StatusUnauthorized)
 }

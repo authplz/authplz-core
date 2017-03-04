@@ -6,8 +6,8 @@ import (
 
 // Interface for a user control module
 type UserControlInterface interface {
-	// Login method, returns api.LoginStatus result, user interface for further use, error in case of failure
-	Login(email string, password string) (*api.LoginStatus, interface{}, error)
+	// Login method, returns boolean result, user interface for further use, error in case of failure
+	Login(email string, password string) (bool, interface{}, error)
 }
 
 // Interface for token (creation and?) validation
@@ -34,8 +34,16 @@ type TokenHandlerInterface interface {
 // Event Hook Interfaces
 
 // PreLogin hooks may allow or deny login
-type LoginHandlerInterface interface {
-	PreLogin(userid string, u interface{}) (bool, error)
+type PreLoginInterface interface {
+	PreLogin(u interface{}) (bool, error)
+}
+
+type PostLoginSuccessInterface interface {
+    PostLoginSuccess(u interface{}) (error)
+}
+
+type PostLoginFailureInterface interface {
+    PostLoginFailure(u interface{}) (error)
 }
 
 // Interface for event handler modules

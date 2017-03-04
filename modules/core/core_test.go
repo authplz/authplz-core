@@ -17,14 +17,14 @@ const (
 )
 
 type MockHandler struct {
-	LoginCallResp        *api.LoginStatus
+	LoginCallResp        bool
 	SecondFactorRequired bool
 	TokenAction          api.TokenAction
 	LoginAllowed         bool
 }
 
 // user controller interface
-func (mh *MockHandler) Login(email string, password string) (*api.LoginStatus, interface{}, error) {
+func (mh *MockHandler) Login(email string, password string) (bool, interface{}, error) {
 	var u interface{}
 	return mh.LoginCallResp, u, nil
 }
@@ -40,7 +40,7 @@ func (mh *MockHandler) HandleToken(u interface{}, tokenAction api.TokenAction) e
 	return nil
 }
 
-func (mh *MockHandler) PreLogin(userid string, u interface{}) (bool, error) {
+func (mh *MockHandler) PreLogin(u interface{}) (bool, error) {
 	return mh.LoginAllowed, nil
 }
 
@@ -48,7 +48,7 @@ func TestCoreModule(t *testing.T) {
 
 	tokenControl := token.NewTokenController("localhost", "ABCD")
 
-	mockHandler := MockHandler{api.LoginSuccess, false, api.TokenActionInvalid, false}
+	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false}
 	coreControl := NewCoreModule(tokenControl, &mockHandler)
 
 	t.Run("Bind and call token action handlers", func(t *testing.T) {
@@ -96,13 +96,13 @@ func TestCoreModule(t *testing.T) {
 		}
 	})
 
-	t.Run("Bind login handlers", func(t *testing.T) {
+	t.Run("Bind PreLogin handlers", func(t *testing.T) {
 		var u interface{}
 
-		coreControl.BindLoginHandler("mock-login-handler", &mockHandler)
+		coreControl.BindPreLogin("mock-login-handler", &mockHandler)
 
 		mockHandler.LoginAllowed = false
-		ok, err := coreControl.PreLogin("", u)
+		ok, err := coreControl.PreLogin(u)
 		if err != nil {
 			t.Error(err)
 		}
@@ -111,7 +111,7 @@ func TestCoreModule(t *testing.T) {
 		}
 
 		mockHandler.LoginAllowed = true
-		ok, err = coreControl.PreLogin("", u)
+		ok, err = coreControl.PreLogin(u)
 		if err != nil {
 			t.Error(err)
 		}

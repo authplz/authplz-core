@@ -124,14 +124,13 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 }
 
 //TODO: differentiate between login states and internal errors
-func (userModule *UserModule) Login(email string, pass string) (*api.LoginStatus, interface{}, error) {
+func (userModule *UserModule) Login(email string, pass string) (bool, interface{}, error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
 	if err != nil {
-		// Userstore error, wrap
-		log.Println(err)
-		return nil, nil, api.LoginError
+		log.Printf("UserModule.Login: error fetching user %s (%s)\r\n", email, err)
+		return false, nil, nil
 	}
 
 	// Fake hash if user does not exist, then make login decision after
@@ -160,7 +159,7 @@ func (userModule *UserModule) Login(email string, pass string) (*api.LoginStatus
 			if err != nil {
 				// Userstore error, wrap
 				log.Println(err)
-				return nil, nil, api.LoginError
+				return false, nil, api.LoginError
 			}
 
 			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
@@ -169,48 +168,19 @@ func (userModule *UserModule) Login(email string, pass string) (*api.LoginStatus
 		}
 
 		// Error in case of hash error
-		return api.LoginFailure, nil, nil
+		return false, nil, nil
 	}
 
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
 		user := u.(UserInterface)
 
-		//u.FidoTokens, _ = userModule.tokenStore.GetFidoTokens(u)
-		//TotpTokens, _ := userModule.tokenStore.GetTotpTokens(u)
-
-		if user.IsEnabled() == false {
-			//TODO: handle disabled error
-			log.Printf("UserModule.Login: User %s login failed, account disabled\r\n", user.GetExtId())
-			return api.LoginDisabled, user, nil
-		}
-
-		if user.IsActivated() == false {
-			//TODO: handle un-activated error
-			log.Printf("UserModule.Login: User %s login failed, account deactivated\r\n", user.GetExtId())
-			return api.LoginUnactivated, user, nil
-		}
-
-		if user.IsLocked() == true {
-			//TODO: handle locked error
-			log.Printf("UserModule.Login: User %s login failed, account locked\r\n", user.GetExtId())
-			return api.LoginLocked, user, nil
-		}
-
 		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
 
-		// Update login time etc.
-		user.SetLastLogin(time.Now())
-		_, err = userModule.userStore.UpdateUser(user)
-		if err != nil {
-			log.Println(err)
-			return api.LoginFailure, nil, nil
-		}
-
-		return api.LoginSuccess, user, nil
+		return true, user, nil
 	}
 
-	return api.LoginFailure, nil, nil
+	return false, nil, nil
 }
 
 func (userModule *UserModule) GetUser(extId string) (UserInterface, error) {
@@ -294,4 +264,51 @@ func (userModule *UserModule) HandleToken(u interface{}, action api.TokenAction)
 		log.Printf("UserModule.HandleToken: Invalid token action\n")
 		return api.TokenError
 	}
+}
+
+// PreLogin checks for the user module
+func (userModule *UserModule) PreLogin(u interface{}) (bool, error) {
+	user := u.(UserInterface)
+
+	if user.IsEnabled() == false {
+		//TODO: handle disabled error
+		log.Printf("UserModule.PreLogin: User %s login failed, account disabled\r\n", user.GetExtId())
+		return false, nil
+	}
+
+	if user.IsActivated() == false {
+		//TODO: handle un-activated error
+		log.Printf("UserModule.PreLogin: User %s login failed, account deactivated\r\n", user.GetExtId())
+		return false, nil
+	}
+
+	if user.IsLocked() == true {
+		//TODO: handle locked error
+		log.Printf("UserModule.PreLogin: User %s login failed, account locked\r\n", user.GetExtId())
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// PostLogin Success actions for the user module
+func (userModule *UserModule) PostLoginSuccess(u interface{}) (error) {
+
+	user := u.(UserInterface)
+	
+	// Update user object
+	user.SetLastLogin(time.Now())
+	_, err := userModule.userStore.UpdateUser(user)
+	if err != nil {
+		log.Printf("UserModule.PostLogin: error %s\r\n", err)
+		return err
+	}
+
+	return nil
+}
+
+// PostLogin Failure actions for the user module
+func (userModule *UserModule) PostLoginFailure(u interface{}) (error) {
+
+	return nil
 }

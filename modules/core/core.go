@@ -24,11 +24,13 @@ type CoreModule struct {
 	// 2nd Factor Authentication implementations
 	secondFactorHandlers map[string]SecondFactorInterface
 
-	// Login handler implementations
-	loginHandlers map[string]LoginHandlerInterface
-
 	// Event handler implementations
 	eventHandlers map[string]EventHandlerInterface
+
+	// Login handler implementations
+	preLogin map[string]PreLoginInterface
+	postLoginSuccess map[string]PostLoginSuccessInterface
+	postLoginFailure map[string]PostLoginFailureInterface
 }
 
 // Create a new core module instance
@@ -40,7 +42,10 @@ func NewCoreModule(tokenControl TokenControlInterface, userControl UserControlIn
 		userControl:          userControl,
 		tokenHandlers:        make(map[api.TokenAction]TokenHandlerInterface),
 		secondFactorHandlers: make(map[string]SecondFactorInterface),
-		loginHandlers:        make(map[string]LoginHandlerInterface),
+
+		preLogin:        	  make(map[string]PreLoginInterface),
+		postLoginSuccess:	  make(map[string]PostLoginSuccessInterface),
+		postLoginFailure:	  make(map[string]PostLoginFailureInterface),
 		eventHandlers:        make(map[string]EventHandlerInterface),
 	}
 }
@@ -62,19 +67,26 @@ func (coreModule *CoreModule) BindSecondFactor(name string, sfi SecondFactorInte
 	coreModule.secondFactorHandlers[name] = sfi
 }
 
-// Bind a login handler interface to the core module
-// Login handlers are called in the login chain to check login requirements
-func (coreModule *CoreModule) BindLoginHandler(name string, lhi LoginHandlerInterface) {
-	// TODO: check if exists before attaching and throw an error
-	coreModule.loginHandlers[name] = lhi
-}
-
 // Bind an event handler interface into the core module
 // Event handlers are called during a variety of evens
 func (coreModule *CoreModule) BindEventHandler(name string, ehi EventHandlerInterface) {
-	// TODO: check if exists before attaching and throw an error
 	coreModule.eventHandlers[name] = ehi
 }
+
+// Bind a PreLogin handler interface to the core module
+// PreLogin handlers are called in the login chain to check login requirements
+func (coreModule *CoreModule) BindPreLogin(name string, lhi PreLoginInterface) {
+	coreModule.preLogin[name] = lhi
+}
+
+func (coreModule *CoreModule) BindPostLoginSuccess(name string, plsi PostLoginSuccessInterface) {
+	coreModule.postLoginSuccess[name] = plsi
+}
+
+func (coreModule *CoreModule) BindPostLoginFailure(name string, plfi PostLoginFailureInterface) {
+	coreModule.postLoginFailure[name] = plfi
+}
+
 
 // Magic binding function, detects interfaces implemented by a given module
 // and binds as appropriate
@@ -82,11 +94,17 @@ func (coreModule *CoreModule) BindModule(name string, mod interface{}) {
 	if i, ok := mod.(SecondFactorInterface); ok {
 		coreModule.BindSecondFactor(name, i)
 	}
-	if i, ok := mod.(LoginHandlerInterface); ok {
-		coreModule.BindLoginHandler(name, i)
-	}
 	if i, ok := mod.(EventHandlerInterface); ok {
 		coreModule.BindEventHandler(name, i)
+	}
+	if i, ok := mod.(PreLoginInterface); ok {
+		coreModule.BindPreLogin(name, i)
+	}
+	if i, ok := mod.(PostLoginSuccessInterface); ok {
+		coreModule.BindPostLoginSuccess(name, i)
+	}
+	if i, ok := mod.(PostLoginFailureInterface); ok {
+		coreModule.BindPostLoginFailure(name, i)
 	}
 }
 
@@ -136,18 +154,44 @@ func (coreModule *CoreModule) HandleToken(userid string, user interface{}, token
 }
 
 // Run bound login handlers to accept user logins
-func (coreModule *CoreModule) PreLogin(userid string, u interface{}) (bool, error) {
-	for key, handler := range coreModule.loginHandlers {
-		ok, err := handler.PreLogin(userid, u)
+func (coreModule *CoreModule) PreLogin(u interface{}) (bool, error) {
+	for key, handler := range coreModule.preLogin {
+		ok, err := handler.PreLogin(u)
 		if err != nil {
 			log.Printf("CoreModule.LoginHandlers: error in handler %s (%s)", key, err)
 			return false, err
 		}
 		if !ok {
-			log.Printf("CoreModule.LoginHandlers: user %s login blocked by handler %s", userid, err)
+			log.Printf("CoreModule.LoginHandlers: login blocked by handler %s", key)
 			return false, nil
 		}
 	}
 
 	return true, nil
 }
+
+// Run bound post login success handlers
+func (coreModule *CoreModule) PostLoginSuccess(u interface{}) error {
+	for key, handler := range coreModule.postLoginSuccess {
+		err := handler.PostLoginSuccess(u)
+		if err != nil {
+			log.Printf("CoreModule.PostLoginSuccess: error in handler %s (%s)", key, err)
+			return err
+		}
+	}
+	return nil
+}
+
+// Run bound post login failure handlers
+func (coreModule *CoreModule) PostLoginFailure(u interface{}) error {
+	for key, handler := range coreModule.postLoginFailure {
+		err := handler.PostLoginFailure(u)
+		if err != nil {
+			log.Printf("CoreModule.PostLoginFailure: error in handler %s (%s)", key, err)
+			return err
+		}
+	}
+	return nil
+}
+
+

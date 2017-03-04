@@ -57,25 +57,28 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
 
-	// TODO: Create CSRF middleware
-
-	// Create shared controllers
-
 	// Create token controller
 	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret))
 	server.tokenControl = tokenControl
+
+	// TODO: Create CSRF middleware
+
 
 	// Create modules
 
 	// User management module
 	userModule := user.NewUserModule(dataStore)
 
-	u2fModule := u2f.NewU2FModule(config.Address, dataStore)
-
 	// Core module
 	coreModule := core.NewCoreModule(tokenControl, userModule)
+	
+	coreModule.BindModule("user", userModule)
 	coreModule.BindActionHandler(api.TokenActionActivate, userModule)
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
+	
+
+	// U2F module
+	u2fModule := u2f.NewU2FModule(config.Address, dataStore)	
 	coreModule.BindSecondFactor("u2f", u2fModule)
 
 	// Create a global context object
