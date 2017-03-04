@@ -1,4 +1,4 @@
-package logcontroller
+package audit
 
 import "testing"
 
@@ -19,14 +19,15 @@ func TestLogController(t *testing.T) {
 	ds.ForceSync()
 
 	// Create controllers
-	lc := NewLogController(ds)
+	lc := NewAuditController(ds)
 
 	// Create fake user
 	u, _ := ds.AddUser(fakeEmail, fakePass)
+	user := u.(*datastore.User)
 
 	// Run tests
 	t.Run("Add login event", func(t *testing.T) {
-		err := lc.AddEvent(u, LoginEvent)
+		err := lc.AddEvent(user.GetExtId(), LoginEvent)
 		if err != nil {
 			t.Error(err)
 			return
