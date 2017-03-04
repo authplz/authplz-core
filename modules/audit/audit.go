@@ -19,13 +19,13 @@ func NewAuditController(store AuditStoreInterface) *AuditController {
 func (ac *AuditController) AddEvent(u interface{}, eventType string, eventTime time.Time, data map[string]string) error {
 	user := u.(AuditUserI)
 
-	e, err := ac.store.AddAuditEvent(user.GetExtId(), eventType, eventTime, data)
+	_, err := ac.store.AddAuditEvent(user.GetExtId(), eventType, eventTime, data)
 	if err != nil {
 		log.Printf("AuditController.AddEvent: error adding audit event (%s)", err)
 		return err
 	}
 
-    log.Printf("AuditController.AddEvent: added event %+v", e)
+    log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, user.GetExtId())
 
 	return nil
 }
