@@ -31,16 +31,16 @@ const (
 	u2fRegisterChallengeKey string = "u2f-register-challenge"
 	u2fRegisterNameKey      string = "u2f-register-name"
 	u2fSignChallengeKey     string = "u2f-sign-challenge"
-	u2fSignUserIdKey        string = "u2f-sign-userid"
+	u2fSignUserIDKey        string = "u2f-sign-userid"
 )
 
-// U2F API context storage
-type U2FApiCtx struct {
+// apiCtx context storage for router instance
+type apiCtx struct {
 	// Base context for shared components
 	*appcontext.AuthPlzCtx
 
 	// U2F controller module
-	um *U2FModule
+	um *Controller
 }
 
 // Initialise serialisation of u2f challenge objects
@@ -48,9 +48,9 @@ func init() {
 	gob.Register(&u2f.Challenge{})
 }
 
-// First stage token enrolment (get) handler
+// U2FEnrolGet First stage token enrolment (get) handler
 // This creates and caches a challenge for a device to be registered
-func (c *U2FApiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
@@ -82,9 +82,9 @@ func (c *U2FApiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, *u2fReq)
 }
 
-// Second stage token enrolment (post) handler
+// U2FEnrolPost Second stage token enrolment (post) handler
 // This checks the cached challenge and completes device enrolment
-func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
@@ -130,12 +130,12 @@ func (c *U2FApiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	return
 }
 
-// Fetch authentication challenge
+// U2FAuthenticateGet Fetches an authentication challenge
 // This grabs a pending 2fa userid from the global context
 // Not sure how to:
 // a) do this better / without global context
 // b) allow this to be used for authentication and for "sudo" like behaviour.
-func (c *U2FApiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 3  %s", err)
@@ -164,15 +164,15 @@ func (c *U2FApiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) 
 
 	// Save to session vars
 	u2fSession.Values[u2fSignChallengeKey] = challenge
-	u2fSession.Values[u2fSignUserIdKey] = userid
+	u2fSession.Values[u2fSignUserIDKey] = userid
 	u2fSession.Save(req.Request, rw)
 
 	// Write challenge to user
 	c.WriteJson(rw, *u2fSignReq)
 }
 
-// Post authentication response to complete authentication
-func (c *U2FApiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+// U2FAuthenticatePost Post authentication response to complete authentication
+func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 	if err != nil {
@@ -191,13 +191,13 @@ func (c *U2FApiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request)
 	challenge := u2fSession.Values[u2fSignChallengeKey].(*u2f.Challenge)
 	u2fSession.Values[u2fSignChallengeKey] = ""
 
-	if u2fSession.Values[u2fSignUserIdKey] == nil {
+	if u2fSession.Values[u2fSignUserIDKey] == nil {
 		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
 		fmt.Println("No userid found in session flash")
 		return
 	}
-	userid := u2fSession.Values[u2fSignUserIdKey].(string)
-	u2fSession.Values[u2fSignUserIdKey] = ""
+	userid := u2fSession.Values[u2fSignUserIDKey].(string)
+	u2fSession.Values[u2fSignUserIDKey] = ""
 
 	// Clear session vars
 	u2fSession.Save(req.Request, rw)
@@ -230,8 +230,8 @@ func (c *U2FApiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request)
 	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
 }
 
-// List u2f tokens for the enrolled user
-func (c *U2FApiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
+// U2FTokensGet Lists u2f tokens for the logged in user user
+func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {

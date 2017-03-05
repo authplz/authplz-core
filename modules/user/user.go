@@ -1,7 +1,6 @@
 package user
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -16,20 +15,20 @@ import (
 const minimumPasswordLength = 12
 const hashRounds = 8
 
-var LoginError = errors.New("internal server error")
-
-type UserModule struct {
-	userStore  UserStoreInterface
+// Controller User controller instance storage
+type Controller struct {
+	userStore  Storer
 	emitter    api.EventEmitter
 	hashRounds int
 }
 
-func NewUserModule(userStore UserStoreInterface, emitter api.EventEmitter) *UserModule {
-	return &UserModule{userStore, emitter, hashRounds}
+// NewController Create a new user controller
+func NewController(userStore Storer, emitter api.EventEmitter) *Controller {
+	return &Controller{userStore, emitter, hashRounds}
 }
 
 // Create a new user account
-func (userModule *UserModule) Create(email string, pass string) (user UserInterface, err error) {
+func (userModule *Controller) Create(email string, pass string) (user User, err error) {
 
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userModule.hashRounds)
@@ -62,7 +61,7 @@ func (userModule *UserModule) Create(email string, pass string) (user UserInterf
 		return nil, ErrorCreatingUser
 	}
 
-	user = u.(UserInterface)
+	user = u.(User)
 
 	// Emit user creation event
 	data := make(map[string]string)
@@ -73,17 +72,18 @@ func (userModule *UserModule) Create(email string, pass string) (user UserInterf
 	return user, nil
 }
 
-func (userModule *UserModule) Activate(email string) (user UserInterface, err error) {
+// Activate activates the provided user account
+func (userModule *Controller) Activate(email string) (user User, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, LoginError
+		return nil, errLogin
 	}
 
-	user = u.(UserInterface)
+	user = u.(User)
 
 	user.SetActivated(true)
 
@@ -91,10 +91,10 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	if err != nil {
 		// Userstore error, wrap
 		fmt.Println(err)
-		return nil, LoginError
+		return nil, errLogin
 	}
 
-	user = u.(UserInterface)
+	user = u.(User)
 
 	// Emit user activation event
 	data := make(map[string]string)
@@ -105,17 +105,18 @@ func (userModule *UserModule) Activate(email string) (user UserInterface, err er
 	return user, nil
 }
 
-func (userModule *UserModule) Unlock(email string) (user UserInterface, err error) {
+// Unlock unlocks the provided user account
+func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, LoginError
+		return nil, errLogin
 	}
 
-	user = u.(UserInterface)
+	user = u.(User)
 
 	user.SetLocked(false)
 
@@ -123,10 +124,10 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
-		return nil, LoginError
+		return nil, errLogin
 	}
 
-	user = u.(UserInterface)
+	user = u.(User)
 
 	// Emit user unlock event
 	data := make(map[string]string)
@@ -137,8 +138,8 @@ func (userModule *UserModule) Unlock(email string) (user UserInterface, err erro
 	return user, nil
 }
 
-//TODO: differentiate between login states and internal errors
-func (userModule *UserModule) Login(email string, pass string) (bool, interface{}, error) {
+// Login checks user credentials and returns a login state and the associated user object (if found)
+func (userModule *Controller) Login(email string, pass string) (bool, interface{}, error) {
 
 	// Fetch user account
 	u, err := userModule.userStore.GetUserByEmail(email)
@@ -151,7 +152,7 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 	// Avoids leaking account info by login timing
 	hash := "fake password hash"
 	if u != nil {
-		user := u.(UserInterface)
+		user := u.(User)
 		hash = user.GetPassword()
 	}
 
@@ -159,7 +160,7 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 	hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 	if hashErr != nil {
 		if u != nil {
-			user := u.(UserInterface)
+			user := u.(User)
 			retries := user.GetLoginRetries()
 
 			// Handle account lock after N retries
@@ -173,7 +174,7 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 			if err != nil {
 				// Userstore error, wrap
 				log.Println(err)
-				return false, nil, LoginError
+				return false, nil, errLogin
 			}
 
 			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
@@ -187,7 +188,7 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 
 	// Login if user exists and passwords match
 	if (u != nil) && (hashErr == nil) {
-		user := u.(UserInterface)
+		user := u.(User)
 
 		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
 
@@ -197,9 +198,10 @@ func (userModule *UserModule) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
-func (userModule *UserModule) GetUser(extId string) (UserInterface, error) {
+// GetUser finds a user by userID
+func (userModule *Controller) GetUser(userid string) (User, error) {
 	// Attempt to fetch user
-	u, err := userModule.userStore.GetUserByExtId(extId)
+	u, err := userModule.userStore.GetUserByExtId(userid)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -208,17 +210,19 @@ func (userModule *UserModule) GetUser(extId string) (UserInterface, error) {
 
 	if u == nil {
 		// Userstore error, wrap
-		log.Printf("Error: user not found %s", extId)
+		log.Printf("Error: user not found %s", userid)
 		return nil, ErrorUserNotFound
 	}
 
-	return u.(UserInterface), nil
+	return u.(User), nil
 }
 
-func (userModule *UserModule) UpdatePassword(extId string, old string, new string) (UserInterface, error) {
+// UpdatePassword updates a user password
+// This checks the original password prior to updating and fails on password errors
+func (userModule *Controller) UpdatePassword(userid string, old string, new string) (User, error) {
 
 	// Fetch user
-	u, err := userModule.userStore.GetUserByExtId(extId)
+	u, err := userModule.userStore.GetUserByExtId(userid)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -230,7 +234,7 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 		return nil, ErrorUserNotFound
 	}
 
-	user := u.(UserInterface)
+	user := u.(User)
 
 	// Check password
 	hashErr := bcrypt.CompareHashAndPassword([]byte(user.GetPassword()), []byte(old))
@@ -257,15 +261,16 @@ func (userModule *UserModule) UpdatePassword(extId string, old string, new strin
 	data := make(map[string]string)
 	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
 
-	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", extId)
+	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", userid)
 
 	return user, nil
 }
 
-// Generic method to handle an action token
-func (userModule *UserModule) HandleToken(u interface{}, action api.TokenAction) (err error) {
+// HandleToken provides a generic method to handle an action token
+// This executes the specified api.TokenAction on the provided user
+func (userModule *Controller) HandleToken(u interface{}, action api.TokenAction) (err error) {
 
-	user := u.(UserInterface)
+	user := u.(User)
 
 	switch action {
 	case api.TokenActionUnlock:
@@ -285,8 +290,8 @@ func (userModule *UserModule) HandleToken(u interface{}, action api.TokenAction)
 }
 
 // PreLogin checks for the user module
-func (userModule *UserModule) PreLogin(u interface{}) (bool, error) {
-	user := u.(UserInterface)
+func (userModule *Controller) PreLogin(u interface{}) (bool, error) {
+	user := u.(User)
 
 	if user.IsEnabled() == false {
 		//TODO: handle disabled error
@@ -309,10 +314,10 @@ func (userModule *UserModule) PreLogin(u interface{}) (bool, error) {
 	return true, nil
 }
 
-// PostLogin Success actions for the user module
-func (userModule *UserModule) PostLoginSuccess(u interface{}) error {
+// PostLoginSuccess runs success actions for the user module
+func (userModule *Controller) PostLoginSuccess(u interface{}) error {
 
-	user := u.(UserInterface)
+	user := u.(User)
 
 	// Update user object
 	user.SetLastLogin(time.Now())
@@ -325,8 +330,8 @@ func (userModule *UserModule) PostLoginSuccess(u interface{}) error {
 	return nil
 }
 
-// PostLogin Failure actions for the user module
-func (userModule *UserModule) PostLoginFailure(u interface{}) error {
+// PostLoginFailure runs Failure actions for the user module
+func (userModule *Controller) PostLoginFailure(u interface{}) error {
 
 	return nil
 }

@@ -36,7 +36,7 @@ func TestU2FModule(t *testing.T) {
 	vt, _ := u2f.NewVirtualKey()
 
 	// Instantiate u2f module
-	u2fModule := NewU2FModule("localhost", dataStore)
+	u2fModule := NewController("localhost", dataStore)
 
 	t.Run("Create challenges", func(t *testing.T) {
 		c, err := u2fModule.GetChallenge(user.GetExtId())

@@ -28,7 +28,7 @@ func TestAuditController(t *testing.T) {
 	ds.ForceSync()
 
 	// Create controllers
-	ac := NewAuditController(ds)
+	ac := NewController(ds)
 	auditSvc := async.NewAsyncService(ac, 64)
 	serviceManager.BindService(&auditSvc)
 

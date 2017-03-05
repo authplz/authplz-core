@@ -14,43 +14,44 @@ import (
 )
 
 // API context instance
-type UserApiCtx struct {
+type apiCtx struct {
 	// Base context required by router
 	*appcontext.AuthPlzCtx
 	// User module instance
-	um *UserModule
+	um *Controller
 }
 
-// Helper middleware to bind module to API context
-func BindUserContext(userModule *UserModule) func(ctx *UserApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	return func(ctx *UserApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+// BindUserContext Helper middleware to bind module to API context
+func BindUserContext(userModule *Controller) func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.um = userModule
 		next(rw, req)
 	}
 }
 
-func (userModule *UserModule) BindAPI(router *web.Router) {
+// BindAPI Binds the API for the user module to the provided router
+func (userModule *Controller) BindAPI(router *web.Router) {
 	// Create router for user modules
-	userRouter := router.Subrouter(UserApiCtx{}, "/api")
+	userRouter := router.Subrouter(apiCtx{}, "/api")
 
 	// Attach module context
 	userRouter.Middleware(BindUserContext(userModule))
 
 	// Bind endpoints
-	userRouter.Get("/test", (*UserApiCtx).Test)
-	userRouter.Get("/status", (*UserApiCtx).Status)
-	userRouter.Post("/create", (*UserApiCtx).Create)
-	userRouter.Get("/account", (*UserApiCtx).AccountGet)
-	userRouter.Post("/account", (*UserApiCtx).AccountPost)
+	userRouter.Get("/test", (*apiCtx).Test)
+	userRouter.Get("/status", (*apiCtx).Status)
+	userRouter.Post("/create", (*apiCtx).Create)
+	userRouter.Get("/account", (*apiCtx).AccountGet)
+	userRouter.Post("/account", (*apiCtx).AccountPost)
 }
 
 // Test endpoint
-func (c *UserApiCtx) Test(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) Test(rw web.ResponseWriter, req *web.Request) {
 	c.WriteApiResult(rw, api.ApiResultOk, "Test Response")
 }
 
 // Get user login status
-func (c *UserApiCtx) Status(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiMessageInst().Unauthorized)
 	} else {
@@ -58,7 +59,7 @@ func (c *UserApiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
-func (c *UserApiCtx) Create(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
 		log.Printf("Create: email parameter required")
@@ -100,26 +101,26 @@ func (c *UserApiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Fetch a user object
-func (c *UserApiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 
-	} else {
-		// Fetch user from user controller
-		u, err := c.um.GetUser(c.GetUserID())
-		if err != nil {
-			log.Print(err)
-			c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-			return
-		}
-
-		c.WriteJson(rw, u)
 	}
+	// Fetch user from user controller
+	u, err := c.um.GetUser(c.GetUserID())
+	if err != nil {
+		log.Print(err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+
+	c.WriteJson(rw, u)
+
 }
 
 // Update user object
-func (c *UserApiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
+func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return

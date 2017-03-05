@@ -29,3 +29,4 @@ setenv.sh
 *.crt
 node_modules/
 static/
+.vscode/

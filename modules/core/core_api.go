@@ -13,40 +13,40 @@ import (
 )
 
 // Temporary mapping between contexts
-type AuthPlzCoreCtx struct {
+type coreCtx struct {
 	// Base context for shared components
 	*appcontext.AuthPlzCtx
 
 	// Core module to provide API with required methods
-	cm *CoreModule
+	cm *Controller
 }
 
 // Helper middleware to bind module to API context
-func BindCoreContext(coreModule *CoreModule) func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	return func(ctx *AuthPlzCoreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+func bindCoreContext(coreModule *Controller) func(ctx *coreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *coreCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.cm = coreModule
 		next(rw, req)
 	}
 }
 
-// Bind the API for the coreModule to the provided router
-func (coreModule *CoreModule) BindAPI(router *web.Router) {
+// BindAPI Binds the API for the coreModule to the provided router
+func (coreModule *Controller) BindAPI(router *web.Router) {
 	// Create router for user modules
-	coreRouter := router.Subrouter(AuthPlzCoreCtx{}, "/api")
+	coreRouter := router.Subrouter(coreCtx{}, "/api")
 
 	// Attach module context
-	coreRouter.Middleware(BindCoreContext(coreModule))
+	coreRouter.Middleware(bindCoreContext(coreModule))
 
 	// Bind endpoints
-	coreRouter.Post("/login", (*AuthPlzCoreCtx).Login)
-	coreRouter.Get("/logout", (*AuthPlzCoreCtx).Logout)
-	coreRouter.Get("/action", (*AuthPlzCoreCtx).Action)
-	coreRouter.Post("/action", (*AuthPlzCoreCtx).Action)
+	coreRouter.Post("/login", (*coreCtx).Login)
+	coreRouter.Get("/logout", (*coreCtx).Logout)
+	coreRouter.Get("/action", (*coreCtx).Action)
+	coreRouter.Post("/action", (*coreCtx).Action)
 }
 
 // Handle an action token (both get and post calls)
 // This adds the action token to a session flash for use post-login attempt
-func (c *AuthPlzCoreCtx) Action(rw web.ResponseWriter, req *web.Request) {
+func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 	// Grab token string from get or post request
 	var tokenString string
 	tokenString = req.FormValue("token")
@@ -79,7 +79,7 @@ func (c *AuthPlzCoreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Login to a user account
-func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
+func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
@@ -211,19 +211,20 @@ func (c *AuthPlzCoreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusUnauthorized)
 }
 
-// End a user session
-func (c *AuthPlzCoreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+// Logout Endpoint ends a user session
+func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
-	} else {
-		c.LogoutUser(rw, req)
-		rw.WriteHeader(http.StatusOK)
 	}
+
+	c.LogoutUser(rw, req)
+	rw.WriteHeader(http.StatusOK)
 }
 
-// Recover a user account
-func (c *AuthPlzCoreCtx) Recover(rw web.ResponseWriter, req *web.Request) {
+// Recover endpoint provides mechanisms for user account recovery
+// TODO: this
+func (c *coreCtx) Recover(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
 		rw.WriteHeader(http.StatusBadRequest)

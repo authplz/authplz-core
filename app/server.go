@@ -75,21 +75,21 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager = async.NewServiceManager(bufferSize)
 
 	// User management module
-	userModule := user.NewUserModule(dataStore, server.serviceManager)
+	userModule := user.NewController(dataStore, server.serviceManager)
 
 	// Core module
-	coreModule := core.NewCoreModule(tokenControl, userModule)
+	coreModule := core.NewController(tokenControl, userModule)
 
 	coreModule.BindModule("user", userModule)
 	coreModule.BindActionHandler(api.TokenActionActivate, userModule)
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
 
 	// U2F module
-	u2fModule := u2f.NewU2FModule(config.Address, dataStore)
+	u2fModule := u2f.NewController(config.Address, dataStore)
 	coreModule.BindSecondFactor("u2f", u2fModule)
 
 	// Audit module (async components)
-	auditModule := audit.NewAuditController(dataStore)
+	auditModule := audit.NewController(dataStore)
 	auditSvc := async.NewAsyncService(auditModule, bufferSize)
 	server.serviceManager.BindService(&auditSvc)
 

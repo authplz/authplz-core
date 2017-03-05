@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// Token instance interface
+// TokenInterface Token instance interface
 // This must be implemented by the token storage implementation
-type U2FTokenInterface interface {
+type TokenInterface interface {
 	GetName() string
 	GetKeyHandle() string
 	GetPublicKey() string
@@ -25,9 +25,9 @@ type U2FTokenInterface interface {
 	SetLastUsed(time.Time)
 }
 
-// Token store interface
+// Storer U2F Token store interface
 // This must be implemented by a storage module to provide persistence to the module
-type U2FStoreInterface interface {
+type Storer interface {
 	// Fetch a user instance by user id (should be able to remove this)
 	GetUserByExtId(userid string) (interface{}, error)
 	// Add a fido token to a given user

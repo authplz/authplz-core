@@ -24,7 +24,7 @@ func TestUserController(t *testing.T) {
 	mockEventEmitter := test.MockEventEmitter{}
 
 	// Create controllers
-	uc := NewUserModule(dataStore, &mockEventEmitter)
+	uc := NewController(dataStore, &mockEventEmitter)
 
 	t.Run("Create user", func(t *testing.T) {
 		u, err := uc.Create(fakeEmail, fakePass)
@@ -100,8 +100,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.(UserInterface).GetLastLogin() == u2.(UserInterface).GetLastLogin() {
-			t.Errorf("Login times match (initial: %v new: %v)", u1.(UserInterface).GetLastLogin(), u2.(UserInterface).GetLastLogin())
+		if u1.(User).GetLastLogin() == u2.(User).GetLastLogin() {
+			t.Errorf("Login times match (initial: %v new: %v)", u1.(User).GetLastLogin(), u2.(User).GetLastLogin())
 			t.FailNow()
 		}
 	})
@@ -129,7 +129,7 @@ func TestUserController(t *testing.T) {
 	t.Run("PreLogin rejects disabled user accounts", func(t *testing.T) {
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
 
-		u.(UserInterface).SetEnabled(false)
+		u.(User).SetEnabled(false)
 		uc.userStore.UpdateUser(u)
 
 		res, err := uc.PreLogin(u)
@@ -141,13 +141,13 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		u.(UserInterface).SetEnabled(true)
+		u.(User).SetEnabled(true)
 		uc.userStore.UpdateUser(u)
 	})
 
 	t.Run("Login locks accounts after N failed attempts", func(t *testing.T) {
 		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u.(UserInterface).IsLocked() {
+		if u.(User).IsLocked() {
 			t.Errorf("Account already locked")
 		}
 
@@ -156,7 +156,7 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		if !u.(UserInterface).IsLocked() {
+		if !u.(User).IsLocked() {
 			t.Errorf("Account not locked")
 		}
 	})
@@ -182,7 +182,7 @@ func TestUserController(t *testing.T) {
 		}
 
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
-		if u.(UserInterface).IsLocked() {
+		if u.(User).IsLocked() {
 			t.Errorf("Account is still locked")
 		}
 	})
@@ -195,7 +195,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u1, err := uc.GetUser(u.(UserInterface).GetExtId())
+		u1, err := uc.GetUser(u.(User).GetExtId())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -211,7 +211,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(UserInterface).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -237,7 +237,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password &$#%"
 
-		_, err := uc.UpdatePassword(u1.(UserInterface).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u1.(User).GetExtId(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -249,8 +249,8 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		if u1.(UserInterface).GetPasswordChanged() == u2.(UserInterface).GetPasswordChanged() {
-			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(UserInterface).GetPasswordChanged(), u2.(UserInterface).GetPasswordChanged())
+		if u1.(User).GetPasswordChanged() == u2.(User).GetPasswordChanged() {
+			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(User).GetPasswordChanged(), u2.(User).GetPasswordChanged())
 			t.FailNow()
 		}
 	})
@@ -261,7 +261,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(UserInterface).GetExtId(), "wrongPass", newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtId(), "wrongPass", newPass)
 		if err == nil {
 			t.Error(err)
 			t.FailNow()

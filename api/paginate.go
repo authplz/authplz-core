@@ -1,7 +1,6 @@
 package api
 
 type Paginate struct {
-    Count uint
-    Offset uint
+	Count  uint
+	Offset uint
 }
-

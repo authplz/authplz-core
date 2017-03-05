@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Defines the User object interface required by this module
-type UserInterface interface {
+// User Defines the User object interfaces required by this module
+type User interface {
 	GetExtId() string
 	GetEmail() string
 
@@ -30,14 +30,16 @@ type UserInterface interface {
 	SetLocked(locked bool)
 }
 
-// Defines the required store interfaces for the user module
-type UserStoreInterface interface {
+// Storer Defines the required store interfaces for the user module
+// Returned interfaces must satisfy the User interface requirements
+type Storer interface {
 	AddUser(email string, pass string) (interface{}, error)
 	GetUserByExtId(userid string) (interface{}, error)
 	GetUserByEmail(email string) (interface{}, error)
 	UpdateUser(user interface{}) (interface{}, error)
 }
 
+/*
 // Login status return objects
 type LoginStatus struct {
 	Code    uint64
@@ -55,6 +57,7 @@ const (
 )
 
 // Login return object instances
+
 var LoginSuccess = LoginStatus{LoginCodeSuccess, "Login successful"}
 var LoginFailure = LoginStatus{LoginCodeFailure, "Invalid username or password"}
 var LoginRequired = LoginStatus{LoginCodeFailure, "Login required"}
@@ -62,5 +65,5 @@ var LoginPartial = LoginStatus{LoginCodeFailure, "Second factor required"}
 var LoginLocked = LoginStatus{LoginCodeLocked, "User account locked"}
 var LoginUnactivated = LoginStatus{LoginCodeUnactivated, "User account not activated"}
 var LoginDisabled = LoginStatus{LoginCodeDisabled, "User account disabled"}
-
-var loginError = errors.New("internal server error")
+*/
+var errLogin = errors.New("internal server error")

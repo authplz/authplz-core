@@ -19,45 +19,47 @@ import (
 	u2f "github.com/ryankurte/go-u2f"
 )
 
-type U2FModule struct {
+// Controller U2F controller instance storage
+type Controller struct {
 	url      string
-	u2fStore U2FStoreInterface
+	u2fStore Storer
 }
 
-func NewU2FModule(url string, u2fStore U2FStoreInterface) *U2FModule {
-	return &U2FModule{
+// NewController creates a new U2F controller
+func NewController(url string, u2fStore Storer) *Controller {
+	return &Controller{
 		url:      url,
 		u2fStore: u2fStore,
 	}
 }
 
-// Helper middleware to bind module to API context
-func BindU2FContext(u2fModule *U2FModule) func(ctx *U2FApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	return func(ctx *U2FApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+// BindU2FContext Helper middleware to bind module to API context
+func BindU2FContext(u2fModule *Controller) func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.um = u2fModule
 		next(rw, req)
 	}
 }
 
-// Bind the API for the coreModule to the provided router
-func (u2fModule *U2FModule) BindAPI(router *web.Router) {
+// BindAPI Binds the API for the u2f module to the provided router
+func (u2fModule *Controller) BindAPI(router *web.Router) {
 	// Create router for user modules
-	u2frouter := router.Subrouter(U2FApiCtx{}, "/api/u2f")
+	u2frouter := router.Subrouter(apiCtx{}, "/api/u2f")
 
 	// Attach module context
 	u2frouter.Middleware(BindU2FContext(u2fModule))
 
 	// Bind endpoints
-	u2frouter.Get("/enrol", (*U2FApiCtx).U2FEnrolGet)
-	u2frouter.Post("/enrol", (*U2FApiCtx).U2FEnrolPost)
-	u2frouter.Get("/authenticate", (*U2FApiCtx).U2FAuthenticateGet)
-	u2frouter.Post("/authenticate", (*U2FApiCtx).U2FAuthenticatePost)
-	u2frouter.Get("/tokens", (*U2FApiCtx).U2FTokensGet)
+	u2frouter.Get("/enrol", (*apiCtx).U2FEnrolGet)
+	u2frouter.Post("/enrol", (*apiCtx).U2FEnrolPost)
+	u2frouter.Get("/authenticate", (*apiCtx).U2FAuthenticateGet)
+	u2frouter.Post("/authenticate", (*apiCtx).U2FAuthenticatePost)
+	u2frouter.Get("/tokens", (*apiCtx).U2FTokensGet)
 }
 
-// Check whether u2f is supported for a given user
+// IsSupported Checks whether u2f is supported for a given user by userid
 // This is required to implement the generic 2fa interface for binding into the core module.
-func (u2fModule *U2FModule) IsSupported(userid string) bool {
+func (u2fModule *Controller) IsSupported(userid string) bool {
 	tokens, err := u2fModule.u2fStore.GetFidoTokens(userid)
 	if err != nil {
 		log.Printf("U2FModule.IsSupported error fetching fido tokens for user %s (%s)", userid, tokens)
@@ -69,8 +71,8 @@ func (u2fModule *U2FModule) IsSupported(userid string) bool {
 	return true
 }
 
-// Fetch a U2F challenge for a given user
-func (u2fModule *U2FModule) GetChallenge(userid string) (*u2f.Challenge, error) {
+// GetChallenge Fetches a U2F challenge for a given user
+func (u2fModule *Controller) GetChallenge(userid string) (*u2f.Challenge, error) {
 
 	// Fetch registered tokens
 	tokens, err := u2fModule.ListTokens(userid)
@@ -82,7 +84,7 @@ func (u2fModule *U2FModule) GetChallenge(userid string) (*u2f.Challenge, error) 
 	// Convert to u2f objects for usefulness
 	var registeredKeys []u2f.Registration
 	for _, v := range tokens {
-		t := v.(U2FTokenInterface)
+		t := v.(TokenInterface)
 
 		reg := u2f.Registration{
 			KeyHandle:   t.GetKeyHandle(),
@@ -99,9 +101,9 @@ func (u2fModule *U2FModule) GetChallenge(userid string) (*u2f.Challenge, error) 
 	return challenge, nil
 }
 
-// Validate and save a u2f registration
+// ValidateRegistration Validates and saves a u2f registration
 // Returns ok, err indicating registration validity and forwarding errors
-func (u2fModule *U2FModule) ValidateRegistration(userid, tokenName string, challenge *u2f.Challenge, resp *u2f.RegisterResponse) (bool, error) {
+func (u2fModule *Controller) ValidateRegistration(userid, tokenName string, challenge *u2f.Challenge, resp *u2f.RegisterResponse) (bool, error) {
 
 	// Check registration validity
 	// TODO: attestation should be disabled only in test mode, need a better certificate list
@@ -122,7 +124,8 @@ func (u2fModule *U2FModule) ValidateRegistration(userid, tokenName string, chall
 	return true, nil
 }
 
-func (u2fModule *U2FModule) ValidateSignature(userid string, challenge *u2f.Challenge, resp *u2f.SignResponse) (bool, error) {
+// ValidateSignature validates a u2f signature response
+func (u2fModule *Controller) ValidateSignature(userid string, challenge *u2f.Challenge, resp *u2f.SignResponse) (bool, error) {
 
 	// Check signature validity
 	reg, err := challenge.Authenticate(*resp)
@@ -139,9 +142,9 @@ func (u2fModule *U2FModule) ValidateSignature(userid string, challenge *u2f.Chal
 	}
 
 	// Locate matching token
-	var token U2FTokenInterface = nil
+	var token TokenInterface
 	for _, v := range tokens {
-		t := v.(U2FTokenInterface)
+		t := v.(TokenInterface)
 		if t.GetKeyHandle() == reg.KeyHandle {
 			token = t
 		}
@@ -166,8 +169,8 @@ func (u2fModule *U2FModule) ValidateSignature(userid string, challenge *u2f.Chal
 	return true, nil
 }
 
-// Add a token to a provided user id
-func (u2fModule *U2FModule) AddToken(userid, name, keyHandle, publicKey, certificate string, counter uint) error {
+// AddToken Adds a token to a provided user id
+func (u2fModule *Controller) AddToken(userid, name, keyHandle, publicKey, certificate string, counter uint) error {
 	_, err := u2fModule.u2fStore.AddFidoToken(userid, "", keyHandle, publicKey, certificate, counter)
 	if err != nil {
 		log.Printf("U2FModule.AddToken: error %s", err)
@@ -176,15 +179,19 @@ func (u2fModule *U2FModule) AddToken(userid, name, keyHandle, publicKey, certifi
 	return nil
 }
 
-func (u2fModule *U2FModule) UpdateToken() {
+// UpdateToken Updates a token instance
+// TODO: not sure if/why this is required atm
+func (u2fModule *Controller) UpdateToken() {
 
 }
 
-func (u2fModule *U2FModule) RemoveToken() {
+// RemoveToken Removes a token instance
+func (u2fModule *Controller) RemoveToken() {
 
 }
 
-func (u2fModule *U2FModule) ListTokens(userid string) ([]interface{}, error) {
+// ListTokens lists tokens for a given user
+func (u2fModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	// Fetch tokens from database
 	tokens, err := u2fModule.u2fStore.GetFidoTokens(userid)
 	if err != nil {

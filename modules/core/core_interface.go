@@ -4,59 +4,59 @@ import (
 	"github.com/ryankurte/authplz/api"
 )
 
-// Interface for a user control module
-type UserControlInterface interface {
+// LoginProvider Interface for a user control module
+type LoginProvider interface {
 	// Login method, returns boolean result, user interface for further use, error in case of failure
 	Login(email string, password string) (bool, interface{}, error)
 }
 
-// Interface for token (creation and?) validation
-type TokenControlInterface interface {
+// TokenValidator Interface for token (creation and?) validation
+type TokenValidator interface {
 	ValidateToken(userid string, tokenString string) (*api.TokenAction, error)
 }
 
-// Interface for 2 factor authentication modules
+// SecondFactorProvider for 2 factor authentication modules
 // These modules must inform the login handler as to whether
 // further authentication is supported
-type SecondFactorInterface interface {
+type SecondFactorProvider interface {
 	// Check whether a user can use this 2fa module
 	// This depends on what second factors are registered
 	IsSupported(userid string) bool
 }
 
-// Interface for token handler modules
+// TokenHandler for token handler modules
 // These modules accept a token action and user id to execute a task
 // For example, the user module accepts 'activate' and 'unlock' actions
-type TokenHandlerInterface interface {
+type TokenHandler interface {
 	HandleToken(u interface{}, tokenAction api.TokenAction) error
 }
 
 // Core Event Hook Interfaces
 
-// PreLogin hooks may allow or deny login
-type PreLoginInterface interface {
+// PreLoginHook PreLogin hooks may allow or deny login
+type PreLoginHook interface {
 	PreLogin(u interface{}) (bool, error)
 }
 
-// Post login success hooks called on login success
-type PostLoginSuccessInterface interface {
+// PostLoginSuccessHook Post login success hooks called on login success
+type PostLoginSuccessHook interface {
 	PostLoginSuccess(u interface{}) error
 }
 
-// Post login failure hooks called on login failure
-type PostLoginFailureInterface interface {
+// PostLoginFailureHook Post login failure hooks called on login failure
+type PostLoginFailureHook interface {
 	PostLoginFailure(u interface{}) error
 }
 
-// Interface for event handler modules
+// EventHandler Interface for event handler modules
 // These modules are bound into the event manager to provide asynchronous services
 // based on system events.
 // For example, the mailer module accepts a variety of user events and sends mail in response.
-type EventHandlerInterface interface {
+type EventHandler interface {
 	HandleEvent(userid string, u interface{}) error
 }
 
-// Interface for user instances
+// UserInterface Interface for user instances
 type UserInterface interface {
 	GetExtId() string
 	GetEmail() string

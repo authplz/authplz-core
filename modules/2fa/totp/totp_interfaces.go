@@ -12,22 +12,20 @@ import (
 	"time"
 )
 
-// Token instance interface
+// TokenInterface Token instance interface
 // This must be implemented by the token storage implementation
-type TotpTokenInterface interface {
+type TokenInterface interface {
 	GetName() string
-	GetKeyHandle() string
-	GetPublicKey() string
-	GetCertificate() string
+	GetSecret() string
 	GetCounter() uint
 	SetCounter(uint)
 	GetLastUsed() time.Time
 	SetLastUsed(time.Time)
 }
 
-// Token store interface
+// Storer Token store interface
 // This must be implemented by a storage module to provide persistence to the module
-type TotpStoreInterface interface {
+type Storer interface {
 	// Fetch a user instance by user id (should be able to remove this)
 	GetUserByExtId(userid string) (interface{}, error)
 	// Add a fido token to a given user

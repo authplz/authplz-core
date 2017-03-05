@@ -19,34 +19,34 @@ import (
 )
 
 // U2F API context storage
-type TOTPApiCtx struct {
+type totpAPICtx struct {
 	// Base context for shared components
 	*appcontext.AuthPlzCtx
 
 	// U2F controller module
-	totpModule *TOTPModule
+	totpModule *Controller
 }
 
-func (c *TOTPApiCtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *TOTPApiCtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *TOTPApiCtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *TOTPApiCtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *TOTPApiCtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }
 
-func (c *TOTPApiCtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {
+func (c *totpAPICtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusNotImplemented)
 }

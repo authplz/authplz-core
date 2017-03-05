@@ -5,19 +5,19 @@ import (
 	"time"
 )
 
-// Audit controller interface
-type AuditController struct {
-	store AuditStoreInterface
+// Controller instance
+type Controller struct {
+	store Storer
 }
 
-// Instantiate an audit controller
-func NewAuditController(store AuditStoreInterface) *AuditController {
-	return &AuditController{store: store}
+// NewController Instantiates an audit controller
+func NewController(store Storer) *Controller {
+	return &Controller{store: store}
 }
 
-// Add an event to the audit log
-func (ac *AuditController) AddEvent(u interface{}, eventType string, eventTime time.Time, data map[string]string) error {
-	user := u.(AuditUserI)
+// AddEvent adds an event to the audit log
+func (ac *Controller) AddEvent(u interface{}, eventType string, eventTime time.Time, data map[string]string) error {
+	user := u.(User)
 
 	_, err := ac.store.AddAuditEvent(user.GetExtId(), eventType, eventTime, data)
 	if err != nil {
@@ -25,26 +25,26 @@ func (ac *AuditController) AddEvent(u interface{}, eventType string, eventTime t
 		return err
 	}
 
-    log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, user.GetExtId())
+	log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, user.GetExtId())
 
 	return nil
 }
 
-// Event handler function for go-async
-func (ac *AuditController) HandleEvent(event interface{}) error {
-	auditEvent := event.(AuditEventI)
+// HandleEvent handles async events for go-async
+func (ac *Controller) HandleEvent(event interface{}) error {
+	auditEvent := event.(Event)
 	ac.AddEvent(auditEvent.GetUser(), auditEvent.GetType(), auditEvent.GetTime(), auditEvent.GetData())
 	return nil
 }
 
-// List events
-func (ac *AuditController) ListEvents(userid string) ([]interface{}, error) {
+// ListEvents fetches events for the provided userID
+func (ac *Controller) ListEvents(userid string) ([]interface{}, error) {
 
-    events, err := ac.store.GetAuditEvents(userid)
-    if err != nil {
-        log.Printf("AuditController.AddEvent: error adding audit event (%s)", err)
-        return events, err
-    }
+	events, err := ac.store.GetAuditEvents(userid)
+	if err != nil {
+		log.Printf("AuditController.AddEvent: error adding audit event (%s)", err)
+		return events, err
+	}
 
-    return events, err
+	return events, err
 }

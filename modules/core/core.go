@@ -8,108 +8,113 @@ import (
 	"github.com/ryankurte/authplz/api"
 )
 
-type CoreModule struct {
+// Controller core module instance storage
+// The core module implements basic login/logout methods and allows binding of modules
+// To interrupt/assist/log the execution of each
+type Controller struct {
 	// Token controller for parsing of tokens
-	tokenControl TokenControlInterface
+	tokenControl TokenValidator
 
 	// User controller interface for basic user logins
-	userControl UserControlInterface
+	userControl LoginProvider
 
 	// Token handler implementations
 	// This allows token handlers to be bound on a per-module basis using the actions
 	// defined in api.TokenAction. Note that there must not be overlaps in bindings
 	// TODO: this should probably be implemented as a bind function to panic if overlap is attempted
-	tokenHandlers map[api.TokenAction]TokenHandlerInterface
+	tokenHandlers map[api.TokenAction]TokenHandler
 
 	// 2nd Factor Authentication implementations
-	secondFactorHandlers map[string]SecondFactorInterface
+	secondFactorHandlers map[string]SecondFactorProvider
 
 	// Event handler implementations
-	eventHandlers map[string]EventHandlerInterface
+	eventHandlers map[string]EventHandler
 
 	// Login handler implementations
-	preLogin         map[string]PreLoginInterface
-	postLoginSuccess map[string]PostLoginSuccessInterface
-	postLoginFailure map[string]PostLoginFailureInterface
+	preLogin         map[string]PreLoginHook
+	postLoginSuccess map[string]PostLoginSuccessHook
+	postLoginFailure map[string]PostLoginFailureHook
 }
 
-// Create a new core module instance
-// The core module implements basic login/logout methods and allows binding of modules
-// To interrupt/assist/log the execution of each
-func NewCoreModule(tokenControl TokenControlInterface, userControl UserControlInterface) *CoreModule {
-	return &CoreModule{
-		tokenControl:         tokenControl,
-		userControl:          userControl,
-		tokenHandlers:        make(map[api.TokenAction]TokenHandlerInterface),
-		secondFactorHandlers: make(map[string]SecondFactorInterface),
+// NewController Create a new core module instance
+func NewController(tokenValidator TokenValidator, loginProvider LoginProvider) *Controller {
+	return &Controller{
+		tokenControl:         tokenValidator,
+		userControl:          loginProvider,
+		tokenHandlers:        make(map[api.TokenAction]TokenHandler),
+		secondFactorHandlers: make(map[string]SecondFactorProvider),
 
-		preLogin:         make(map[string]PreLoginInterface),
-		postLoginSuccess: make(map[string]PostLoginSuccessInterface),
-		postLoginFailure: make(map[string]PostLoginFailureInterface),
-		eventHandlers:    make(map[string]EventHandlerInterface),
+		preLogin:         make(map[string]PreLoginHook),
+		postLoginSuccess: make(map[string]PostLoginSuccessHook),
+		postLoginFailure: make(map[string]PostLoginFailureHook),
+		eventHandlers:    make(map[string]EventHandler),
 	}
 }
 
-// Bind a token action handler instance to the core module
+// BindActionHandler Binds a token action handler instance to the core module
 // Token actions are validated and executed following successful login
-func (coreModule *CoreModule) BindActionHandler(action api.TokenAction, thi TokenHandlerInterface) {
+func (coreModule *Controller) BindActionHandler(action api.TokenAction, thi TokenHandler) {
 	// TODO: check if exists before attaching and throw an error
 	coreModule.tokenHandlers[action] = thi
 }
 
-// Bind a 2fa handler instance into the core module
+// BindSecondFactor Binds a 2fa handler instance into the core module
 // 2fa handlers must return whether they are available for a given user.
 // If any 2fa module returns true, login will be halted, the user alerted (with available options),
 // and a 2fa-pending session variable set in the global context for a 2fa implementation to
 // pick up
-func (coreModule *CoreModule) BindSecondFactor(name string, sfi SecondFactorInterface) {
+func (coreModule *Controller) BindSecondFactor(name string, sfi SecondFactorProvider) {
 	// TODO: check if exists before attaching and throw an error
 	coreModule.secondFactorHandlers[name] = sfi
 }
 
-// Bind an event handler interface into the core module
+// BindEventHandler Binds an event handler interface into the core module
 // Event handlers are called during a variety of evens
-func (coreModule *CoreModule) BindEventHandler(name string, ehi EventHandlerInterface) {
+func (coreModule *Controller) BindEventHandler(name string, ehi EventHandler) {
 	coreModule.eventHandlers[name] = ehi
 }
 
-// Bind a PreLogin handler interface to the core module
+// BindPreLogin Binds a PreLogin handler interface to the core module
 // PreLogin handlers are called in the login chain to check login requirements
-func (coreModule *CoreModule) BindPreLogin(name string, lhi PreLoginInterface) {
+func (coreModule *Controller) BindPreLogin(name string, lhi PreLoginHook) {
 	coreModule.preLogin[name] = lhi
 }
 
-func (coreModule *CoreModule) BindPostLoginSuccess(name string, plsi PostLoginSuccessInterface) {
+// BindPostLoginSuccess binds a PostLoginSuccess handler interface to the core module
+// This handler will be called on successful logins
+func (coreModule *Controller) BindPostLoginSuccess(name string, plsi PostLoginSuccessHook) {
 	coreModule.postLoginSuccess[name] = plsi
 }
 
-func (coreModule *CoreModule) BindPostLoginFailure(name string, plfi PostLoginFailureInterface) {
+// BindPostLoginFailure binds a PostLoginFailure handler interface to the core module
+// This handler will be called on failed logins
+func (coreModule *Controller) BindPostLoginFailure(name string, plfi PostLoginFailureHook) {
 	coreModule.postLoginFailure[name] = plfi
 }
 
-// Magic binding function, detects interfaces implemented by a given module
+// BindModule Magic binding function, detects interfaces implemented by a given module
 // and binds as appropriate
-func (coreModule *CoreModule) BindModule(name string, mod interface{}) {
-	if i, ok := mod.(SecondFactorInterface); ok {
+func (coreModule *Controller) BindModule(name string, mod interface{}) {
+	if i, ok := mod.(SecondFactorProvider); ok {
 		coreModule.BindSecondFactor(name, i)
 	}
-	if i, ok := mod.(EventHandlerInterface); ok {
+	if i, ok := mod.(EventHandler); ok {
 		coreModule.BindEventHandler(name, i)
 	}
-	if i, ok := mod.(PreLoginInterface); ok {
+	if i, ok := mod.(PreLoginHook); ok {
 		coreModule.BindPreLogin(name, i)
 	}
-	if i, ok := mod.(PostLoginSuccessInterface); ok {
+	if i, ok := mod.(PostLoginSuccessHook); ok {
 		coreModule.BindPostLoginSuccess(name, i)
 	}
-	if i, ok := mod.(PostLoginFailureInterface); ok {
+	if i, ok := mod.(PostLoginFailureHook); ok {
 		coreModule.BindPostLoginFailure(name, i)
 	}
 }
 
-// Determine whether a second factor is required for a user
+// CheckSecondFactors Determine whether a second factor is required for a user
 // This returns a bool indicating whether 2fa is required, and a map of the available 2fa mechanisms
-func (coreModule *CoreModule) CheckSecondFactors(userid string) (bool, map[string]bool) {
+func (coreModule *Controller) CheckSecondFactors(userid string) (bool, map[string]bool) {
 
 	availableHandlers := make(map[string]bool)
 	secondFactorRequired := false
@@ -125,9 +130,9 @@ func (coreModule *CoreModule) CheckSecondFactors(userid string) (bool, map[strin
 	return secondFactorRequired, availableHandlers
 }
 
-// Handle a token string for a given user
+// HandleToken Handles a token string for a given user
 // Returns accepted bool and error in case of failure
-func (coreModule *CoreModule) HandleToken(userid string, user interface{}, tokenString string) (bool, error) {
+func (coreModule *Controller) HandleToken(userid string, user interface{}, tokenString string) (bool, error) {
 	action, err := coreModule.tokenControl.ValidateToken(userid, tokenString)
 	if err != nil {
 		log.Printf("CoreModule.Login: token validation failed %s\n", err)
@@ -152,8 +157,8 @@ func (coreModule *CoreModule) HandleToken(userid string, user interface{}, token
 	return true, nil
 }
 
-// Run bound login handlers to accept user logins
-func (coreModule *CoreModule) PreLogin(u interface{}) (bool, error) {
+// PreLogin Runs bound login handlers to accept user logins
+func (coreModule *Controller) PreLogin(u interface{}) (bool, error) {
 	for key, handler := range coreModule.preLogin {
 		ok, err := handler.PreLogin(u)
 		if err != nil {
@@ -169,8 +174,8 @@ func (coreModule *CoreModule) PreLogin(u interface{}) (bool, error) {
 	return true, nil
 }
 
-// Run bound post login success handlers
-func (coreModule *CoreModule) PostLoginSuccess(u interface{}) error {
+// PostLoginSuccess Runs bound post login success handlers
+func (coreModule *Controller) PostLoginSuccess(u interface{}) error {
 	for key, handler := range coreModule.postLoginSuccess {
 		err := handler.PostLoginSuccess(u)
 		if err != nil {
@@ -181,8 +186,8 @@ func (coreModule *CoreModule) PostLoginSuccess(u interface{}) error {
 	return nil
 }
 
-// Run bound post login failure handlers
-func (coreModule *CoreModule) PostLoginFailure(u interface{}) error {
+// PostLoginFailure Runs bound post login failure handlers
+func (coreModule *Controller) PostLoginFailure(u interface{}) error {
 	for key, handler := range coreModule.postLoginFailure {
 		err := handler.PostLoginFailure(u)
 		if err != nil {
