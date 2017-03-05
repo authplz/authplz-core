@@ -24,10 +24,10 @@ func TestMain(t *testing.T) {
 	// Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123"
-	var userId = ""
+	var userID = ""
 
 	// Attempt database connection
-	c.NoTls = true
+	c.NoTLS = true
 	server := NewServer(*c)
 
 	// Force database synchronization
@@ -60,11 +60,11 @@ func TestMain(t *testing.T) {
 		u, _ := server.ds.GetUserByEmail(fakeEmail)
 
 		user := u.(*datastore.User)
-		userId = user.GetExtId()
+		userID = user.GetExtId()
 	})
 
 	t.Run("User loaded", func(t *testing.T) {
-		if userId == "" {
+		if userID == "" {
 			t.Errorf("User loading failed")
 			t.FailNow()
 		}
@@ -106,7 +106,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken(userId, api.TokenActionActivate, d)
+		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)
@@ -190,7 +190,7 @@ func TestMain(t *testing.T) {
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken(userId, api.TokenActionUnlock, d)
+		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionUnlock, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)

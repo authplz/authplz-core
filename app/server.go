@@ -18,14 +18,14 @@ import (
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/controllers/token"
 	"github.com/ryankurte/authplz/modules/2fa/u2f"
+	"github.com/ryankurte/authplz/modules/audit"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
-	"github.com/ryankurte/authplz/modules/audit"
 
 	"github.com/ryankurte/go-async"
 )
 
-// Base AuthPlz server object
+// AuthPlzServer Base AuthPlz server object
 type AuthPlzServer struct {
 	address        string
 	port           string
@@ -37,7 +37,9 @@ type AuthPlzServer struct {
 	serviceManager *async.ServiceManager
 }
 
-// Create an AuthPlz server instance
+const bufferSize uint = 64
+
+// NewServer Create an AuthPlz server instance
 func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	server := AuthPlzServer{}
 
@@ -45,7 +47,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// Generate URL string
 	var url string
-	if config.NoTls == false {
+	if config.NoTLS == false {
 		url = "https://" + config.Address + ":" + config.Port
 	} else {
 		url = "http://" + config.Address + ":" + config.Port
@@ -70,7 +72,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	// Create modules
 
 	// Create service manager
-	server.serviceManager = async.NewServiceManager()
+	server.serviceManager = async.NewServiceManager(bufferSize)
 
 	// User management module
 	userModule := user.NewUserModule(dataStore, server.serviceManager)
@@ -88,7 +90,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 
 	// Audit module (async components)
 	auditModule := audit.NewAuditController(dataStore)
-	auditSvc := async.NewAsyncService(auditModule)
+	auditSvc := async.NewAsyncService(auditModule, bufferSize)
 	server.serviceManager.BindService(&auditSvc)
 
 	// Create a global context object
@@ -117,6 +119,7 @@ func NewServer(config AuthPlzConfig) *AuthPlzServer {
 	return &server
 }
 
+// Start an instance of the AuthPlzServer
 func (server *AuthPlzServer) Start() {
 	// Start listening
 
@@ -131,7 +134,7 @@ func (server *AuthPlzServer) Start() {
 
 	// Start with/without TLS
 	var err error
-	if server.config.NoTls == true {
+	if server.config.NoTLS == true {
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
@@ -139,7 +142,7 @@ func (server *AuthPlzServer) Start() {
 		err = http.ListenAndServe(address, handler)
 	} else {
 		log.Printf("Listening at: https://%s", address)
-		err = http.ListenAndServeTLS(address, server.config.TlsCert, server.config.TlsKey, handler)
+		err = http.ListenAndServeTLS(address, server.config.TLSCert, server.config.TLSKey, handler)
 	}
 
 	// Stop async services
@@ -151,6 +154,13 @@ func (server *AuthPlzServer) Start() {
 	}
 }
 
+// Close an instance of the AuthPlzServer
 func (server *AuthPlzServer) Close() {
+	// TODO: stop HTTP server
+
+	// Stop workers
+	server.serviceManager.Exit()
+
+	// Close datastore
 	server.ds.Close()
 }

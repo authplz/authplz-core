@@ -6,9 +6,9 @@ import (
 )
 
 import (
-"github.com/ryankurte/go-async"
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/controllers/datastore"
+	"github.com/ryankurte/go-async"
 )
 
 func TestAuditController(t *testing.T) {
@@ -17,8 +17,7 @@ func TestAuditController(t *testing.T) {
 	var fakePass = "abcDEF123@"
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
-	serviceManager := async.NewServiceManager()
-	
+	serviceManager := async.NewServiceManager(64)
 
 	// Attempt database connection
 	ds, err := datastore.NewDataStore(dbString)
@@ -30,7 +29,7 @@ func TestAuditController(t *testing.T) {
 
 	// Create controllers
 	ac := NewAuditController(ds)
-	auditSvc := async.NewAsyncService(ac)
+	auditSvc := async.NewAsyncService(ac, 64)
 	serviceManager.BindService(&auditSvc)
 
 	// Create fake user
