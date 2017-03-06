@@ -11,6 +11,7 @@ package totp
 import (
 	"encoding/gob"
 	"log"
+	"time"
 
 	"github.com/gocraft/web"
 	"github.com/pquerna/otp"
@@ -23,15 +24,15 @@ func init() {
 
 // Controller TOTP controller instance
 type Controller struct {
-	url       string
-	totpStore Storer
+	issuerName string
+	totpStore  Storer
 }
 
 // NewController creates a new TOTP controller
-func NewController(url string, totpStore Storer) *Controller {
+func NewController(issuerName string, totpStore Storer) *Controller {
 	return &Controller{
-		url:       url,
-		totpStore: totpStore,
+		issuerName: issuerName,
+		totpStore:  totpStore,
 	}
 }
 
@@ -62,10 +63,18 @@ func (totpModule *Controller) BindAPI(router *web.Router) {
 
 // CreateToken creates a TOTP token for the provided account
 func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
+
+	// Fetch user account
+	u, err := totpModule.totpStore.GetUserByExtId(userid)
+	if err != nil {
+		log.Printf("TOTPModule CreateToken: error fetching user instance (%s)", err)
+	}
+	user := u.(User)
+
 	// Generate token
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      totpModule.url,
-		AccountName: userid,
+		Issuer:      totpModule.issuerName,
+		AccountName: user.GetEmail(),
 	})
 	if err != nil {
 		log.Printf("TOTPModule CreateToken: error generating totp token (%s)", err)
@@ -74,7 +83,28 @@ func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
 	return key, err
 }
 
+// ValidateToValidateRegistrationken validates a totp token registration for a given user
+// and enrols the token if valid
+func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, token string) (bool, error) {
+
+	// Check token matches key
+	valid := totp.Validate(token, secret)
+	if !valid {
+		return false, nil
+	}
+
+	// Create token instance
+	_, err := totpModule.totpStore.AddTotpToken(userid, tokenName, secret, 0)
+	if err != nil {
+		log.Printf("TOTPModule.ValidateRegistration: error creating token object (%s)", err)
+		return false, err
+	}
+
+	return true, nil
+}
+
 // ValidateToken validates a totp token for a given user
+// This is used to check a user provided token against the set of registered totp keys
 func (totpModule *Controller) ValidateToken(userid string, token string) (bool, error) {
 	// Fetch tokens
 	tokens, err := totpModule.totpStore.GetTotpTokens(userid)
@@ -84,18 +114,31 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 	}
 
 	// Check for matches
+	var validToken TokenInterface
+	validated := false
 	for _, t := range tokens {
 		valid := totp.Validate(token, t.(TokenInterface).GetSecret())
 		if valid {
-			return true, nil
+			validated = true
+			validToken = t.(TokenInterface)
 		}
 	}
 
-	return false, nil
-}
+	// Return error if validation failed
+	if !validated {
+		return false, nil
+	}
 
-// SaveToken saves a token to a given user
-func (totpModule *Controller) SaveToken(userid string, secret string) error {
+	// Update token last used time and counter
+	validToken.SetCounter(validToken.GetCounter() + 1)
+	validToken.SetLastUsed(time.Now())
 
-	return nil
+	// Write updates to database
+	_, err = totpModule.totpStore.UpdateTotpToken(validToken)
+	if err != nil {
+		log.Printf("TOTPModule.ValidateToken: error updating token object (%s)", err)
+		return false, err
+	}
+
+	return true, nil
 }

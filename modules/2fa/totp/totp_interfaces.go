@@ -13,7 +13,7 @@ import (
 )
 
 // TokenInterface Token instance interface
-// This must be implemented by the token storage implementation
+// Storer token objects must implement this interface
 type TokenInterface interface {
 	GetName() string
 	GetSecret() string
@@ -21,6 +21,12 @@ type TokenInterface interface {
 	SetCounter(uint)
 	GetLastUsed() time.Time
 	SetLastUsed(time.Time)
+}
+
+// User interface type
+// Storer user objects must implement this interface
+type User interface {
+	GetEmail() string
 }
 
 // Storer Token store interface
