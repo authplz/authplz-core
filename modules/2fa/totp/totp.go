@@ -9,14 +9,17 @@
 package totp
 
 import (
-	"bytes"
-	"encoding/base64"
-	"image/png"
+	"encoding/gob"
 	"log"
 
 	"github.com/gocraft/web"
-	otp "github.com/pquerna/otp/totp"
+	"github.com/pquerna/otp"
+	totp "github.com/pquerna/otp/totp"
 )
+
+func init() {
+	gob.Register(&otp.Key{})
+}
 
 // Controller TOTP controller instance
 type Controller struct {
@@ -47,6 +50,7 @@ func (totpModule *Controller) BindAPI(router *web.Router) {
 
 	// Attach module context
 	totpRouter.Middleware(bindTOTPContext(totpModule))
+	totpRouter.Middleware(totpSessionMiddleware)
 
 	// Bind endpoints
 	totpRouter.Get("/enrol", (*totpAPICtx).TOTPEnrolGet)
@@ -57,32 +61,17 @@ func (totpModule *Controller) BindAPI(router *web.Router) {
 }
 
 // CreateToken creates a TOTP token for the provided account
-func (totpModule *Controller) CreateToken(userid string) (string, error) {
+func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
 	// Generate token
-	key, err := otp.Generate(otp.GenerateOpts{
+	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      totpModule.url,
 		AccountName: userid,
 	})
 	if err != nil {
 		log.Printf("TOTPModule CreateToken: error generating totp token (%s)", err)
-		return "", err
+		return nil, err
 	}
-
-	// Generate image
-	img, err := key.Image(200, 200)
-	if err != nil {
-		log.Printf("TOTPModule CreateToken: error converting token to image(%s)", err)
-		return "", err
-	}
-
-	// Encode image to buffer
-	var buf bytes.Buffer
-	png.Encode(&buf, img)
-
-	// Base64 encode image for endpoint
-	imgString := base64.StdEncoding.EncodeToString(buf.Bytes())
-
-	return imgString, err
+	return key, err
 }
 
 // ValidateToken validates a totp token for a given user
@@ -96,7 +85,7 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 
 	// Check for matches
 	for _, t := range tokens {
-		valid := otp.Validate(token, t.(TokenInterface).GetSecret())
+		valid := totp.Validate(token, t.(TokenInterface).GetSecret())
 		if valid {
 			return true, nil
 		}
