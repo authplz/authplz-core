@@ -9,7 +9,6 @@
 package totp
 
 import (
-	"encoding/gob"
 	"log"
 	"time"
 
@@ -17,10 +16,6 @@ import (
 	"github.com/pquerna/otp"
 	totp "github.com/pquerna/otp/totp"
 )
-
-func init() {
-	gob.Register(&otp.Key{})
-}
 
 // Controller TOTP controller instance
 type Controller struct {
@@ -51,6 +46,7 @@ func (totpModule *Controller) BindAPI(router *web.Router) {
 
 	// Attach module context
 	totpRouter.Middleware(bindTOTPContext(totpModule))
+	totpRouter.Middleware(totpSessionMiddleware)
 
 	// Bind endpoints
 	totpRouter.Get("/enrol", (*totpAPICtx).TOTPEnrolGet)

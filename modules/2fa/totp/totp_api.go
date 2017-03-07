@@ -15,6 +15,7 @@ import (
 	"net/http"
 
 	"encoding/base64"
+	"encoding/gob"
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
@@ -35,6 +36,10 @@ type totpAPICtx struct {
 
 	// totp session
 	totpSession *sessions.Session
+}
+
+func init() {
+	gob.Register(&otp.Key{})
 }
 
 const (
@@ -79,13 +84,6 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	totpSession, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
-	if err != nil {
-		log.Printf("Error fetching %s  %s", totpSessionKey, err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	// Fetch a name for the token
 	tokenName := req.URL.Query().Get("name")
 	if tokenName == "" {
@@ -118,11 +116,11 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	resp := RegisterChallenge{token.AccountName(), token.Issuer(), tokenName, token.String(), b64Image, token.Secret()}
 
 	// Save token to session
-	totpSession.Values[totpRegisterTokenKey] = token
-	totpSession.Values[totpRegisterNameKey] = tokenName
-	totpSession.Save(req.Request, rw)
+	c.totpSession.Values[totpRegisterTokenKey] = token.String()
+	c.totpSession.Values[totpRegisterNameKey] = tokenName
+	c.totpSession.Save(req.Request, rw)
 
-	log.Printf("Session A: %+v", totpSession)
+	log.Printf("Session A: %+v", c.totpSession)
 
 	log.Println("TOTPEnrolGet: Fetched enrolment challenge")
 
@@ -138,31 +136,24 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	totpSession, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
-	if err != nil {
-		log.Printf("Error fetching totp session (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("Session B: %+v", totpSession)
+	log.Printf("Session B: %+v", c.totpSession)
 
 	// Fetch session variables
-	if totpSession.Values[totpRegisterTokenKey] == nil {
+	if c.totpSession.Values[totpRegisterTokenKey] == nil {
 		log.Printf("TOTPEnrolPost: missing session variables (%s)", totpRegisterTokenKey)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	token := totpSession.Values[totpRegisterTokenKey].(*otp.Key)
-	totpSession.Values[totpRegisterTokenKey] = ""
+	tokenString := c.totpSession.Values[totpRegisterTokenKey].(string)
+	c.totpSession.Values[totpRegisterTokenKey] = ""
 
-	keyName := totpSession.Values[totpRegisterNameKey].(string)
-	totpSession.Values[totpRegisterNameKey] = ""
+	keyName := c.totpSession.Values[totpRegisterNameKey].(string)
+	c.totpSession.Values[totpRegisterNameKey] = ""
 
-	c.Global.SessionStore.Save(req.Request, rw, totpSession)
+	c.totpSession.Save(req.Request, rw)
 
-	totpSession.Save(req.Request, rw)
+	token, _ := otp.NewKeyFromURL(tokenString)
 
 	// Fetch challenge code from post request
 	req.ParseForm()
