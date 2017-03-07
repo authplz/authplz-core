@@ -79,7 +79,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	ts, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
+	totpSession, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
 	if err != nil {
 		log.Printf("Error fetching %s  %s", totpSessionKey, err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -118,11 +118,11 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	resp := RegisterChallenge{token.AccountName(), token.Issuer(), tokenName, token.String(), b64Image, token.Secret()}
 
 	// Save token to session
-	ts.Values[totpRegisterTokenKey] = token
-	ts.Values[totpRegisterNameKey] = tokenName
-	ts.Save(req.Request, rw)
+	totpSession.Values[totpRegisterTokenKey] = token
+	totpSession.Values[totpRegisterNameKey] = tokenName
+	totpSession.Save(req.Request, rw)
 
-	log.Printf("Session A: %+v", ts)
+	log.Printf("Session A: %+v", totpSession)
 
 	log.Println("TOTPEnrolGet: Fetched enrolment challenge")
 
@@ -138,31 +138,31 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("TOTPEnrolPost: called")
-
-	ts, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
+	totpSession, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
 	if err != nil {
-		log.Printf("Error fetching %s  %s", totpSessionKey, err)
+		log.Printf("Error fetching totp session (%s)", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Session: %+v", ts)
+	log.Printf("Session B: %+v", totpSession)
 
 	// Fetch session variables
-	if ts.Values[totpRegisterTokenKey] == nil {
+	if totpSession.Values[totpRegisterTokenKey] == nil {
 		log.Printf("TOTPEnrolPost: missing session variables (%s)", totpRegisterTokenKey)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	token := ts.Values[totpRegisterTokenKey].(*otp.Key)
-	ts.Values[totpRegisterTokenKey] = ""
+	token := totpSession.Values[totpRegisterTokenKey].(*otp.Key)
+	totpSession.Values[totpRegisterTokenKey] = ""
 
-	keyName := ts.Values[totpRegisterNameKey].(string)
-	ts.Values[totpRegisterNameKey] = ""
+	keyName := totpSession.Values[totpRegisterNameKey].(string)
+	totpSession.Values[totpRegisterNameKey] = ""
 
-	ts.Save(req.Request, rw)
+	c.Global.SessionStore.Save(req.Request, rw, totpSession)
+
+	totpSession.Save(req.Request, rw)
 
 	// Fetch challenge code from post request
 	req.ParseForm()

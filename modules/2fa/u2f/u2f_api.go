@@ -152,7 +152,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("U2F Authenticate request for user %s", userid)
+	log.Printf("u2f.U2FAuthenticateGet Authentication request for user %s", userid)
 
 	// Generate challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
