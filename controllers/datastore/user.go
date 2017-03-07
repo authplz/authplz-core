@@ -16,6 +16,7 @@ type User struct {
 	DeletedAt       *time.Time
 	ExtId           string `gorm:"not null;unique"`
 	Email           string `gorm:"not null;unique"`
+	Username        string `gorm:"not null;unique"`
 	Password        string `gorm:"not null"`
 	PasswordChanged time.Time
 	Activated       bool `gorm:"not null; default:false"`
@@ -30,8 +31,10 @@ type User struct {
 }
 
 // Getters and Setters
+
 func (u *User) GetExtId() string              { return u.ExtId }
 func (u *User) GetEmail() string              { return u.Email }
+func (u *User) GetUsername() string           { return u.Username }
 func (u *User) GetPassword() string           { return u.Password }
 func (u *User) GetPasswordChanged() time.Time { return u.PasswordChanged }
 func (u *User) IsActivated() bool             { return u.Activated }
@@ -48,18 +51,19 @@ func (u *User) ClearLoginRetries()            { u.LoginRetries = 0 }
 func (u *User) GetLastLogin() time.Time       { return u.LastLogin }
 func (u *User) SetLastLogin(t time.Time)      { u.LastLogin = t }
 
-// Check if a user has attached second factors
+// SecondFactors Checks if a user has attached second factors
 func (u *User) SecondFactors() bool {
 	return (len(u.FidoTokens) > 0) || (len(u.TotpTokens) > 0)
 }
 
+// SetPassword sets a user password
 func (u *User) SetPassword(pass string) {
 	u.Password = pass
 	u.PasswordChanged = time.Now()
 }
 
-// Add a user to the datastore
-func (dataStore *DataStore) AddUser(email string, pass string) (interface{}, error) {
+// AddUser Adds a user to the datastore
+func (dataStore *DataStore) AddUser(email, username, pass string) (interface{}, error) {
 
 	if !govalidator.IsEmail(email) {
 		return nil, fmt.Errorf("invalid email address %s", email)
@@ -67,6 +71,7 @@ func (dataStore *DataStore) AddUser(email string, pass string) (interface{}, err
 
 	user := &User{
 		Email:     email,
+		Username:  username,
 		Password:  pass,
 		ExtId:     uuid.NewV4().String(),
 		Enabled:   true,
@@ -84,7 +89,7 @@ func (dataStore *DataStore) AddUser(email string, pass string) (interface{}, err
 	return user, nil
 }
 
-// Fetch a user account by email
+// GetUserByEmail Fetches a user account by email
 func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 
 	var user User
@@ -98,7 +103,7 @@ func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 	return &user, nil
 }
 
-// Fetch a user account by external id
+// GetUserByExtId Fetch a user account by external id
 func (dataStore *DataStore) GetUserByExtId(extId string) (interface{}, error) {
 
 	var user User
@@ -112,7 +117,7 @@ func (dataStore *DataStore) GetUserByExtId(extId string) (interface{}, error) {
 	return &user, nil
 }
 
-// Update a user object
+// UpdateUser Update a user object
 func (dataStore *DataStore) UpdateUser(user interface{}) (interface{}, error) {
 	u := user.(*User)
 

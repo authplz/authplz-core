@@ -10,6 +10,7 @@ import (
 func TestUserController(t *testing.T) {
 	// Setup user controller for testing
 	var fakeEmail = "test@abc.com"
+	var fakeName = "test.user"
 	var fakePass = "abcDEF123@abcDEF123@"
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
@@ -27,7 +28,7 @@ func TestUserController(t *testing.T) {
 	uc := NewController(dataStore, &mockEventEmitter)
 
 	t.Run("Create user", func(t *testing.T) {
-		u, err := uc.Create(fakeEmail, fakePass)
+		u, err := uc.Create(fakeEmail, fakeName, fakePass)
 		if err != nil {
 			t.Error(err)
 		}

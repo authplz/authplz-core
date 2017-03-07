@@ -95,6 +95,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Check user is not already logged in
 	if c.GetUserID() != "" {
 		rw.WriteHeader(http.StatusOK)
+		return
 	}
 
 	// Attempt login via UserControl interface
@@ -117,6 +118,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if !loginOk {
 		log.Printf("Core.Login: invalid credentials\n")
 		rw.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
 	// No user account found

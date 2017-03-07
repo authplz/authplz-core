@@ -15,6 +15,7 @@ func TestAuditController(t *testing.T) {
 	// Setup user controller for testing
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@"
+	var fakeName = "user.sdfsfdF"
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	serviceManager := async.NewServiceManager(64)
@@ -33,7 +34,7 @@ func TestAuditController(t *testing.T) {
 	serviceManager.BindService(&auditSvc)
 
 	// Create fake user
-	u, _ := ds.AddUser(fakeEmail, fakePass)
+	u, _ := ds.AddUser(fakeEmail, fakeName, fakePass)
 	user := u.(*datastore.User)
 
 	// Run tests

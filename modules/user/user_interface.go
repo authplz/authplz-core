@@ -9,6 +9,7 @@ import (
 type User interface {
 	GetExtId() string
 	GetEmail() string
+	GetUsername() string
 
 	GetPassword() string
 	SetPassword(pass string)
@@ -33,7 +34,7 @@ type User interface {
 // Storer Defines the required store interfaces for the user module
 // Returned interfaces must satisfy the User interface requirements
 type Storer interface {
-	AddUser(email string, pass string) (interface{}, error)
+	AddUser(email, username, pass string) (interface{}, error)
 	GetUserByExtId(userid string) (interface{}, error)
 	GetUserByEmail(email string) (interface{}, error)
 	UpdateUser(user interface{}) (interface{}, error)

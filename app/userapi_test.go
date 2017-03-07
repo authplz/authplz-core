@@ -28,6 +28,7 @@ func TestMain(t *testing.T) {
 	// Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123"
+	var fakeName = "test.user99"
 	var userID = ""
 
 	// Attempt database connection
@@ -58,6 +59,7 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
+		v.Set("username", fakeName)
 
 		client.BindTest(t).TestPostForm("/create", http.StatusOK, v)
 

@@ -20,11 +20,12 @@ func TestDatastore(t *testing.T) {
 
 	var fakeEmail = "test1@abc.com"
 	var fakePass = "abcDEF123@"
+	var fakeName = "user.sdfsfdF"
 
 	// Run tests
 	t.Run("Add user", func(t *testing.T) {
 		// Create user
-		u, err := ds.AddUser(fakeEmail, fakePass)
+		u, err := ds.AddUser(fakeEmail, fakeName, fakePass)
 		if err != nil {
 			t.Error(err)
 			return
@@ -55,7 +56,7 @@ func TestDatastore(t *testing.T) {
 
 	t.Run("Rejects users with invalid emails", func(t *testing.T) {
 		// Create user
-		_, err := ds.AddUser("abcdef", fakePass)
+		_, err := ds.AddUser("abcdef", fakeName, fakePass)
 		if err == nil {
 			t.Error("Invalid email allowed")
 		}

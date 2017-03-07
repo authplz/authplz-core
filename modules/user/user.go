@@ -28,7 +28,7 @@ func NewController(userStore Storer, emitter api.EventEmitter) *Controller {
 }
 
 // Create a new user account
-func (userModule *Controller) Create(email string, pass string) (user User, err error) {
+func (userModule *Controller) Create(email, username, pass string) (user User, err error) {
 
 	// Generate password hash
 	hash, hashErr := bcrypt.GenerateFromPassword([]byte(pass), userModule.hashRounds)
@@ -54,7 +54,7 @@ func (userModule *Controller) Create(email string, pass string) (user User, err 
 	}
 
 	// Add user to database (disabled)
-	u, err = userModule.userStore.AddUser(email, string(hash))
+	u, err = userModule.userStore.AddUser(email, username, string(hash))
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -198,8 +198,18 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
+type UserResp struct {
+	Email     string
+	Username  string
+	Activated bool
+	Enabled   bool
+	Locked    bool
+	Admin     bool
+	LastLogin time.Time
+}
+
 // GetUser finds a user by userID
-func (userModule *Controller) GetUser(userid string) (User, error) {
+func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	// Attempt to fetch user
 	u, err := userModule.userStore.GetUserByExtId(userid)
 	if err != nil {
@@ -214,7 +224,18 @@ func (userModule *Controller) GetUser(userid string) (User, error) {
 		return nil, ErrorUserNotFound
 	}
 
-	return u.(User), nil
+	user := u.(User)
+
+	resp := UserResp{
+		Email:     user.GetEmail(),
+		Username:  user.GetUsername(),
+		Activated: user.IsActivated(),
+		Enabled:   user.IsEnabled(),
+		Locked:    user.IsLocked(),
+		LastLogin: user.GetLastLogin(),
+	}
+
+	return &resp, nil
 }
 
 // UpdatePassword updates a user password

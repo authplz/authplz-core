@@ -14,6 +14,7 @@ import (
 func TestU2FModule(t *testing.T) {
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123@"
+	var fakeName = "user.sdfsfdF"
 	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 	// Attempt database connection
@@ -27,7 +28,7 @@ func TestU2FModule(t *testing.T) {
 	dataStore.ForceSync()
 
 	// Create user for tests
-	u, err := dataStore.AddUser(fakeEmail, fakePass)
+	u, err := dataStore.AddUser(fakeEmail, fakeName, fakePass)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

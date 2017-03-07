@@ -3,6 +3,8 @@ package user
 import (
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	//"encoding/json"
 )
 
@@ -59,9 +61,17 @@ func (c *apiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	}
 }
 
+var usernameExp = regexp.MustCompile(`([a-z0-9\.]+)`)
+
 func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
-	email := req.FormValue("email")
+	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
+		log.Printf("Create: email parameter required")
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	username := strings.ToLower(req.FormValue("username"))
+	if !usernameExp.MatchString(username) {
 		log.Printf("Create: email parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
@@ -73,7 +83,7 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	u, e := c.um.Create(email, password)
+	u, e := c.um.Create(email, username, password)
 	if e != nil {
 		log.Printf("Create: user creation failed with %s", e)
 
