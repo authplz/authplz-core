@@ -65,11 +65,30 @@ Seems like this could be more efficient / remove the need for the second login i
 4. browser executes challenge, posts response
 5. server responds with 200 success or 403 unauthorized
 
+### TOTP enrolment
+
+1. user logs in as above
+2. user submits token name to /api/totp/enrol
+3. server responds with registration challenge (string and image)
+4. user loads totp onto device, posts a valid code
+5. server validates registration response
+6. server responds with 200 success or 401 error
+
+
+### TOTP Login
+
+1. post email, password to /api/login
+2. server responds with 201 partial (2fa) and available factors object ({totp: true})
+3. user gets code from totp app
+4. browser posts code to /api/totp/authenticate
+5. server responds with 200 success or 403 unauthorized
+
 
 
 ## Questions
 
 - How do we manage password resets with/without 2fa?
+- How can you enrol / remove tokens, what is required?
 - How do plugins require further login validation (ie. "this doesn't look right, click token in email to validate")?
 
 
