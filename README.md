@@ -15,8 +15,10 @@ Early WIP.
 ### Tasks
 
 - [X] Refactor to Modules
-- [ ] Refactor modules to split API + Controller components (API should only use methods on controller)
+- [ ] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
+- [ ] Refactor common test setup (datastore, fakeuser etc.) into common test module
 
+Check out [design.md](design.md) for more.
 
 ## Usage
 

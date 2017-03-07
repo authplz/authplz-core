@@ -90,5 +90,7 @@ Seems like this could be more efficient / remove the need for the second login i
 - How do we manage password resets with/without 2fa?
 - How can you enrol / remove tokens, what is required?
 - How do plugins require further login validation (ie. "this doesn't look right, click token in email to validate")?
+- How do we run multiple OAuth schemes for different clients?
+  - Guess user interaction is going to be important here as to what is granted
 
 
