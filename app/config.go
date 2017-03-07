@@ -14,6 +14,7 @@ import (
 
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
+	Name                  string `short:"n" long:"name" description:"User friendly service name"`
 	Address               string `short:"a" long:"address" description:"Set server address"`
 	Port                  string `short:"p" long:"port" description:"Set server port"`
 	Database              string `short:"d" long:"database" description:"Database connection string"`
@@ -45,6 +46,7 @@ func GenerateSecret(len int) (string, error) {
 func DefaultConfig() (*AuthPlzConfig, error) {
 	var c AuthPlzConfig
 
+	c.Name = "AuthPlz"
 	c.Address = "localhost"
 	c.Port = "9000"
 	c.Database = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"

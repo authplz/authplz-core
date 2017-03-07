@@ -51,14 +51,26 @@ func (totpModule *Controller) BindAPI(router *web.Router) {
 
 	// Attach module context
 	totpRouter.Middleware(bindTOTPContext(totpModule))
-	totpRouter.Middleware(totpSessionMiddleware)
 
 	// Bind endpoints
 	totpRouter.Get("/enrol", (*totpAPICtx).TOTPEnrolGet)
 	totpRouter.Post("/enrol", (*totpAPICtx).TOTPEnrolPost)
-	totpRouter.Get("/authenticate", (*totpAPICtx).TOTPAuthenticateGet)
 	totpRouter.Post("/authenticate", (*totpAPICtx).TOTPAuthenticatePost)
 	totpRouter.Get("/tokens", (*totpAPICtx).TOTPListTokens)
+}
+
+// IsSupported Checks whether totp is supported for a given user by userid
+// This is required to implement the generic 2fa interface for binding into the core module.
+func (totpModule *Controller) IsSupported(userid string) bool {
+	tokens, err := totpModule.totpStore.GetTotpTokens(userid)
+	if err != nil {
+		log.Printf("TOTPModule.IsSupported error fetching totp tokens for user %s (%s)", userid, tokens)
+		return false
+	}
+	if len(tokens) == 0 {
+		return false
+	}
+	return true
 }
 
 // CreateToken creates a TOTP token for the provided account
@@ -98,6 +110,8 @@ func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, to
 		log.Printf("TOTPModule.ValidateRegistration: error creating token object (%s)", err)
 		return false, err
 	}
+
+	log.Printf("TOTPModule.ValidateRegistration: registered token for user %s", userid)
 
 	return true, nil
 }
@@ -142,6 +156,12 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 	return true, nil
 }
 
+type Token struct {
+	Name       string
+	LastUsed   time.Time
+	UsageCount uint
+}
+
 // ListTokens lists tokens for a given user
 func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	// Fetch tokens from database
@@ -151,5 +171,19 @@ func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 		return make([]interface{}, 0), err
 	}
 
-	return tokens, nil
+	log.Printf("tokens: %+v", tokens)
+
+	cleanTokens := make([]interface{}, len(tokens))
+	for i, t := range tokens {
+		ti := t.(TokenInterface)
+		cleanTokens[i] = &Token{
+			Name:       ti.GetName(),
+			LastUsed:   ti.GetLastUsed(),
+			UsageCount: ti.GetCounter(),
+		}
+	}
+
+	log.Printf("cleantokens: %+v", cleanTokens)
+
+	return cleanTokens, nil
 }

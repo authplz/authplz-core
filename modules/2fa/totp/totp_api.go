@@ -18,6 +18,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
+	"github.com/pquerna/otp"
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 )
@@ -61,16 +62,27 @@ func totpSessionMiddleware(ctx *totpAPICtx, rw web.ResponseWriter, req *web.Requ
 	next(rw, req)
 }
 
-type totpEnrolment struct {
-	Name  string
-	URL   string
-	Image string
+type RegisterChallenge struct {
+	AccountName string
+	Issuer      string
+	TokenName   string
+	URL         string
+	Image       string
+	Secret      string
 }
 
+// TOTPEnrolGet Fetches a challenge for TOTP enrolment and saves this to the totp session storage
 func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	ts, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
+	if err != nil {
+		log.Printf("Error fetching %s  %s", totpSessionKey, err)
+		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -103,12 +115,14 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	b64Image := base64.StdEncoding.EncodeToString(buf.Bytes())
 
 	// Create response structure
-	resp := totpEnrolment{tokenName, token.String(), b64Image}
+	resp := RegisterChallenge{token.AccountName(), token.Issuer(), tokenName, token.String(), b64Image, token.Secret()}
 
 	// Save token to session
-	c.totpSession.Values[totpRegisterTokenKey] = token
-	c.totpSession.Values[totpRegisterNameKey] = tokenName
-	c.totpSession.Save(req.Request, rw)
+	ts.Values[totpRegisterTokenKey] = token
+	ts.Values[totpRegisterNameKey] = tokenName
+	ts.Save(req.Request, rw)
+
+	log.Printf("Session A: %+v", ts)
 
 	log.Println("TOTPEnrolGet: Fetched enrolment challenge")
 
@@ -116,12 +130,59 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, &resp)
 }
 
+// TOTPEnrolPost checks a totp code against the session stored TOTP token and enrols the token on success
 func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
-}
+	// Check if user is logged in
+	if c.GetUserID() == "" {
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		return
+	}
 
-func (c *totpAPICtx) TOTPAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
+	log.Printf("TOTPEnrolPost: called")
+
+	ts, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
+	if err != nil {
+		log.Printf("Error fetching %s  %s", totpSessionKey, err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Session: %+v", ts)
+
+	// Fetch session variables
+	if ts.Values[totpRegisterTokenKey] == nil {
+		log.Printf("TOTPEnrolPost: missing session variables (%s)", totpRegisterTokenKey)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	token := ts.Values[totpRegisterTokenKey].(*otp.Key)
+	ts.Values[totpRegisterTokenKey] = ""
+
+	keyName := ts.Values[totpRegisterNameKey].(string)
+	ts.Values[totpRegisterNameKey] = ""
+
+	ts.Save(req.Request, rw)
+
+	// Fetch challenge code from post request
+	req.ParseForm()
+	code := req.Form.Get("code")
+
+	valid, err := c.totpModule.ValidateRegistration(c.GetUserID(), keyName, token.Secret(), code)
+	if err != nil {
+		log.Printf("TOTPEnrolPost: error validating token registration (%s)", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		log.Printf("TOTPEnrolPost: validation failed with invalid token (%s)", err)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("TOTPEnrolPost: enrolled token for user %s", c.GetUserID())
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
@@ -129,7 +190,22 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 }
 
 func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
+	// Check if user is logged in
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch tokens
+	tokens, err := c.totpModule.ListTokens(c.GetUserID())
+	if err != nil {
+		log.Printf("Error fetching TOTP tokens %s", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Write tokens out
+	c.WriteJson(rw, tokens)
 }
 
 func (c *totpAPICtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {

@@ -1,17 +1,21 @@
 package app
 
-import "testing"
+import (
+	"net/http"
+	"net/url"
+	"testing"
+	"time"
+)
 
-//import "fmt"
-import "time"
-import "net/http"
-import "net/url"
+import (
+	_totp "github.com/pquerna/otp/totp"
+	"github.com/ryankurte/go-u2f"
 
-import "github.com/ryankurte/go-u2f"
-
-import "github.com/ryankurte/authplz/controllers/datastore"
-import "github.com/ryankurte/authplz/api"
-import "github.com/ryankurte/authplz/test"
+	"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/controllers/datastore"
+	"github.com/ryankurte/authplz/modules/2fa/totp"
+	"github.com/ryankurte/authplz/test"
+)
 
 func TestMain(t *testing.T) {
 
@@ -239,7 +243,7 @@ func TestMain(t *testing.T) {
 		//TODO
 	})
 
-	t.Run("Logged in users can enrol tokens", func(t *testing.T) {
+	t.Run("Logged in users can enrol fido tokens", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("name", "fakeToken")
 
@@ -263,11 +267,50 @@ func TestMain(t *testing.T) {
 		client.TestPostJsonCheckApiResponse(t, "/u2f/enrol", resp, api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).U2FRegistrationComplete)
 	})
 
-	t.Run("Logged in users can list tokens", func(t *testing.T) {
+	t.Run("Logged in users can list fido tokens", func(t *testing.T) {
 		var regs []u2f.Registration
 		client.BindTest(t).TestGet("/u2f/tokens", 200).TestParseJson(&regs)
 
 		if len(regs) != 1 {
+			t.Errorf("No registrations returned")
+		}
+	})
+
+	t.Run("Logged in users can enrol totp tokens", func(t *testing.T) {
+		v := url.Values{}
+		v.Set("name", "fakeToken")
+
+		// Generate enrolment request
+		var rc totp.RegisterChallenge
+		client.BindTest(t).TestGetWithParams("/totp/enrol", 200, v).TestParseJson(&rc)
+
+		// Check Name is set correctly
+		if rc.Issuer != c.Name {
+			t.Errorf("TOTP challenge Issuer mismatch (expected %s received %s)", c.Name, rc.Issuer)
+		}
+
+		if rc.AccountName != fakeEmail {
+			t.Errorf("TOTP challenge Name mismatch (expected %s received %s)", rc.AccountName, fakeEmail)
+		}
+
+		// Generate challenge response
+		code, err := _totp.GenerateCode(rc.Secret, time.Now())
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		v = url.Values{}
+		v.Set("code", code)
+		// Post registration response back
+		client.TestPostForm("/totp/enrol", http.StatusOK, v)
+	})
+
+	t.Run("Logged in users can list totp tokens", func(t *testing.T) {
+		var tokens []totp.Token
+		client.BindTest(t).TestGet("/totp/tokens", 200).TestParseJson(&tokens)
+
+		if len(tokens) != 1 {
 			t.Errorf("No registrations returned")
 		}
 	})
