@@ -83,8 +83,7 @@ func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
 	return key, err
 }
 
-// ValidateToValidateRegistrationken validates a totp token registration for a given user
-// and enrols the token if valid
+// ValidateRegistration validates a totp token registration for a given user and enrols the token if valid
 func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, token string) (bool, error) {
 
 	// Check token matches key
@@ -141,4 +140,16 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 	}
 
 	return true, nil
+}
+
+// ListTokens lists tokens for a given user
+func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
+	// Fetch tokens from database
+	tokens, err := totpModule.totpStore.GetTotpTokens(userid)
+	if err != nil {
+		log.Printf("TOTPModule.ListTokens: error fetching TOTP tokens (%s)", err)
+		return make([]interface{}, 0), err
+	}
+
+	return tokens, nil
 }

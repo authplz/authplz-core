@@ -124,7 +124,7 @@ func (dataStore *DataStore) UpdateUser(user interface{}) (interface{}, error) {
 	return user, nil
 }
 
-// Fetch tokens attached to a user account
+// GetTokens Fetches tokens attached to a user account
 func (dataStore *DataStore) GetTokens(user interface{}) (interface{}, error) {
 	var err error
 
@@ -134,7 +134,7 @@ func (dataStore *DataStore) GetTokens(user interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	u.TotpTokens, err = dataStore.GetTotpTokens(u)
+	err = dataStore.db.Model(user).Related(u.TotpTokens).Error
 	if err != nil {
 		return nil, err
 	}
