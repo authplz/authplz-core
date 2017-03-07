@@ -95,7 +95,7 @@ func TestDatastore(t *testing.T) {
 
 		userInst := u.(*User)
 
-		u, err = ds.GetUserByExtId(userInst.GetExtId())
+		u, err = ds.GetUserByExtID(userInst.GetExtID())
 		if err != nil {
 			t.Error(err)
 			return

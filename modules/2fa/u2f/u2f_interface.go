@@ -29,7 +29,7 @@ type TokenInterface interface {
 // This must be implemented by a storage module to provide persistence to the module
 type Storer interface {
 	// Fetch a user instance by user id (should be able to remove this)
-	GetUserByExtId(userid string) (interface{}, error)
+	GetUserByExtID(userid string) (interface{}, error)
 	// Add a fido token to a given user
 	AddFidoToken(userid, name, keyHandle, publicKey, certificate string, counter uint) (interface{}, error)
 	// Fetch fido tokens for a given user

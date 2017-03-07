@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Audit events for a login account
+// AuditEvent for a user account
 type AuditEvent struct {
 	gorm.Model
 	UserID uint
@@ -15,9 +15,13 @@ type AuditEvent struct {
 	Data   string
 }
 
-func (ae *AuditEvent) GetType() string    { return ae.Type }
+// GetType fetches the type of the event
+func (ae *AuditEvent) GetType() string { return ae.Type }
+
+// GetTime fetches the time at which the event occured
 func (ae *AuditEvent) GetTime() time.Time { return ae.Time }
 
+// GetData fetches a map of the associated data
 func (ae *AuditEvent) GetData() (map[string]string, error) {
 	data := make(map[string]string)
 
@@ -26,9 +30,10 @@ func (ae *AuditEvent) GetData() (map[string]string, error) {
 	return data, err
 }
 
+// AddAuditEvent creates an audit event in the database
 func (dataStore *DataStore) AddAuditEvent(userid, eventType string, eventTime time.Time, data map[string]string) (interface{}, error) {
 
-	u, err := dataStore.GetUserByExtId(userid)
+	u, err := dataStore.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +56,12 @@ func (dataStore *DataStore) AddAuditEvent(userid, eventType string, eventTime ti
 	return user.AuditEvents, err
 }
 
+// GetAuditEvents fetches a list of audit events for a given userr
 func (dataStore *DataStore) GetAuditEvents(userid string) ([]interface{}, error) {
 	var auditEvents []AuditEvent
 
 	// Fetch user
-	u, err := dataStore.GetUserByExtId(userid)
+	u, err := dataStore.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}

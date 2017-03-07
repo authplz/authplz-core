@@ -38,7 +38,7 @@ type AuthPlzCtx struct {
 }
 
 type User interface {
-	GetExtId() string
+	GetExtID() string
 }
 
 func (ctx *AuthPlzCtx) GetLocale() string {

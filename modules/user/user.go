@@ -67,7 +67,7 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 	data := make(map[string]string)
 	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountCreated, data))
 
-	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtId())
+	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtID())
 
 	return user, nil
 }
@@ -100,7 +100,7 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 	data := make(map[string]string)
 	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountActivated, data))
 
-	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtId())
+	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtID())
 
 	return user, nil
 }
@@ -133,7 +133,7 @@ func (userModule *Controller) Unlock(email string) (user User, err error) {
 	data := make(map[string]string)
 	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountUnlocked, data))
 
-	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtId())
+	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtID())
 
 	return user, nil
 }
@@ -166,7 +166,7 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 			// Handle account lock after N retries
 			user.SetLoginRetries(retries + 1)
 			if (retries > 5) && (user.IsLocked() == false) {
-				log.Printf("UserModule.Login: Locking user %s", user.GetExtId())
+				log.Printf("UserModule.Login: Locking user %s", user.GetExtID())
 				user.SetLocked(true)
 			}
 
@@ -177,7 +177,7 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 				return false, nil, errLogin
 			}
 
-			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtId())
+			log.Printf("UserModule.Login: User %s login failed, invalid password\r\n", user.GetExtID())
 		} else {
 			log.Printf("UserModule.Login: Login failed, unrecognised account\r\n")
 		}
@@ -190,7 +190,7 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	if (u != nil) && (hashErr == nil) {
 		user := u.(User)
 
-		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtId())
+		log.Printf("UserModule.Login: User %s login successful\r\n", user.GetExtID())
 
 		return true, user, nil
 	}
@@ -211,7 +211,7 @@ type UserResp struct {
 // GetUser finds a user by userID
 func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	// Attempt to fetch user
-	u, err := userModule.userStore.GetUserByExtId(userid)
+	u, err := userModule.userStore.GetUserByExtID(userid)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -243,7 +243,7 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 func (userModule *Controller) UpdatePassword(userid string, old string, new string) (User, error) {
 
 	// Fetch user
-	u, err := userModule.userStore.GetUserByExtId(userid)
+	u, err := userModule.userStore.GetUserByExtID(userid)
 	if err != nil {
 		// Userstore error, wrap
 		log.Println(err)
@@ -316,19 +316,19 @@ func (userModule *Controller) PreLogin(u interface{}) (bool, error) {
 
 	if user.IsEnabled() == false {
 		//TODO: handle disabled error
-		log.Printf("UserModule.PreLogin: User %s login failed, account disabled\r\n", user.GetExtId())
+		log.Printf("UserModule.PreLogin: User %s login failed, account disabled\r\n", user.GetExtID())
 		return false, nil
 	}
 
 	if user.IsActivated() == false {
 		//TODO: handle un-activated error
-		log.Printf("UserModule.PreLogin: User %s login failed, account deactivated\r\n", user.GetExtId())
+		log.Printf("UserModule.PreLogin: User %s login failed, account deactivated\r\n", user.GetExtID())
 		return false, nil
 	}
 
 	if user.IsLocked() == true {
 		//TODO: handle locked error
-		log.Printf("UserModule.PreLogin: User %s login failed, account locked\r\n", user.GetExtId())
+		log.Printf("UserModule.PreLogin: User %s login failed, account locked\r\n", user.GetExtID())
 		return false, nil
 	}
 

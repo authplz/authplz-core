@@ -58,6 +58,6 @@ type EventHandler interface {
 
 // UserInterface Interface for user instances
 type UserInterface interface {
-	GetExtId() string
+	GetExtID() string
 	GetEmail() string
 }

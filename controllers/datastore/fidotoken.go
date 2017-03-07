@@ -6,7 +6,7 @@ import (
 
 import "github.com/jinzhu/gorm"
 
-// Fido/U2F token object
+// FidoToken Fido/U2F token object
 type FidoToken struct {
 	gorm.Model
 	UserID      uint
@@ -19,20 +19,36 @@ type FidoToken struct {
 }
 
 // Getters and setters for external interface compliance
-func (token *FidoToken) GetName() string            { return token.Name }
-func (token *FidoToken) GetKeyHandle() string       { return token.KeyHandle }
-func (token *FidoToken) GetPublicKey() string       { return token.PublicKey }
-func (token *FidoToken) GetCertificate() string     { return token.Certificate }
-func (token *FidoToken) GetCounter() uint           { return token.Counter }
-func (token *FidoToken) SetCounter(count uint)      { token.Counter = count }
-func (token *FidoToken) GetLastUsed() time.Time     { return token.LastUsed }
+
+// GetName fetches the token Name
+func (token *FidoToken) GetName() string { return token.Name }
+
+// GetKeyHandle fetches the token KeyHandle
+func (token *FidoToken) GetKeyHandle() string { return token.KeyHandle }
+
+// GetPublicKey fetches the token PublicKey
+func (token *FidoToken) GetPublicKey() string { return token.PublicKey }
+
+// GetCertificate fetches the token Certificate
+func (token *FidoToken) GetCertificate() string { return token.Certificate }
+
+// GetCounter fetches the token usage counter
+func (token *FidoToken) GetCounter() uint { return token.Counter }
+
+// SetCounter Sets the token usage counter
+func (token *FidoToken) SetCounter(count uint) { token.Counter = count }
+
+// GetLastUsed fetches the token LastUsed time
+func (token *FidoToken) GetLastUsed() time.Time { return token.LastUsed }
+
+// SetLastUsed sets the token LastUsed time
 func (token *FidoToken) SetLastUsed(used time.Time) { token.LastUsed = used }
 
-// Datastore methods required by Fido module
+// AddFidoToken creates a fido token instance in the database
 func (dataStore *DataStore) AddFidoToken(userid, name, keyHandle, publicKey, certificate string, counter uint) (interface{}, error) {
 
 	// Fetch user
-	u, err := dataStore.GetUserByExtId(userid)
+	u, err := dataStore.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +72,12 @@ func (dataStore *DataStore) AddFidoToken(userid, name, keyHandle, publicKey, cer
 	return user, err
 }
 
+// GetFidoTokens fetches the fido tokens for a provided user
 func (dataStore *DataStore) GetFidoTokens(userid string) ([]interface{}, error) {
 	var fidoTokens []FidoToken
 
 	// Fetch user
-	u, err := dataStore.GetUserByExtId(userid)
+	u, err := dataStore.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +94,7 @@ func (dataStore *DataStore) GetFidoTokens(userid string) ([]interface{}, error) 
 	return interfaces, err
 }
 
+// UpdateFidoToken updates a fido token instance
 func (dataStore *DataStore) UpdateFidoToken(token interface{}) (interface{}, error) {
 
 	err := dataStore.db.Save(token).Error

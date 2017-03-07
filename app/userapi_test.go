@@ -66,7 +66,7 @@ func TestMain(t *testing.T) {
 		u, _ := server.ds.GetUserByEmail(fakeEmail)
 
 		user := u.(*datastore.User)
-		userID = user.GetExtId()
+		userID = user.GetExtID()
 	})
 
 	t.Run("User loaded", func(t *testing.T) {

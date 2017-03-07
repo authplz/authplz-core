@@ -14,7 +14,7 @@ type User struct {
 	CreatedAt       time.Time `description:"User creation time"`
 	UpdatedAt       time.Time
 	DeletedAt       *time.Time
-	ExtId           string `gorm:"not null;unique"`
+	ExtID           string `gorm:"not null;unique"`
 	Email           string `gorm:"not null;unique"`
 	Username        string `gorm:"not null;unique"`
 	Password        string `gorm:"not null"`
@@ -32,24 +32,59 @@ type User struct {
 
 // Getters and Setters
 
-func (u *User) GetExtId() string              { return u.ExtId }
-func (u *User) GetEmail() string              { return u.Email }
-func (u *User) GetUsername() string           { return u.Username }
-func (u *User) GetPassword() string           { return u.Password }
+// GetExtID fetches a users ExtID
+func (u *User) GetExtID() string { return u.ExtID }
+
+// GetEmail fetches a users Email
+func (u *User) GetEmail() string { return u.Email }
+
+// GetUsername fetches a users Username
+func (u *User) GetUsername() string { return u.Username }
+
+// GetPassword fetches a users Password
+func (u *User) GetPassword() string { return u.Password }
+
+// GetPasswordChanged fetches a users PasswordChanged time
 func (u *User) GetPasswordChanged() time.Time { return u.PasswordChanged }
-func (u *User) IsActivated() bool             { return u.Activated }
-func (u *User) SetActivated(activated bool)   { u.Activated = activated }
-func (u *User) IsEnabled() bool               { return u.Enabled }
-func (u *User) SetEnabled(enabled bool)       { u.Enabled = enabled }
-func (u *User) IsLocked() bool                { return u.Locked }
-func (u *User) SetLocked(locked bool)         { u.Locked = locked }
-func (u *User) IsAdmin() bool                 { return u.Admin }
-func (u *User) SetAdmin(admin bool)           { u.Admin = admin }
-func (u *User) GetLoginRetries() uint         { return u.LoginRetries }
-func (u *User) SetLoginRetries(retries uint)  { u.LoginRetries = retries }
-func (u *User) ClearLoginRetries()            { u.LoginRetries = 0 }
-func (u *User) GetLastLogin() time.Time       { return u.LastLogin }
-func (u *User) SetLastLogin(t time.Time)      { u.LastLogin = t }
+
+// IsActivated checks if a user is activated
+func (u *User) IsActivated() bool { return u.Activated }
+
+// SetActivated sets a users activated status
+func (u *User) SetActivated(activated bool) { u.Activated = activated }
+
+// IsEnabled checks if a user is enabled
+func (u *User) IsEnabled() bool { return u.Enabled }
+
+// SetEnabled sets a users enabled status
+func (u *User) SetEnabled(enabled bool) { u.Enabled = enabled }
+
+// IsLocked checkes if a user account is locked
+func (u *User) IsLocked() bool { return u.Locked }
+
+// SetLocked sets a users locked status
+func (u *User) SetLocked(locked bool) { u.Locked = locked }
+
+// IsAdmin checks if a user is an admin
+func (u *User) IsAdmin() bool { return u.Admin }
+
+// SetAdmin sets a users admin status
+func (u *User) SetAdmin(admin bool) { u.Admin = admin }
+
+// GetLoginRetries fetches a users login retry count
+func (u *User) GetLoginRetries() uint { return u.LoginRetries }
+
+// SetLoginRetries sets a users login retry count
+func (u *User) SetLoginRetries(retries uint) { u.LoginRetries = retries }
+
+// ClearLoginRetries clears a users login retry count
+func (u *User) ClearLoginRetries() { u.LoginRetries = 0 }
+
+// GetLastLogin fetches a users LastLogin time
+func (u *User) GetLastLogin() time.Time { return u.LastLogin }
+
+// SetLastLogin sets a users LastLogin time
+func (u *User) SetLastLogin(t time.Time) { u.LastLogin = t }
 
 // SecondFactors Checks if a user has attached second factors
 func (u *User) SecondFactors() bool {
@@ -73,7 +108,7 @@ func (dataStore *DataStore) AddUser(email, username, pass string) (interface{}, 
 		Email:     email,
 		Username:  username,
 		Password:  pass,
-		ExtId:     uuid.NewV4().String(),
+		ExtID:     uuid.NewV4().String(),
 		Enabled:   true,
 		Activated: false,
 		Locked:    false,
@@ -103,11 +138,11 @@ func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 	return &user, nil
 }
 
-// GetUserByExtId Fetch a user account by external id
-func (dataStore *DataStore) GetUserByExtId(extId string) (interface{}, error) {
+// GetUserByExtID Fetch a user account by external id
+func (dataStore *DataStore) GetUserByExtID(extId string) (interface{}, error) {
 
 	var user User
-	err := dataStore.db.Where(&User{ExtId: extId}).First(&user).Error
+	err := dataStore.db.Where(&User{ExtID: extId}).First(&user).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {

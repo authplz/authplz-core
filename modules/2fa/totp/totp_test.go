@@ -41,7 +41,7 @@ func TestU2FModule(t *testing.T) {
 	totpModule := NewController("localhost", dataStore)
 
 	t.Run("Create token", func(t *testing.T) {
-		to, err := totpModule.CreateToken(user.GetExtId())
+		to, err := totpModule.CreateToken(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 		}
@@ -60,7 +60,7 @@ func TestU2FModule(t *testing.T) {
 			t.FailNow()
 		}
 
-		ok, err := totpModule.ValidateRegistration(user.GetExtId(), "test token", token.Secret(), code)
+		ok, err := totpModule.ValidateRegistration(user.GetExtID(), "test token", token.Secret(), code)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -71,7 +71,7 @@ func TestU2FModule(t *testing.T) {
 	})
 
 	t.Run("List tokens", func(t *testing.T) {
-		tokens, err := totpModule.ListTokens(user.GetExtId())
+		tokens, err := totpModule.ListTokens(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -89,7 +89,7 @@ func TestU2FModule(t *testing.T) {
 			t.FailNow()
 		}
 
-		ok, err := totpModule.ValidateToken(user.GetExtId(), code)
+		ok, err := totpModule.ValidateToken(user.GetExtID(), code)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()

@@ -73,7 +73,7 @@ func (totpModule *Controller) IsSupported(userid string) bool {
 func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
 
 	// Fetch user account
-	u, err := totpModule.totpStore.GetUserByExtId(userid)
+	u, err := totpModule.totpStore.GetUserByExtID(userid)
 	if err != nil {
 		log.Printf("TOTPModule CreateToken: error fetching user instance (%s)", err)
 	}

@@ -16,17 +16,28 @@ type TotpToken struct {
 
 // Getters and setters for external interface compliance
 
-func (token *TotpToken) GetName() string            { return token.Name }
-func (token *TotpToken) GetSecret() string          { return token.Secret }
-func (token *TotpToken) GetCounter() uint           { return token.UsageCount }
-func (token *TotpToken) SetCounter(count uint)      { token.UsageCount = count }
-func (token *TotpToken) GetLastUsed() time.Time     { return token.LastUsed }
+// GetName fetches the fido token Name
+func (token *TotpToken) GetName() string { return token.Name }
+
+// GetSecret fetches the fido token Secret
+func (token *TotpToken) GetSecret() string { return token.Secret }
+
+// GetCounter fetches the fido token Counter
+func (token *TotpToken) GetCounter() uint { return token.UsageCount }
+
+// SetCounter sets the fido token usage counter
+func (token *TotpToken) SetCounter(count uint) { token.UsageCount = count }
+
+// GetLastUsed fetches the fido token LastUsed time
+func (token *TotpToken) GetLastUsed() time.Time { return token.LastUsed }
+
+// SetLastUsed sets the fido token LastUsed time
 func (token *TotpToken) SetLastUsed(used time.Time) { token.LastUsed = used }
 
 // AddTotpToken adds a TOTP token to the provided user
 func (ds *DataStore) AddTotpToken(userid, name, secret string, counter uint) (interface{}, error) {
 	// Fetch user
-	u, err := ds.GetUserByExtId(userid)
+	u, err := ds.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +61,7 @@ func (ds *DataStore) GetTotpTokens(userid string) ([]interface{}, error) {
 	var totpTokens []TotpToken
 
 	// Fetch user
-	u, err := ds.GetUserByExtId(userid)
+	u, err := ds.GetUserByExtID(userid)
 	if err != nil {
 		return nil, err
 	}

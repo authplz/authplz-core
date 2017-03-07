@@ -196,7 +196,7 @@ func TestUserController(t *testing.T) {
 			t.FailNow()
 		}
 
-		u1, err := uc.GetUser(u.(User).GetExtId())
+		u1, err := uc.GetUser(u.(User).GetExtID())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -212,7 +212,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(User).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtID(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -238,7 +238,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password &$#%"
 
-		_, err := uc.UpdatePassword(u1.(User).GetExtId(), fakePass, newPass)
+		_, err := uc.UpdatePassword(u1.(User).GetExtID(), fakePass, newPass)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -262,7 +262,7 @@ func TestUserController(t *testing.T) {
 
 		newPass := "Test new password"
 
-		_, err := uc.UpdatePassword(u.(User).GetExtId(), "wrongPass", newPass)
+		_, err := uc.UpdatePassword(u.(User).GetExtID(), "wrongPass", newPass)
 		if err == nil {
 			t.Error(err)
 			t.FailNow()

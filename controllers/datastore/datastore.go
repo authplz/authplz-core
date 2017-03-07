@@ -3,20 +3,21 @@ package datastore
 import "fmt"
 
 import "github.com/jinzhu/gorm"
-import _ "github.com/jinzhu/gorm/dialects/postgres"
 
-// Datastore instance storage
+import _ "github.com/jinzhu/gorm/dialects/postgres" // Postgres engine required for GORM connection
+
+// DataStore instance storage
 type DataStore struct {
 	db *gorm.DB
 }
 
-// Query filter types
+// QueryFilter filter types
 type QueryFilter struct {
 	Limit  uint // Number of objects to return
 	Offset uint // Offset of objects to return
 }
 
-// Create a datastore instance
+// NewDataStore Create a datastore instance
 func NewDataStore(dbString string) (*DataStore, error) {
 	// Attempt database connection
 	db, err := gorm.Open("postgres", dbString)
@@ -34,10 +35,10 @@ func (dataStore *DataStore) Close() {
 	dataStore.db.Close()
 }
 
-// Drop and create existing tables to match required schema
+// ForceSync Drop and create existing tables to match required schema
 // WARNING: do not run this on a live database...
-func (ds *DataStore) ForceSync() {
-	db := ds.db
+func (dataStore *DataStore) ForceSync() {
+	db := dataStore.db
 
 	db = db.Exec("DROP TABLE IF EXISTS fido_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS totp_tokens CASCADE;")

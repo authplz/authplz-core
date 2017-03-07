@@ -46,7 +46,7 @@ func TestAuditController(t *testing.T) {
 	})
 
 	t.Run("Can list events", func(t *testing.T) {
-		events, err := ac.ListEvents(user.GetExtId())
+		events, err := ac.ListEvents(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 		}
@@ -70,7 +70,7 @@ func TestAuditController(t *testing.T) {
 	})
 
 	t.Run("Can list async events", func(t *testing.T) {
-		events, err := ac.ListEvents(user.GetExtId())
+		events, err := ac.ListEvents(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 		}

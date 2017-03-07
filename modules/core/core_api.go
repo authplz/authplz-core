@@ -137,7 +137,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		tokenString := flashes[0].(string)
 
 		// Handle token and call require action
-		tokenOk, err := c.cm.HandleToken(user.GetExtId(), user, tokenString)
+		tokenOk, err := c.cm.HandleToken(user.GetExtID(), user, tokenString)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			return
@@ -176,7 +176,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Respond with list of available 2fa components if required
 	if loginOk && preLoginOk && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
-		c.Bind2FARequest(rw, req, user.GetExtId())
+		c.Bind2FARequest(rw, req, user.GetExtID())
 
 		rw.WriteHeader(http.StatusAccepted)
 		rw.Header().Set("Content-Type", "application/json")
@@ -203,7 +203,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		log.Println("Core.Login: Login OK")
 
 		// Create session
-		c.LoginUser(user.GetExtId(), rw, req)
+		c.LoginUser(user.GetExtID(), rw, req)
 		rw.WriteHeader(http.StatusOK)
 		return
 	}

@@ -40,7 +40,7 @@ func TestU2FModule(t *testing.T) {
 	u2fModule := NewController("localhost", dataStore)
 
 	t.Run("Create challenges", func(t *testing.T) {
-		c, err := u2fModule.GetChallenge(user.GetExtId())
+		c, err := u2fModule.GetChallenge(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 		}
@@ -50,7 +50,7 @@ func TestU2FModule(t *testing.T) {
 	})
 
 	t.Run("Register tokens", func(t *testing.T) {
-		challenge, err := u2fModule.GetChallenge(user.GetExtId())
+		challenge, err := u2fModule.GetChallenge(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -64,7 +64,7 @@ func TestU2FModule(t *testing.T) {
 			t.FailNow()
 		}
 
-		ok, err := u2fModule.ValidateRegistration(user.GetExtId(), "test token", challenge, resp)
+		ok, err := u2fModule.ValidateRegistration(user.GetExtID(), "test token", challenge, resp)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -75,7 +75,7 @@ func TestU2FModule(t *testing.T) {
 	})
 
 	t.Run("List tokens", func(t *testing.T) {
-		tokens, err := u2fModule.ListTokens(user.GetExtId())
+		tokens, err := u2fModule.ListTokens(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -87,7 +87,7 @@ func TestU2FModule(t *testing.T) {
 	})
 
 	t.Run("Authenticate using a token", func(t *testing.T) {
-		challenge, err := u2fModule.GetChallenge(user.GetExtId())
+		challenge, err := u2fModule.GetChallenge(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -101,7 +101,7 @@ func TestU2FModule(t *testing.T) {
 			t.FailNow()
 		}
 
-		ok, err := u2fModule.ValidateSignature(user.GetExtId(), challenge, resp)
+		ok, err := u2fModule.ValidateSignature(user.GetExtID(), challenge, resp)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()

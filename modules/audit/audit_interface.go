@@ -14,7 +14,7 @@ type Event interface {
 
 // User Audit user type interface
 type User interface {
-	GetExtId() string
+	GetExtID() string
 }
 
 // Storer Interface that datastore must implement to provide audit controller
