@@ -47,9 +47,9 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] User password update
 - [ ] User Password reset
 - [ ] Email notification
-- [ ] Audit / Event logging
+- [X] Audit / Event logging
 - [ ] 2FA token enrolment
-  - [ ] TOTP
+  - [X] TOTP
   - [X] FIDO
 - [X] 2FA token validation
   - [ ] TOTP
