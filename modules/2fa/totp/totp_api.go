@@ -177,7 +177,37 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 }
 
 func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
+
+	// Fetch challenge user ID
+	userid := c.Get2FARequest(rw, req)
+	if userid == "" {
+		log.Printf("totp.TOTPAuthenticatePost No pending 2fa requests found")
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+
+	log.Printf("totp.TOTPAuthenticatePost Authentication request for user %s", userid)
+
+	// Fetch challenge code
+	req.ParseForm()
+	code := req.Form.Get("code")
+
+	ok, err := c.totpModule.ValidateToken(userid, code)
+	if err != nil {
+		log.Printf("TOTPAuthenticatePost: error validating totp code (%s)", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if !ok {
+		log.Printf("TOTPAuthenticatePost: authentication failed for user %s\n", userid)
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("TOTPAuthenticatePost: Valid authentication for account %s\n", userid)
+	c.LoginUser(userid, rw, req)
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {

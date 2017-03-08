@@ -152,7 +152,8 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 	return true, nil
 }
 
-type Token struct {
+// TokenResp is a sanatised token instance to return from the controller
+type TokenResp struct {
 	Name       string
 	LastUsed   time.Time
 	UsageCount uint
@@ -172,7 +173,7 @@ func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	cleanTokens := make([]interface{}, len(tokens))
 	for i, t := range tokens {
 		ti := t.(TokenInterface)
-		cleanTokens[i] = &Token{
+		cleanTokens[i] = &TokenResp{
 			Name:       ti.GetName(),
 			LastUsed:   ti.GetLastUsed(),
 			UsageCount: ti.GetCounter(),

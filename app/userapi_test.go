@@ -278,6 +278,8 @@ func TestMain(t *testing.T) {
 		}
 	})
 
+	var totpSecret = ""
+
 	t.Run("Logged in users can enrol totp tokens", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("name", "fakeToken")
@@ -306,10 +308,12 @@ func TestMain(t *testing.T) {
 		v.Set("code", code)
 		// Post registration response back
 		client.TestPostForm("/totp/enrol", http.StatusOK, v)
+
+		totpSecret = rc.Secret
 	})
 
 	t.Run("Logged in users can list totp tokens", func(t *testing.T) {
-		var tokens []totp.Token
+		var tokens []totp.TokenResp
 		client.BindTest(t).TestGet("/totp/tokens", 200).TestParseJson(&tokens)
 
 		if len(tokens) != 1 {
@@ -328,7 +332,7 @@ func TestMain(t *testing.T) {
 		client2.TestGetApiResponse(t, "/status", api.ApiResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized)
 	})
 
-	t.Run("Second factor allows login", func(t *testing.T) {
+	t.Run("Second factor allows login (u2f)", func(t *testing.T) {
 
 		client2 := test.NewTestClient(apiPath)
 
@@ -356,6 +360,33 @@ func TestMain(t *testing.T) {
 
 		// Post response and check login status
 		client2.TestPostJsonCheckApiResponse(t, "/u2f/authenticate", resp, api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
+		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
+
+	})
+
+	t.Run("Second factor allows login (totp)", func(t *testing.T) {
+
+		client2 := test.NewTestClient(apiPath)
+
+		// Start login
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		client2.BindTest(t).TestPostForm("/login", http.StatusAccepted, v)
+
+		// Generate challenge response
+		code, err := _totp.GenerateCode(totpSecret, time.Now())
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		// Post response and check login status
+		v = url.Values{}
+		v.Set("code", code)
+		client2.TestPostForm("/totp/authenticate", http.StatusOK, v)
+
 		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 
 	})
