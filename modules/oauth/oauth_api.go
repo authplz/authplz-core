@@ -1,18 +1,14 @@
 package oauth
 
 import (
-	"encoding/gob"
-	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 import (
+	"github.com/RangelReale/osin"
 	"github.com/gocraft/web"
-	"github.com/ory-am/fosite"
 	"github.com/ryankurte/authplz/appcontext"
-	"golang.org/x/net/context"
 )
 
 // APICtx API context instance
@@ -23,21 +19,6 @@ type APICtx struct {
 	oc *Controller
 }
 
-func init() {
-	gob.Register(&url.URL{})
-	gob.Register(&fosite.Arguments{})
-	gob.Register(&fosite.Request{})
-	gob.Register(&fosite.AuthorizeRequest{})
-	/*
-		buf := bytes.NewBuffer([]byte{})
-
-		enc := gob.NewEncoder(buf)
-		err := enc.Encode(&fosite.AuthorizeRequest{})
-
-		log.Fatalf("Error %s encoding AuthorizeRequest", err)
-	*/
-}
-
 // BindOauthContext Helper middleware to bind module controller to API context
 func BindOauthContext(oc *Controller) func(ctx *APICtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	return func(ctx *APICtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -46,140 +27,171 @@ func BindOauthContext(oc *Controller) func(ctx *APICtx, rw web.ResponseWriter, r
 	}
 }
 
-// BindAPI binds the AuditController API to a provided router
-func (oc *Controller) BindAPI(router *web.Router) {
-	// Create router for user modules
-	oauthRouter := router.Subrouter(APICtx{}, "/api/oauth")
+// BindAPI Binds oauth API endpoints to the provded router
+func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
-	// Attach module context
-	oauthRouter.Middleware(BindOauthContext(oc))
+	// Create router object
+	router := base.Subrouter(APICtx{}, "/api/oauth")
 
-	// Bind endpoints
-	oauthRouter.Get("/test", (*APICtx).TestGet)
-	oauthRouter.Get("/auth", (*APICtx).AuthRequestGet)
-	oauthRouter.Get("/pending", (*APICtx).AuthorizePendingGet)
-	oauthRouter.Post("/auth", (*APICtx).AuthorizeConfirmPost)
+	// Bind context to router
+	router.Middleware(BindOauthContext(oc))
+
+	// Bind paths to endpoint
+	router.Get("/auth", (*APICtx).AuthorizeRequestGet)
+	router.Get("/pending", (*APICtx).AuthorizePendingGet)
+	router.Post("/auth", (*APICtx).AuthorizeConfirmPost)
+
+	router.Post("/token", (*APICtx).TokenPost)
+	router.Get("/info", (*APICtx).InfoGet)
+	router.Get("/test", (*APICtx).TestGet)
+
+	// Return router for external use
+	return router
 }
 
-// Information endpoint
-func (c *APICtx) TestGet(rw web.ResponseWriter, req *web.Request) {
-	log.Printf("OAuth2 TestGet called")
-	rw.WriteHeader(http.StatusOK)
-}
+// AuthorizeRequestGet External OAuth authorization endpoint
+func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
-// AuthRequestGet request an authorization instance
-func (c *APICtx) AuthRequestGet(rw web.ResponseWriter, req *web.Request) {
+	resp := c.oc.Server.NewResponse()
+	defer resp.Close()
+
+	// Process authorization request
+	ar := c.oc.Server.HandleAuthorizeRequest(resp, req.Request)
+	if ar == nil {
+		// Handle request errors
+		if resp.IsError && resp.InternalError != nil {
+			log.Printf("Oauth error: %s\n", resp.InternalError)
+		}
+		// Write output
+		osin.OutputJSON(resp, rw, req.Request)
+		return
+	}
+
+	// Add user data for later use
+	ar.UserData = struct {
+		Login string
+	}{
+		Login: "test",
+	}
+
+	// Cache authorization request
+	c.GetSession().Values["oauth"] = ar
+	c.GetSession().Save(req.Request, rw)
+
 	// Check user is logged in
 	if c.GetUserID() == "" {
+		// TODO: redirect to login page with redirect to authorization page
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	// Create context
-	ctx := context.Background()
+	// TODO: Check if app is already authorized
 
-	// Parse authorize request
-	authRequest, err := c.oc.OAuth2.NewAuthorizeRequest(ctx, req.Request)
-	if err != nil {
-		log.Printf("AuthEndpoint NewAuthorizeRequest error: %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	authRequestInst := authRequest.(*fosite.AuthorizeRequest)
-
-	authRequestBytes, err := json.Marshal(authRequestInst)
-	if err != nil {
-		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Save request to session
-	c.GetSession().Values["oauth"] = string(authRequestBytes)
-	c.GetSession().Save(req.Request, rw)
-
-	// Return OK
-	log.Printf("AuthEndpoint AuthRequestGet success")
-	// TODO: this probably needs to redirect to auth ok page for user
+	// TODO: redirect to authorization page
 	rw.WriteHeader(http.StatusAccepted)
 }
 
-type AuthData struct {
-	ClientID string
-	Scope    string
-}
-
-// AuthorizePendingGet Fetch pending authorization
+// AuthorizePendingGet Fetch pending authorizations
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetSession().Values["oauth"] == nil {
-		log.Printf("AuthEndpoint AuthorizePendingGet error: no pending authorization found")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	authRequestString := c.GetSession().Values["oauth"].(string)
+	ar := c.GetSession().Values["oauth"].(osin.AuthorizeRequest)
 
-	authRequest := fosite.AuthorizeRequest{}
-	err := json.Unmarshal([]byte(authRequestString), &authRequest)
-	if err != nil {
-		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
+	authData := struct {
+		ClientID string
+		Scope    string
+	}{
+		ar.Client.GetId(),
+		ar.Scope,
 	}
 
-	log.Printf("AuthEndpoint AuthorizePendingGet ar: %+v", authRequest)
-
-	requestScopes, _ := authRequest.Scopes.Value()
-
-	authData := AuthData{
-		authRequest.Client.GetID(),
-		requestScopes,
-	}
-
-	// Write request to user
 	c.WriteJson(rw, authData)
 }
 
-// AuthorizeConfirmPost handles auth response from user
+// AuthorizeConfirmPost Confirm authorization of a token
+// This finalises and stores the authentication, and redirects back to the calling service
+// TODO: this endpoint /really/ needs CSRF / CORS protection
 func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
-	// Check user is logged in
-	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+	resp := c.oc.Server.NewResponse()
+	defer resp.Close()
+
+	// Fetch authorization request
+	if c.GetSession().Values["oauth"] == nil {
+		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	ar := c.GetSession().Values["oauth"].(osin.AuthorizeRequest)
 
-	// Load auth request from session
-	authRequestString := c.GetSession().Values["oauth"].(string)
+	// Validate authorization
 
-	authRequest := fosite.AuthorizeRequest{}
-	err := json.Unmarshal([]byte(authRequestString), &authRequest)
-	if err != nil {
-		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
+	ar.Authorized = true
+	c.oc.Server.FinishAuthorizeRequest(resp, req.Request, &ar)
+
+	// Handle request errors
+	if resp.IsError && resp.InternalError != nil {
+		log.Printf("ERROR: %s\n", resp.InternalError)
 	}
 
-	// Create context
-	ctx := context.Background()
+	// Write output
+	osin.OutputJSON(resp, rw, req.Request)
+}
 
-	// TODO: check for user consent, oauth type & allowed scopes
+// TokenPost Generate access token endpoint
+func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
+	resp := c.oc.Server.NewResponse()
+	defer resp.Close()
 
-	// Create session information
-	s := fosite.DefaultSession{
-		Username: c.GetUserID(),
-		Subject:  c.GetUserID(),
+	if ar := c.oc.Server.HandleAccessRequest(resp, req.Request); ar != nil {
+
+		// Fetch OauthClient instance to determine scope
+		client := ar.Client.(OauthClient)
+		log.Printf("%+v\n", client)
+
+		// Force generation of a refresh token
+		ar.GenerateRefresh = true
+
+		// Attach scope from client
+		ar.Scope = client.Scope
+
+		switch ar.Type {
+		case osin.CLIENT_CREDENTIALS:
+			ar.Authorized = true
+		case osin.AUTHORIZATION_CODE:
+			ar.Authorized = true
+		case osin.REFRESH_TOKEN:
+			ar.Authorized = true
+		}
+
+		c.oc.Server.FinishAccessRequest(resp, req.Request, ar)
 	}
-
-	// Generate auth response
-	authResponse, err := c.oc.OAuth2.NewAuthorizeResponse(ctx, req.Request, &authRequest, &s)
-	if err != nil {
-		log.Printf("AuthEndpoint NewAuthorizeResponse error: %s", err)
-		c.oc.OAuth2.WriteAuthorizeError(rw, &authRequest, err)
-		return
+	if resp.IsError && resp.InternalError != nil {
+		log.Printf("OAuth error: %s\n", resp.InternalError)
 	}
+	if !resp.IsError {
+		resp.Output["custom_parameter"] = 19923
+	}
+	osin.OutputJSON(resp, rw, req.Request)
+}
 
-	// Write authorization response
-	log.Printf("AuthEndpoint NewAuthorizeRequest success")
-	c.oc.OAuth2.WriteAuthorizeResponse(rw, &authRequest, authResponse)
+// InfoGet token information endpoint
+func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
+	resp := c.oc.Server.NewResponse()
+	defer resp.Close()
+
+	if ir := c.oc.Server.HandleInfoRequest(resp, req.Request); ir != nil {
+
+		// Cast back to OauthClient type
+		_ = ir.AccessData.Client.(OauthClient)
+
+		c.oc.Server.FinishInfoRequest(resp, req.Request, ir)
+	}
+	osin.OutputJSON(resp, rw, req.Request)
+}
+
+// TestGet test endpoint
+func (c *APICtx) TestGet(rw web.ResponseWriter, req *web.Request) {
+	rw.WriteHeader(http.StatusOK)
 }

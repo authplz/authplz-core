@@ -44,15 +44,16 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.Exec("DROP TABLE IF EXISTS totp_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS oauth_clients CASCADE;")
-	db = db.Exec("DROP TABLE IF EXISTS authorize_data CASCADE;")
-	db = db.Exec("DROP TABLE IF EXISTS access_data CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS users CASCADE;")
 
 	db = db.AutoMigrate(&User{})
 	db = db.AutoMigrate(&FidoToken{})
 	db = db.AutoMigrate(&TotpToken{})
 	db = db.AutoMigrate(&AuditEvent{})
-	db = db.AutoMigrate(&OauthClientApp{})
+
+	db = db.AutoMigrate(&OauthClient{})
+	db = db.AutoMigrate(&OauthAuthorize{})
 
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")

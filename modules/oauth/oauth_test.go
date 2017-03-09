@@ -1,26 +1,16 @@
 package oauth
 
-import "testing"
-
-//import "fmt"
-
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"testing"
 )
 
 import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
-	"github.com/ory-am/fosite"
-	//"github.com/ryankurte/authplz/api"
-	"github.com/ory-am/fosite/storage"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/controllers/token"
@@ -66,15 +56,20 @@ func TestMain(t *testing.T) {
 	coreModule := core.NewController(tokenControl, userModule)
 	coreModule.BindModule("user", userModule)
 
-	// Create oauth server instance
-	key, _ := rsa.GenerateKey(rand.Reader, 1024)
-	s := storage.NewMemoryStore()
-	oauthModule, _ := NewController(Config{key}, s)
-
 	// Create router with base context
 	router := web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&ac)).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware)
+
+	//router.Middleware(api.BindContext(&server.ctx))
+
+	//ocs := OauthClientStore{}
+
+	// Fake storage backend for oauth creds
+	store := NewTestingStorage()
+
+	// Create oauth server instance
+	oauthModule, _ := NewController(store)
 
 	coreModule.BindAPI(router)
 	oauthModule.BindAPI(router)
@@ -82,10 +77,10 @@ func TestMain(t *testing.T) {
 
 	address := "localhost:9000"
 
-	//uuid := "fakeUuid"
+	uuid := "fakeUuid"
 	redirect := "localhost:9000/auth"
 
-	//var oauthClient *OauthClient
+	var oauthClient *OauthClient = nil
 
 	handler := context.ClearHandler(router)
 	go func() {
@@ -97,8 +92,6 @@ func TestMain(t *testing.T) {
 	}()
 
 	client := test.NewTestClient("http://" + address + "/api")
-
-	//var oauthClient *OauthClient
 	var userID string
 
 	t.Run("Create User", func(t *testing.T) {
@@ -131,73 +124,70 @@ func TestMain(t *testing.T) {
 		client.TestGet("/status", http.StatusOK)
 	})
 
-	oauthClient := fosite.DefaultClient{
-		ID:           "testClientId",
-		Secret:       []byte("secret lol"),
-		RedirectURIs: []string{redirect},
-		GrantTypes:   []string{"implicit", "refresh_token", "authorization_code", "password", "client_credentials"},
-		Scopes:       []string{"fosite", "openid", "scopeA", "scopeB"},
-	}
-
-	s.Clients[oauthClient.ID] = &oauthClient
-
 	// Run tests
-	t.Run("OAuth request enrolment", func(t *testing.T) {
-
-		// Get request for enrolment
-		v := url.Values{}
-		v.Set("client_id", oauthClient.GetID())
-		v.Set("redirect_uri", redirect)
-		v.Set("state", "AAAAAAAAAAAA")
-		v.Set("scopes", "scopeA scopeB")
-
-		client.BindTest(t).TestGetWithParams("/oauth/auth", http.StatusAccepted, v)
-
-		// Fetch pending request
-		authData := AuthData{}
-		client.TestGet("/oauth/pending", http.StatusOK).TestParseJson(&authData)
-
-		log.Printf("AuthData: %v", authData)
-
+	t.Run("OAuth check API is bound", func(t *testing.T) {
+		client.BindTest(t).TestGet("/oauth/test", http.StatusOK)
 	})
 
-	t.Skip("OAuth login as non-interactive client", func(t *testing.T) {
-		config := &clientcredentials.Config{
-			ClientID:     oauthClient.ID,
-			ClientSecret: string(oauthClient.Secret),
-			TokenURL:     "http://" + address + "/api/oauth/token",
-			Scopes:       []string{"scopeA"},
+	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
+		c, err := oauthModule.CreateClient(uuid, "scopeA", redirect)
+		if err != nil {
+			t.Error(err)
 		}
+		oauthClient = c
+	})
+
+	t.Run("OAuth list clients", func(t *testing.T) {
+		c, err := oauthModule.GetClients(uuid)
+		if err != nil {
+			t.Error(err)
+		}
+		log.Printf("%+v\n", c)
+	})
+
+	t.Run("OAuth login as non-interactive client", func(t *testing.T) {
+		config := &clientcredentials.Config{
+			ClientID:     oauthClient.ClientId,
+			ClientSecret: oauthClient.Secret,
+			TokenURL:     "http://" + address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
 
-		// Fetch a token
 		tc := test.NewTestClientFromHttp("http://"+address+"/api/oauth", httpClient)
-		tc.BindTest(t).TestGet("/test", http.StatusOK)
 
-		token, _ := httpClient.Transport.(*oauth2.Transport).Source.Token()
+		tc.BindTest(t).TestGet("/info", http.StatusOK)
+	})
 
-		fmt.Printf("token: %+v\n", token)
-
-		// Check token access
-		client := &http.Client{}
-
-		v := &url.Values{}
-		v.Set("token", token.AccessToken)
-		v.Set("token_type", token.TokenType)
-
-		req, _ := http.NewRequest("POST", "http://"+address+"/api/oauth/introspect", nil)
-		req.SetBasicAuth(oauthClient.ID, string(oauthClient.Secret))
-		req.URL.RawQuery = v.Encode()
-
-		resp, err := client.Do(req)
+	t.Run("OAuth can remove non-interactive clients", func(t *testing.T) {
+		err := oauthModule.RemoveClient(oauthClient.ClientId)
 		if err != nil {
 			t.Error(err)
-			t.FailNow()
 		}
+	})
 
-		_, _ = ioutil.ReadAll(resp.Body)
+	t.Run("Removing non-interactive client causes OAuth to fail", func(t *testing.T) {
+		config := &clientcredentials.Config{
+			ClientID:     oauthClient.ClientId,
+			ClientSecret: oauthClient.Secret,
+			TokenURL:     "http://" + address + "/api/oauth/token"}
 
+		httpClient := config.Client(oauth2.NoContext)
+
+		tc := test.NewTestClientFromHttp("http://"+address+"/api/oauth", httpClient)
+
+		var oauthError OauthError
+		tc.BindTest(t).TestGet("/info", http.StatusOK).TestParseJson(&oauthError)
+		if oauthError.Error == "" {
+			t.Errorf("Expected error response")
+		}
+	})
+
+	t.Run("OAuth users can register interactive clients", func(t *testing.T) {
+		t.Skipf("Unimplemented")
+	})
+
+	t.Run("Interactive clients can login with OAuth", func(t *testing.T) {
+		t.Skipf("Unimplemented")
 	})
 
 }

@@ -8,27 +8,59 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// Oauth client application
-type OauthClientApp struct {
-	ID          uint      `gorm:"primary_key" description:"External user ID"`
-	CreatedAt   time.Time `gorm:"not null"`
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
-	ClientID    string `gorm:"not null;unique"`
-	Secret      string `gorm:"not null;unique"`
-	RedirectURI string `gorm:"not null"`
+type OauthClient struct {
+	ID          uint
+	UserID      uint
+	ClientID    string
+	CreatedAt   time.Time
+	LastUsed    time.Time
+	Secret      string
+	Scope       string
+	RedirectUri string
+	UserData    interface{}
 }
 
-// Getters and Setters
-func (oc *OauthClientApp) GetClientID() string      { return oc.ClientID }
-func (oc *OauthClientApp) GetSecret() string        { return oc.Secret }
-func (oc *OauthClientApp) GetRedirectURI() string   { return oc.RedirectURI }
-func (oc *OauthClientApp) GetUserData() interface{} { return nil }
+func (c OauthClient) GetID() string            { return c.ClientID }
+func (c OauthClient) GetSecret() string        { return c.Secret }
+func (c OauthClient) GetRedirectUri() string   { return c.RedirectUri }
+func (c OauthClient) GetUserData() interface{} { return c.UserData }
+
+func (c OauthClient) SetID(id string)                   { c.ClientID = id }
+func (c OauthClient) SetSecret(secret string)           { c.Secret = secret }
+func (c OauthClient) SetRedirectUri(redirectUri string) { c.RedirectUri = redirectUri }
+func (c OauthClient) SetUserData(userData string)       { c.UserData = userData }
+
+// AddClient adds an OAuth2 client application to the database
+func (dataStore *DataStore) AddClient(userID, clientID, secret, scope, redirect string) (interface{}, error) {
+	// Fetch user
+	u, err := dataStore.GetUserByExtID(userID)
+	if err != nil {
+		return nil, err
+	}
+	user := u.(*User)
+
+	client := OauthClient{
+		UserID:      user.ID,
+		ClientID:    clientID,
+		CreatedAt:   time.Now(),
+		LastUsed:    time.Now(),
+		Secret:      secret,
+		Scope:       scope,
+		RedirectUri: redirect,
+	}
+
+	dataStore.db = dataStore.db.Create(client)
+	err = dataStore.db.Error
+	if err != nil {
+		return nil, err
+	}
+	return &client, nil
+}
 
 // GetClientByID an oauth client app by ClientID
 func (dataStore *DataStore) GetClientByID(clientID string) (interface{}, error) {
-	var client OauthClientApp
-	err := dataStore.db.Where(&OauthClientApp{ClientID: clientID}).First(&client).Error
+	var client OauthClient
+	err := dataStore.db.Where(&OauthClient{ClientID: clientID}).First(&client).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
@@ -36,4 +68,36 @@ func (dataStore *DataStore) GetClientByID(clientID string) (interface{}, error) 
 	}
 
 	return &client, nil
+}
+
+// GetClientsByUser fetches the OauthClients for a provided user
+func (dataStore *DataStore) GetClientsByUser(userID string) ([]interface{}, error) {
+	var oauthClients []OauthClient
+
+	// Fetch user
+	u, err := dataStore.GetUserByExtID(userID)
+	if err != nil {
+		return nil, err
+	}
+	user := u.(*User)
+
+	err = dataStore.db.Model(user).Related(&oauthClients).Error
+
+	interfaces := make([]interface{}, len(oauthClients))
+	for i, t := range oauthClients {
+		interfaces[i] = &t
+	}
+
+	return interfaces, err
+}
+
+// RemoveClientByID removes a client application by id
+func (dataStore *DataStore) RemoveClientByID(clientID string) error {
+	client := OauthClient{
+		ClientID: clientID,
+	}
+
+	dataStore.db = dataStore.db.Delete(&client)
+
+	return dataStore.db.Error
 }

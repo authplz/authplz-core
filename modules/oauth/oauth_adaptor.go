@@ -1,69 +1,103 @@
-// Adaptor to map from generic interfaces to those required by fosite
-
 package oauth
 
 import (
-	"github.com/ory-am/fosite"
-	"golang.org/x/net/context"
+	"github.com/RangelReale/osin"
 )
 
-// OauthAdaptor adapts a generic interface for Fosite compliance
+// OauthAdaptor adapts a generic interface for osin compliance
 type OauthAdaptor struct {
 	Storer
 }
 
+// NewAdaptor creates a new wraper/adaptor around a Storer interface
 func NewAdaptor(s Storer) *OauthAdaptor {
 	return &OauthAdaptor{s}
 }
 
-// Get an OAuth client by ClientID
-func (oa *OauthAdaptor) GetClient(id string) (fosite.Client, error) {
+func (oa *OauthAdaptor) Clone() osin.Storage {
+	return oa
+}
+
+func (oa *OauthAdaptor) Close() {
+
+}
+
+// GetClient Get an OAuth client by ClientID
+func (oa *OauthAdaptor) GetClient(id string) (osin.Client, error) {
 	c, err := oa.GetClientByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return c.(fosite.Client), nil
+	return c.(osin.Client), nil
 }
 
-func (oa *OauthAdaptor) CreateAuthorizeCodeSession(ctx context.Context, code string, request fosite.Requester) (err error) {
-	return nil
+// SaveAuthorize saves authorize data.
+func (oa *OauthAdaptor) SaveAuthorize(ad *osin.AuthorizeData) error {
+	_, err := oa.AddAuthorize(ad.Client.GetId(), ad.Code, ad.ExpireIn, ad.Scope, ad.RedirectUri, ad.State)
+	return err
 }
 
-func (oa *OauthAdaptor) GetAuthorizeCodeSession(ctx context.Context, code string, session fosite.Session) (request fosite.Requester, err error) {
-	return nil, nil
+// LoadAuthorize looks up AuthorizeData by a code.
+// Client information MUST be loaded together.
+// Optionally can return error if expired.
+func (oa *OauthAdaptor) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
+	a, err := oa.GetAuthorizationByCode(code)
+	if err != nil {
+		return nil, error
+	}
+
+	authorization := a.(Authorizaton)
+
+	c, err := oa.GetClientByID(authorization.GetClientID())
+	if err != nil {
+		return nil, error
+	}
+
+	osinAuthorization := osin.AuthorizeData{
+		Client:      c,
+		ClientID:    aauthorization.GetClientID(),
+		Code:        aauthorization.GetCode(),
+		ExpiresIn:   aauthorization.GetExpiresIn(),
+		Scope:       aauthorization.GetScope(),
+		RedirectUri: aauthorization.GetRedirectUri(),
+		State:       aauthorization.GetState(),
+		CreatedAt:   aauthorization.GetCreatedAt(),
+	}
+
+	return &osinAuthorization, nil
 }
 
-func (oa *OauthAdaptor) DeleteAuthorizeCodeSession(ctx context.Context, code string) (err error) {
-	return nil
+// RemoveAuthorize revokes or deletes the authorization code.
+func (oa *OauthAdaptor) RemoveAuthorize(code string) error {
+
 }
 
-func (oa *OauthAdaptor) CreateAccessTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
+// SaveAccess writes AccessData.
+// If RefreshToken is not blank, it must save in a way that can be loaded using LoadRefresh.
+func (oa *OauthAdaptor) SaveAccess(*osin.AccessData) error {
 
-	return nil
 }
 
-func (oa *OauthAdaptor) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+// LoadAccess retrieves access data by token. Client information MUST be loaded together.
+// AuthorizeData and AccessData DON'T NEED to be loaded if not easily available.
+// Optionally can return error if expired.
+func (oa *OauthAdaptor) LoadAccess(token string) (*osin.AccessData, error) {
 
-	return nil, nil
 }
 
-func (oa *OauthAdaptor) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
+// RemoveAccess revokes or deletes an AccessData.
+func (oa *OauthAdaptor) RemoveAccess(token string) error {
 
-	return nil
 }
 
-func (oa *OauthAdaptor) CreateRefreshTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
-	return nil
+// LoadRefresh retrieves refresh AccessData. Client information MUST be loaded together.
+// AuthorizeData and AccessData DON'T NEED to be loaded if not easily available.
+// Optionally can return error if expired.
+func (oa *OauthAdaptor) LoadRefresh(token string) (*osin.AccessData, error) {
+
 }
 
-func (oa *OauthAdaptor) GetRefreshTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
-	return nil, nil
-}
+// RemoveRefresh revokes or deletes refresh AccessData.
+func (oa *OauthAdaptor) RemoveRefresh(token string) error {
 
-func (oa *OauthAdaptor) DeleteRefreshTokenSession(ctx context.Context, signature string) (err error) {
-	return nil
-}
-
-func (oa *OauthAdaptor) PersistRefreshTokenGrantSession(ctx context.Context, requestRefreshSignature, accessSignature, refreshSignature string, request fosite.Requester) error {
-	return nil
 }
