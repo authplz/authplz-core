@@ -16,6 +16,7 @@ import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
+	"github.com/ory-am/fosite"
 	//"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
@@ -63,10 +64,9 @@ func TestMain(t *testing.T) {
 	coreModule := core.NewController(tokenControl, userModule)
 	coreModule.BindModule("user", userModule)
 
-	s := storage.NewMemoryStore()
-
 	// Create oauth server instance
 	key, _ := rsa.GenerateKey(rand.Reader, 1024)
+	s := storage.NewMemoryStore()
 	oc, _ := NewController(Config{key}, s)
 
 	// Create router with base context
@@ -129,11 +129,21 @@ func TestMain(t *testing.T) {
 		client.TestGet("/status", http.StatusOK)
 	})
 
+	oauthClient := fosite.DefaultClient{
+		ID:           "testClientId",
+		Secret:       []byte("secret lol"),
+		RedirectURIs: []string{redirect},
+		GrantTypes:   []string{"implicit", "refresh_token", "authorization_code", "password", "client_credentials"},
+		Scopes:       []string{"fosite", "openid", "scopeA", "scopeB"},
+	}
+
+	s.Clients[oauthClient.ID] = &oauthClient
+
 	// Run tests
 	t.Run("OAuth request enrolment", func(t *testing.T) {
 
 		v := url.Values{}
-		v.Set("client_id", "testClient")
+		v.Set("client_id", oauthClient.GetID())
 		v.Set("redirect_uri", redirect)
 		v.Set("state", "AAAAAAAAAAAA")
 		v.Set("scopes", "scopeA scopeB")
