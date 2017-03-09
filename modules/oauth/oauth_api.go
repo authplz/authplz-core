@@ -1,8 +1,11 @@
 package oauth
 
 import (
+	"encoding/gob"
+	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 import (
@@ -18,6 +21,21 @@ type APICtx struct {
 	*appcontext.AuthPlzCtx
 	// User module instance
 	oc *Controller
+}
+
+func init() {
+	gob.Register(&url.URL{})
+	gob.Register(&fosite.Arguments{})
+	gob.Register(&fosite.Request{})
+	gob.Register(&fosite.AuthorizeRequest{})
+	/*
+		buf := bytes.NewBuffer([]byte{})
+
+		enc := gob.NewEncoder(buf)
+		err := enc.Encode(&fosite.AuthorizeRequest{})
+
+		log.Fatalf("Error %s encoding AuthorizeRequest", err)
+	*/
 }
 
 // BindOauthContext Helper middleware to bind module controller to API context
@@ -37,9 +55,16 @@ func (oc *Controller) BindAPI(router *web.Router) {
 	oauthRouter.Middleware(BindOauthContext(oc))
 
 	// Bind endpoints
+	oauthRouter.Get("/test", (*APICtx).TestGet)
 	oauthRouter.Get("/auth", (*APICtx).AuthRequestGet)
 	oauthRouter.Get("/pending", (*APICtx).AuthorizePendingGet)
 	oauthRouter.Post("/auth", (*APICtx).AuthorizeConfirmPost)
+}
+
+// Information endpoint
+func (c *APICtx) TestGet(rw web.ResponseWriter, req *web.Request) {
+	log.Printf("OAuth2 TestGet called")
+	rw.WriteHeader(http.StatusOK)
 }
 
 // AuthRequestGet request an authorization instance
@@ -57,35 +82,58 @@ func (c *APICtx) AuthRequestGet(rw web.ResponseWriter, req *web.Request) {
 	authRequest, err := c.oc.OAuth2.NewAuthorizeRequest(ctx, req.Request)
 	if err != nil {
 		log.Printf("AuthEndpoint NewAuthorizeRequest error: %s", err)
-		c.oc.OAuth2.WriteAuthorizeError(rw, authRequest, err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	authRequestInst := authRequest.(*fosite.AuthorizeRequest)
+
+	authRequestBytes, err := json.Marshal(authRequestInst)
+	if err != nil {
+		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
+		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// Save request to session
-	c.GetSession().Values["oauth"] = authRequest
+	c.GetSession().Values["oauth"] = string(authRequestBytes)
 	c.GetSession().Save(req.Request, rw)
 
 	// Return OK
+	log.Printf("AuthEndpoint AuthRequestGet success")
 	// TODO: this probably needs to redirect to auth ok page for user
 	rw.WriteHeader(http.StatusAccepted)
+}
+
+type AuthData struct {
+	ClientID string
+	Scope    string
 }
 
 // AuthorizePendingGet Fetch pending authorization
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetSession().Values["oauth"] == nil {
+		log.Printf("AuthEndpoint AuthorizePendingGet error: no pending authorization found")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
+	authRequestString := c.GetSession().Values["oauth"].(string)
 
-	requestScopes, _ := ar.Scopes.Value()
+	authRequest := fosite.AuthorizeRequest{}
+	err := json.Unmarshal([]byte(authRequestString), &authRequest)
+	if err != nil {
+		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	authData := struct {
-		ClientID string
-		Scope    string
-	}{
-		ar.Client.GetID(),
+	log.Printf("AuthEndpoint AuthorizePendingGet ar: %+v", authRequest)
+
+	requestScopes, _ := authRequest.Scopes.Value()
+
+	authData := AuthData{
+		authRequest.Client.GetID(),
 		requestScopes,
 	}
 
@@ -102,7 +150,15 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Load auth request from session
-	authRequest := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
+	authRequestString := c.GetSession().Values["oauth"].(string)
+
+	authRequest := fosite.AuthorizeRequest{}
+	err := json.Unmarshal([]byte(authRequestString), &authRequest)
+	if err != nil {
+		log.Printf("AuthEndpoint NewAuthorizeRequest serialisation error: %s", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	// Create context
 	ctx := context.Background()

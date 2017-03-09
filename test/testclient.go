@@ -40,6 +40,12 @@ func NewTestClient(path string) TestClient {
 	return TestClient{&http.Client{Jar: jar}, path, nil}
 }
 
+func NewTestClientFromHttp(path string, client *http.Client) TestClient {
+	jar, _ := cookiejar.New(nil)
+	client.Jar = jar
+	return TestClient{client, path, nil}
+}
+
 // Bind a testing instance to a test client
 func (tc *TestClient) BindTest(t *testing.T) *TestClient {
 	tc.t = t
