@@ -28,11 +28,11 @@ type Config struct {
 // Controller OAuth module controller
 type Controller struct {
 	OAuth2 fosite.OAuth2Provider
-	Store  Storer
+	Store  fosite.Storage
 }
 
 // Create a new OAuth server instance
-func NewController(cfg Config, store Storer) (*Controller, error) {
+func NewController(cfg Config, store fosite.Storage) (*Controller, error) {
 
 	// Register required objects for session serialisation
 	gob.Register(&fosite.AuthorizeRequest{})
@@ -40,7 +40,7 @@ func NewController(cfg Config, store Storer) (*Controller, error) {
 	// Create config instance
 	config := new(compose.Config)
 
-	storerAdaptor := NewAdaptor(store)
+	//storerAdaptor := NewAdaptor(store)
 
 	// Create OAuth2 and OpenID Strategies
 	var strat = compose.CommonStrategy{
@@ -52,18 +52,18 @@ func NewController(cfg Config, store Storer) (*Controller, error) {
 	// Compose oauth server from components
 	var oauth2 = compose.Compose(
 		config,
-		storerAdaptor,
+		store,
 		strat,
 
 		// enabled handlers
 		//compose.OAuth2AuthorizeExplicitFactory,
-		//compose.OAuth2AuthorizeImplicitFactory,
-		compose.OAuth2ClientCredentialsGrantFactory,
-		compose.OAuth2RefreshTokenGrantFactory,
+		compose.OAuth2AuthorizeImplicitFactory,
+		//compose.OAuth2ClientCredentialsGrantFactory,
+		//compose.OAuth2RefreshTokenGrantFactory,
 		//compose.OAuth2ResourceOwnerPasswordCredentialsFactory,
 
 		//compose.OAuth2TokenRevocationFactory,
-		compose.OAuth2TokenIntrospectionFactory,
+		//compose.OAuth2TokenIntrospectionFactory,
 
 		//compose.OpenIDConnectExplicitFactory,
 		//compose.OpenIDConnectImplicitFactory,
