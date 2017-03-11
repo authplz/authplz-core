@@ -22,11 +22,24 @@ type Client interface {
 type Authorizaton interface {
 	GetClientID() string
 	GetCode() string
-	GetExpiresIn() uint32
+	GetExpiresIn() int32
 	GetScope() string
 	GetRedirectUri() string
 	GetState() string
 	GetCreatedAt() time.Time
+}
+
+type Access interface {
+	GetClient() interface{}
+	GetAuthorizeData() interface{}
+	GetAccessData() interface{}
+	GetAccessToken() string
+	GetRefreshToken() string
+	GetExpiresIn() int32
+	GetScope() string
+	GetRedirectURI() string
+	GetCreatedAt() time.Time
+	GetUserData() interface{}
 }
 
 // Storer OAuth storage interface
@@ -37,4 +50,6 @@ type Storer interface {
 	RemoveClientByID(clientID string) error
 	AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error)
 	GetAuthorizationByCode(code string) (interface{}, error)
+	RemoveAuthorizationByCode(code string) error
+	AddAccess(clientID, authorizationID string)
 }

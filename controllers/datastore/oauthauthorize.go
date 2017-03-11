@@ -90,3 +90,14 @@ func (dataStore *DataStore) GetAuthorizationByCode(code string) (interface{}, er
 
 	return &authorize, nil
 }
+
+// RemoveClientByID removes a client application by id
+func (dataStore *DataStore) RemoveAuthorizationByCode(code string) error {
+	authorization := OauthAuthorize{
+		Code: code,
+	}
+
+	dataStore.db = dataStore.db.Delete(&authorization)
+
+	return dataStore.db.Error
+}

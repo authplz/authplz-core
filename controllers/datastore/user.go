@@ -139,10 +139,10 @@ func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 }
 
 // GetUserByExtID Fetch a user account by external id
-func (dataStore *DataStore) GetUserByExtID(extId string) (interface{}, error) {
+func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 
 	var user User
-	err := dataStore.db.Where(&User{ExtID: extId}).First(&user).Error
+	err := dataStore.db.Where(&User{ExtID: extID}).First(&user).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
