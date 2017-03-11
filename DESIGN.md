@@ -85,6 +85,14 @@ Seems like this could be more efficient / remove the need for the second login i
 
 ### Password Reset
 
+1. post email account to /api/recovery
+2. server sends recovery token to user email
+3. token submitted to /api/recovery (could be /api/token, but different process required so easier to split)
+4. if 2fa, require 2fa to validate recovery session. If lost, sms or recovery codes.
+5. user enters new password
+6. server responds 
+7. server sends alert email to user
+
 What if instead of imposing a security level on users, we informed them and let them pick?
 Users could then be given a security score on their account dashboard to gamify improving it.
 For example:
