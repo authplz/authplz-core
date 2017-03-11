@@ -83,6 +83,16 @@ Seems like this could be more efficient / remove the need for the second login i
 4. browser posts code to /api/totp/authenticate
 5. server responds with 200 success or 403 unauthorized
 
+### Password Reset
+
+What if instead of imposing a security level on users, we informed them and let them pick?
+Users could then be given a security score on their account dashboard to gamify improving it.
+For example:
+- You only have password set, password resets and account recovery will currentl require only your email address, register a phone number or 2fa token to improve this
+- Good work registering 2fa! Password resets will now require this 2fa token. For account recovery purposes you must now either register a phone number or create recovery codes
+
+Other ideas:
+- Testing recoveries (non distruptive) to keep people in practice. If using named keys, test by requesting names.
 
 
 ## Questions
