@@ -41,21 +41,21 @@ type User interface {
 	GetExtID() string
 }
 
-func (ctx *AuthPlzCtx) GetLocale() string {
-	return ctx.locale
+func (c *AuthPlzCtx) GetLocale() string {
+	return c.locale
 }
 
-func (ctx *AuthPlzCtx) GetSession() *sessions.Session {
-	return ctx.session
+func (c *AuthPlzCtx) GetSession() *sessions.Session {
+	return c.session
 }
 
 // Wrapper for API localisation
-func (ctx *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
-	return api.GetApiLocale(ctx.locale)
+func (c *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
+	return api.GetApiLocale(c.locale)
 }
 
 // Convenience type to describe middleware functions
-type MiddlewareFunc func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
+type MiddlewareFunc func(c *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
 // Helper to bind the global context object into the router context
 // This is a closure to run over an instance of the global context
@@ -67,7 +67,7 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 }
 
 // Helper to write objects out as JSON
-func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
+func (c *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 	js, err := json.Marshal(i)
 	if err != nil {
 		log.Print(err)
@@ -79,15 +79,15 @@ func (ctx *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 }
 
 // Helper to write API results out
-func (ctx *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
+func (c *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
 	apiResp := api.ApiResponse{Result: result, Message: message}
-	ctx.WriteJson(w, apiResp)
+	c.WriteJson(w, apiResp)
 }
 
 // User session layer
 // Middleware matches user session if it exists and saves userid to the session object
-func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	session, err := ctx.Global.SessionStore.Get(req.Request, "user-session")
+func (c *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	session, err := c.Global.SessionStore.Get(req.Request, "user-session")
 	if err != nil {
 		log.Printf("Error binding session, %s", err)
 		// Poison invalid session so next request will succeed
@@ -97,7 +97,7 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 	}
 
 	// Save session for further use
-	ctx.session = session
+	c.session = session
 
 	// TODO: load user from session
 
@@ -106,9 +106,9 @@ func (ctx *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request
 }
 
 // Middleware to grab IP & forwarding headers and store in session
-func (ctx *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	ctx.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
-	ctx.forwardedFor = req.Header.Get("x-forwarded-for")
+func (c *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	c.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
+	c.forwardedFor = req.Header.Get("x-forwarded-for")
 
 	next(rw, req)
 }
@@ -207,10 +207,11 @@ func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) st
 }
 
 const secondFactorRequestSessionKey = "2fa-request"
+const secondFactorActionSessionKey = "2fa-action"
 
-// Bind a 2fa request for a user
-// TODO: the request should probably timeout eventually
-func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string) {
+// Bind2FARequest Bind a 2fa request and action for a user
+// TODO: the request should probably time-out eventually
+func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string, action string) {
 	secondFactorSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.Bind2faRequest error fetching %s %s", secondFactorRequestSessionKey, err)
@@ -221,23 +222,38 @@ func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, use
 	log.Printf("AuthPlzCtx.Bind2faRequest adding authorization flash for user %s\n", userid)
 
 	secondFactorSession.Values[secondFactorRequestSessionKey] = userid
+	secondFactorSession.Values[secondFactorActionSessionKey] = action
 	secondFactorSession.Save(req.Request, rw)
 }
 
-// Fetch a 2fa request for a user
-func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) string {
+// Get2FARequest Fetch a 2fa request and action for a user
+func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.Get2FARequest Error fetching %s %s", secondFactorRequestSessionKey, err)
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return ""
+		return "", ""
 	}
 
-	if u2fSession.Values[secondFactorRequestSessionKey] == nil {
+	if u2fSession.Values[secondFactorRequestSessionKey] == nil ||
+		u2fSession.Values[secondFactorActionSessionKey] == nil {
 		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
 		log.Printf("AuthPlzCtx.Get2FARequest No userid found in session flash")
-		return ""
+		return "", ""
 	}
 	userid := u2fSession.Values[secondFactorRequestSessionKey].(string)
-	return userid
+	action := u2fSession.Values[secondFactorActionSessionKey].(string)
+	return userid, action
+}
+
+// UserAction executes a user action, such as `login`
+// This is provided to allow 2fa modules to execute actions by user across the API boundaries
+// TODO: a more elegant solution to this could be nice.
+func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, req *web.Request) {
+	switch action {
+	case "login":
+		c.LoginUser(userid, rw, req)
+	default:
+		log.Printf("AuthPlzCtx.UserAction error: unrecognised user action (%s)", action)
+	}
 }

@@ -67,6 +67,7 @@ func totpSessionMiddleware(ctx *totpAPICtx, rw web.ResponseWriter, req *web.Requ
 	next(rw, req)
 }
 
+// RegisterChallenge is a TOTP registration challenge
 type RegisterChallenge struct {
 	AccountName string
 	Issuer      string
@@ -136,8 +137,6 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Session B: %+v", c.totpSession)
-
 	// Fetch session variables
 	if c.totpSession.Values[totpRegisterTokenKey] == nil {
 		log.Printf("TOTPEnrolPost: missing session variables (%s)", totpRegisterTokenKey)
@@ -179,7 +178,7 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch challenge user ID
-	userid := c.Get2FARequest(rw, req)
+	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
 		log.Printf("totp.TOTPAuthenticatePost No pending 2fa requests found")
 		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
@@ -205,8 +204,8 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 		return
 	}
 
-	log.Printf("TOTPAuthenticatePost: Valid authentication for account %s\n", userid)
-	c.LoginUser(userid, rw, req)
+	log.Printf("TOTPAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
+	c.UserAction(userid, action, rw, req)
 	rw.WriteHeader(http.StatusOK)
 }
 

@@ -238,6 +238,36 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	return &resp, nil
 }
 
+// GetUserByEmail finds a user by userID
+func (userModule *Controller) GetUserByEmail(email string) (interface{}, error) {
+	// Attempt to fetch user
+	u, err := userModule.userStore.GetUserByEmail(email)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, ErrorUserNotFound
+	}
+
+	if u == nil {
+		// Userstore error, wrap
+		log.Printf("Error: user not found %s", email)
+		return nil, ErrorUserNotFound
+	}
+
+	user := u.(User)
+
+	resp := UserResp{
+		Email:     user.GetEmail(),
+		Username:  user.GetUsername(),
+		Activated: user.IsActivated(),
+		Enabled:   user.IsEnabled(),
+		Locked:    user.IsLocked(),
+		LastLogin: user.GetLastLogin(),
+	}
+
+	return &resp, nil
+}
+
 // UpdatePassword updates a user password
 // This checks the original password prior to updating and fails on password errors
 func (userModule *Controller) UpdatePassword(userid string, old string, new string) (User, error) {

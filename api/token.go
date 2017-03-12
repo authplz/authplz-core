@@ -12,6 +12,7 @@ type TokenAction string
 // Token success actions
 const TokenActionActivate TokenAction = "activate"
 const TokenActionUnlock TokenAction = "unlock"
+const TokenActionRecovery TokenAction = "recover"
 
 // Token error actions
 const TokenActionInvalid TokenAction = "invalid"

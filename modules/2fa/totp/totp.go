@@ -24,6 +24,9 @@ type Controller struct {
 }
 
 // NewController creates a new TOTP controller
+// TOTP tokens are issued against the provided issuer name and user email account.
+// A CompletedHandler is required for completion of authorization actions, as welll as a Storer to
+// provide underlying storage to the TOTP module
 func NewController(issuerName string, totpStore Storer) *Controller {
 	return &Controller{
 		issuerName: issuerName,

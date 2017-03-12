@@ -37,3 +37,8 @@ type Storer interface {
 	// Update a provided fido token
 	UpdateFidoToken(token interface{}) (interface{}, error)
 }
+
+// CompletedHandler Callback for 2fa signature completion
+type CompletedHandler interface {
+	SecondFactorCompleted(userid, action string)
+}

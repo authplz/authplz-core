@@ -176,7 +176,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Respond with list of available 2fa components if required
 	if loginOk && preLoginOk && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
-		c.Bind2FARequest(rw, req, user.GetExtID())
+		c.Bind2FARequest(rw, req, user.GetExtID(), "login")
 
 		rw.WriteHeader(http.StatusAccepted)
 		rw.Header().Set("Content-Type", "application/json")
@@ -224,17 +224,82 @@ func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-// Recover endpoint provides mechanisms for user account recovery
-// TODO: this
-func (c *coreCtx) Recover(rw web.ResponseWriter, req *web.Request) {
+// Recover endpoints provide mechanisms for user account recovery
+
+const (
+	recoverySessionKey = "recovery-session"
+	recoveryEmailKey   = "recovery-email"
+)
+
+// RecoverPost takes an email input to start the recovery process
+func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// Send recovery email
+	// Save recovery status to session
+	c.GetSession().Values[recoveryEmailKey] = email
+	c.GetSession().Save(req.Request, rw)
 
-	// Check if 2fa tokens are available
+	// TODO: Generate and send recovery email
+
+	rw.WriteHeader(http.StatusOK)
+}
+
+// RecoverGet handles an account recovery token
+func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
+	tokenString := req.URL.Query().Get("token")
+	if tokenString == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Fetch recovery session key
+	// This requires recovery tokens to be requested and applied on the same device
+	if c.GetSession().Values[recoveryEmailKey] == nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	email := c.GetSession().Values[recoveryEmailKey].(string)
+
+	// Validate recovery token
+	ok, u, err := c.cm.HandleRecoveryToken(email, tokenString)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	user := u.(UserInterface)
+
+	// TODO: check if 2fa is required
+	// How to I attach this to a recovery session..?
+	// Need to genericise 2fa actions I guess.
+
+	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(user.GetExtID())
+
+	if secondFactorRequired {
+
+		// Bind 2fa request with recovery action
+		c.Bind2FARequest(rw, req, user.GetExtID(), "recovery")
+
+		// Write available factors to client
+		rw.WriteHeader(http.StatusAccepted)
+		rw.Header().Set("Content-Type", "application/json")
+		js, err := json.Marshal(factorsAvailable)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		rw.Write(js)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
 
 }

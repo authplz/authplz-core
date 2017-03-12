@@ -26,6 +26,9 @@ type Controller struct {
 }
 
 // NewController creates a new U2F controller
+// TOTP tokens are issued against the provided url, the browser will reject any u2f requess not from this domain.
+// A CompletedHandler is required for completion of authorization actions, as well as a Storer to
+// provide underlying storage to the U2F module
 func NewController(url string, u2fStore Storer) *Controller {
 	return &Controller{
 		url:      url,

@@ -32,6 +32,7 @@ const (
 	u2fRegisterNameKey      string = "u2f-register-name"
 	u2fSignChallengeKey     string = "u2f-sign-challenge"
 	u2fSignUserIDKey        string = "u2f-sign-userid"
+	u2fSignActionKey        string = "u2f-sign-action"
 )
 
 // apiCtx context storage for router instance
@@ -144,7 +145,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch challenge user ID
-	userid := c.Get2FARequest(rw, req)
+	userid, action := c.Get2FARequest(rw, req)
 
 	if userid == "" {
 		log.Printf("u2f.U2FAuthenticateGet No pending 2fa requests found")
@@ -152,7 +153,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("u2f.U2FAuthenticateGet Authentication request for user %s", userid)
+	log.Printf("u2f.U2FAuthenticateGet Authentication request for user %s (action %s)", userid, action)
 
 	// Generate challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
@@ -165,6 +166,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	// Save to session vars
 	u2fSession.Values[u2fSignChallengeKey] = challenge
 	u2fSession.Values[u2fSignUserIDKey] = userid
+	u2fSession.Values[u2fSignActionKey] = action
 	u2fSession.Save(req.Request, rw)
 
 	// Write challenge to user
@@ -199,10 +201,13 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	userid := u2fSession.Values[u2fSignUserIDKey].(string)
 	u2fSession.Values[u2fSignUserIDKey] = ""
 
+	action := u2fSession.Values[u2fSignActionKey].(string)
+	u2fSession.Values[u2fSignActionKey] = ""
+
 	// Clear session vars
 	u2fSession.Save(req.Request, rw)
 
-	log.Printf("U2F Authenticate post for user %s", userid)
+	log.Printf("U2F Authenticate post for user %s (action %s)", userid, action)
 
 	// Parse JSON response body
 	var u2fSignResp u2f.SignResponse
@@ -225,8 +230,8 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("U2FAuthenticatePost: Valid authentication for account %s\n", userid)
-	c.LoginUser(userid, rw, req)
+	log.Printf("U2FAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
+	c.UserAction(userid, action, rw, req)
 	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
 }
 
