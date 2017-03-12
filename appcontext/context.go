@@ -246,6 +246,42 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (str
 	return userid, action
 }
 
+const (
+	recoveryRequestSessionKey = "recovery-request-session"
+	recoveryRequestUserIDKey  = "recovery-request-userid"
+)
+
+// BindRecoveryRequest binds an authenticated recovery request to the session
+// This should only be called after all [possible] authentication has been executed
+func (c *AuthPlzCtx) BindRecoveryRequest(userid string, rw web.ResponseWriter, req *web.Request) {
+	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
+	if err != nil {
+		log.Printf("AuthPlzCtx.BindRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return
+	}
+
+	session.Values[recoveryRequestUserIDKey] = userid
+	session.Save(req.Request, rw)
+}
+
+// GetRecoveryRequest fetches an authenticated recovery request from the session
+// This allows a module to accept new password settings for the provided user id
+func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request) string {
+	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
+	if err != nil {
+		log.Printf("AuthPlzCtx.GetRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		return ""
+	}
+
+	if session.Values[recoveryRequestUserIDKey] == nil {
+		return ""
+	}
+
+	return session.Values[recoveryRequestUserIDKey].(string)
+}
+
 // UserAction executes a user action, such as `login`
 // This is provided to allow 2fa modules to execute actions by user across the API boundaries
 // TODO: a more elegant solution to this could be nice.
@@ -253,6 +289,8 @@ func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, re
 	switch action {
 	case "login":
 		c.LoginUser(userid, rw, req)
+	case "recover":
+		c.BindRecoveryRequest(userid, rw, req)
 	default:
 		log.Printf("AuthPlzCtx.UserAction error: unrecognised user action (%s)", action)
 	}

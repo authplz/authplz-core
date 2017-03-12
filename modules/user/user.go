@@ -198,16 +198,6 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
-type UserResp struct {
-	Email     string
-	Username  string
-	Activated bool
-	Enabled   bool
-	Locked    bool
-	Admin     bool
-	LastLogin time.Time
-}
-
 // GetUser finds a user by userID
 func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	// Attempt to fetch user
@@ -225,17 +215,17 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	}
 
 	user := u.(User)
-
-	resp := UserResp{
-		Email:     user.GetEmail(),
-		Username:  user.GetUsername(),
-		Activated: user.IsActivated(),
-		Enabled:   user.IsEnabled(),
-		Locked:    user.IsLocked(),
-		LastLogin: user.GetLastLogin(),
-	}
-
-	return &resp, nil
+	/*
+		resp := UserResp{
+			Email:     user.GetEmail(),
+			Username:  user.GetUsername(),
+			Activated: user.IsActivated(),
+			Enabled:   user.IsEnabled(),
+			Locked:    user.IsLocked(),
+			LastLogin: user.GetLastLogin(),
+		}
+	*/
+	return user, nil
 }
 
 // GetUserByEmail finds a user by userID
@@ -255,17 +245,70 @@ func (userModule *Controller) GetUserByEmail(email string) (interface{}, error) 
 	}
 
 	user := u.(User)
+	/*
+		resp := UserResp{
+			Email:     user.GetEmail(),
+			Username:  user.GetUsername(),
+			Activated: user.IsActivated(),
+			Enabled:   user.IsEnabled(),
+			Locked:    user.IsLocked(),
+			LastLogin: user.GetLastLogin(),
+		}
+	*/
+	return user, nil
+}
 
-	resp := UserResp{
-		Email:     user.GetEmail(),
-		Username:  user.GetUsername(),
-		Activated: user.IsActivated(),
-		Enabled:   user.IsEnabled(),
-		Locked:    user.IsLocked(),
-		LastLogin: user.GetLastLogin(),
+func (userModule *Controller) handleSetPassword(user User, password string) error {
+
+	// TODO: check password requirements here.
+	// Not URL, Not in most common list, does not contain username or servicename
+
+	// Generate new hash
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), userModule.hashRounds)
+	if err != nil {
+		return ErrorPasswordHashTooShort
 	}
 
-	return &resp, nil
+	// Update user object
+	user.SetPassword(string(hash))
+	_, err = userModule.userStore.UpdateUser(user)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return ErrorUpdatingUser
+	}
+
+	// Emit password update event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
+
+	// Log update
+	log.Printf("UserModule.handleSetPassword: User %s password updated\r\n", user.GetExtID())
+
+	return nil
+}
+
+// SetPassword sets a user password without checking the existing one
+func (userModule *Controller) SetPassword(userid, password string) (User, error) {
+	// Fetch user
+	u, err := userModule.userStore.GetUserByExtID(userid)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, ErrorUserNotFound
+	}
+
+	if u == nil {
+		log.Println("UserModule.SetPassword error, user not found")
+		return nil, ErrorUserNotFound
+	}
+
+	user := u.(User)
+
+	// Call password setting method
+	err = userModule.handleSetPassword(user, password)
+
+	return user, err
 }
 
 // UpdatePassword updates a user password
@@ -293,28 +336,10 @@ func (userModule *Controller) UpdatePassword(userid string, old string, new stri
 		return nil, ErrorPasswordMismatch
 	}
 
-	// Generate new hash
-	hash, hashErr := bcrypt.GenerateFromPassword([]byte(new), userModule.hashRounds)
-	if hashErr != nil {
-		return nil, ErrorPasswordHashTooShort
-	}
+	// Call password setting method
+	err = userModule.handleSetPassword(user, new)
 
-	// Update user object
-	user.SetPassword(string(hash))
-	u, err = userModule.userStore.UpdateUser(user)
-	if err != nil {
-		// Userstore error, wrap
-		log.Println(err)
-		return nil, ErrorUpdatingUser
-	}
-
-	// Emit password update event
-	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
-
-	log.Printf("UserModule.UpdatePassword: User %s password updated\r\n", userid)
-
-	return user, nil
+	return user, err
 }
 
 // HandleToken provides a generic method to handle an action token

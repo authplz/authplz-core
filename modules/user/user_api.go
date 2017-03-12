@@ -45,6 +45,7 @@ func (userModule *Controller) BindAPI(router *web.Router) {
 	userRouter.Post("/create", (*apiCtx).Create)
 	userRouter.Get("/account", (*apiCtx).AccountGet)
 	userRouter.Post("/account", (*apiCtx).AccountPost)
+	userRouter.Post("/reset", (*apiCtx).ResetPost)
 }
 
 // Test endpoint
@@ -156,5 +157,41 @@ func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().PasswordUpdated)
+}
+
+// ResetPost handles password reset posts
+func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
+	if c.GetUserID() != "" {
+		log.Printf("UserModule.ResetPost user already logged in")
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Fetch user recovery request userid
+	userid := c.GetRecoveryRequest(rw, req)
+	if userid == "" {
+		log.Printf("UserModule.ResetPost no recovery request found")
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Fetch new user password
+	password := req.FormValue("password")
+	if password == "" {
+		log.Printf("UserModule.ResetPost missing password")
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Update password
+	_, err := c.um.SetPassword(c.GetUserID(), password)
+	if err != nil {
+		log.Printf("UserAPI.ResetPost error setting password (%s)", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Write OK response
 	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().PasswordUpdated)
 }

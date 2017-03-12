@@ -241,6 +241,80 @@ func TestMain(t *testing.T) {
 		fakePass = newPass
 	})
 
+	t.Run("Users can request password resets", func(t *testing.T) {
+		client2 := test.NewTestClient(apiPath)
+
+		// First, post recovery request to /api/recovery
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		client2.BindTest(t).TestPostForm("/recovery", http.StatusOK, v)
+
+		// Generate a recovery token
+		d, _ := time.ParseDuration("10m")
+		token, _ := server.tokenControl.BuildToken(userID, api.TokenActionRecovery, d)
+
+		// Get recovery endpoint with token
+		v = url.Values{}
+		v.Set("token", token)
+		client2.BindTest(t).TestGetWithParams("/recovery", http.StatusOK, v)
+
+		// Post new password to user reset endpoint
+		newPass := "Reset Password 78@"
+		v = url.Values{}
+		v.Set("password", newPass)
+		client2.BindTest(t).TestPostForm("/reset", http.StatusOK, v)
+
+		// Update fakePass for further calls
+		fakePass = newPass
+	})
+
+	t.Run("Password reset requests rejected across clients", func(t *testing.T) {
+		client2 := test.NewTestClient(apiPath)
+		client3 := test.NewTestClient(apiPath)
+
+		// First, post recovery request to /api/recovery
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		client2.BindTest(t).TestPostForm("/recovery", http.StatusOK, v)
+
+		// Generate a recovery token
+		d, _ := time.ParseDuration("10m")
+		token, _ := server.tokenControl.BuildToken(userID, api.TokenActionRecovery, d)
+
+		// Get recovery endpoint with token
+		v = url.Values{}
+		v.Set("token", token)
+		client3.BindTest(t).TestGetWithParams("/recovery", http.StatusBadRequest, v)
+	})
+
+	t.Run("Password reset submissions rejected across clients", func(t *testing.T) {
+		client2 := test.NewTestClient(apiPath)
+		client3 := test.NewTestClient(apiPath)
+
+		// First, post recovery request to /api/recovery
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		client2.BindTest(t).TestPostForm("/recovery", http.StatusOK, v)
+
+		// Generate a recovery token
+		d, _ := time.ParseDuration("10m")
+		token, _ := server.tokenControl.BuildToken(userID, api.TokenActionRecovery, d)
+
+		// Get recovery endpoint with token
+		v = url.Values{}
+		v.Set("token", token)
+		client2.BindTest(t).TestGetWithParams("/recovery", http.StatusOK, v)
+
+		// Post new password to user reset endpoint
+		newPass := "Reset Password 78@"
+		v = url.Values{}
+		v.Set("password", newPass)
+		client3.BindTest(t).TestPostForm("/reset", http.StatusBadRequest, v)
+
+		// Update fakePass for further calls
+		fakePass = newPass
+	})
+
 	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
 		//TODO
 	})
@@ -389,6 +463,45 @@ func TestMain(t *testing.T) {
 
 		client2.TestGetApiResponse(t, "/status", api.ApiResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful)
 
+	})
+
+	t.Run("Users can request password resets with 2fa", func(t *testing.T) {
+		client2 := test.NewTestClient(apiPath)
+
+		// First, post recovery request to /api/recovery
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		client2.BindTest(t).TestPostForm("/recovery", http.StatusOK, v)
+
+		// Generate a recovery token
+		d, _ := time.ParseDuration("10m")
+		token, _ := server.tokenControl.BuildToken(userID, api.TokenActionRecovery, d)
+
+		// Get recovery endpoint with token
+		v = url.Values{}
+		v.Set("token", token)
+		client2.BindTest(t).TestGetWithParams("/recovery", http.StatusAccepted, v)
+
+		// Generate 2fa response
+		code, err := _totp.GenerateCode(totpSecret, time.Now())
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		// Post 2fa response
+		v = url.Values{}
+		v.Set("code", code)
+		client2.TestPostForm("/totp/authenticate", http.StatusOK, v)
+
+		// Post new password to user reset endpoint
+		newPass := "Reset Password 78@ cats"
+		v = url.Values{}
+		v.Set("password", newPass)
+		client2.BindTest(t).TestPostForm("/reset", http.StatusOK, v)
+
+		// Update fakePass for further calls
+		fakePass = newPass
 	})
 
 	t.Run("Logged in users can logout", func(t *testing.T) {

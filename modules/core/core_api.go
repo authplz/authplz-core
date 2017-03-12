@@ -42,6 +42,8 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	coreRouter.Get("/logout", (*coreCtx).Logout)
 	coreRouter.Get("/action", (*coreCtx).Action)
 	coreRouter.Post("/action", (*coreCtx).Action)
+	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
+	coreRouter.Post("/recovery", (*coreCtx).RecoverPost)
 }
 
 // Handle an action token (both get and post calls)
@@ -245,6 +247,8 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 
 	// TODO: Generate and send recovery email
 
+	log.Printf("Core.RecoverPost started recovery for user %s", email)
+
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -277,16 +281,16 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 
 	user := u.(UserInterface)
 
-	// TODO: check if 2fa is required
-	// How to I attach this to a recovery session..?
-	// Need to genericise 2fa actions I guess.
+	log.Printf("Core.RecoverGet continuing recovery for user %s", user.GetExtID())
 
+	// Check if 2fa is required
 	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(user.GetExtID())
-
 	if secondFactorRequired {
+		log.Printf("Core.RecoverGet recovery requires 2fa for user %s", user.GetExtID())
 
 		// Bind 2fa request with recovery action
-		c.Bind2FARequest(rw, req, user.GetExtID(), "recovery")
+		// c.UserAction will be called at completion with the recover action
+		c.Bind2FARequest(rw, req, user.GetExtID(), "recover")
 
 		// Write available factors to client
 		rw.WriteHeader(http.StatusAccepted)
@@ -300,6 +304,11 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
+	// Bind recovery request flag to session
+	c.BindRecoveryRequest(user.GetExtID(), rw, req)
 
+	log.Printf("Core.RecoverGet bound recovery session for user %s", user.GetExtID())
+
+	// Return OK
+	rw.WriteHeader(http.StatusOK)
 }
