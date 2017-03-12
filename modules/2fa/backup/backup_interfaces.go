@@ -28,6 +28,8 @@ type Storer interface {
 	AddBackupCode(userid, name, secret string) (interface{}, error)
 	// Fetch backup codes for a given user
 	GetBackupCodes(userid string) ([]interface{}, error)
+	// Fetch a backup code by name for a given user
+	GetBackupCodeByName(userid, name string) (interface{}, error)
 	// Update a provided backup code
 	UpdateBackupCode(code interface{}) (interface{}, error)
 }

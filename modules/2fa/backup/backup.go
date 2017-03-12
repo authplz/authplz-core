@@ -2,23 +2,26 @@ package backup
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 )
 
 import (
-	//"github.com/ryankurte/mnemonic"
+	mnemonics "github.com/NebulousLabs/entropy-mnemonics"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	recoveryKeyLen   = 128 / 8
+	recoveryNameLen  = 3
 	numRecoveryKeys  = 5
 	backupHashRounds = 12
 )
 
 // Controller Backup code controller instance
+// The backup code controller generates and parses mnemonic backup codes for 2fa use
+// These codes can be registered and used in the same manner as any other 2fa component.
 type Controller struct {
 	issuerName  string
 	backupStore Storer
@@ -34,59 +37,81 @@ func NewController(issuerName string, backupStore Storer) *Controller {
 	}
 }
 
+func cryptoBytes(size int) ([]byte, error) {
+	buf := make([]byte, size)
+	n, err := rand.Read(buf)
+	if err != nil {
+		return buf, err
+	}
+	if n != recoveryKeyLen {
+		return buf, fmt.Errorf("BackupController.CreateCodes entropy error")
+	}
+	return buf, nil
+}
+
+// BackupKey structure for API use
+type BackupKey struct {
+	// Mnemonic key name
+	Name string
+	// Mnemonic key code
+	Code string
+	// Key Hash
+	Hash string
+}
+
 // CodeResponse is the backup code response object returned when codes are created
 type CodeResponse struct {
-	Names []string
-	Keys  []string
+	Keys []BackupKey
 }
 
 // CreateCodes creates a set of backup codes for a user
 // TODO: should this erase existing codes?
-func (bc *Controller) CreateCodes(userid string) (*CodeResponse, error) {
-	rawCodes := make([]string, numRecoveryKeys)
+func (bc *Controller) CreateCodes(userid string) ([]BackupKey, error) {
+	keys := make([]BackupKey, numRecoveryKeys)
 
 	// Generate raw codes
-	for i := range rawCodes {
-		buf := make([]byte, recoveryKeyLen)
-		n, err := rand.Read(buf)
-		if err != nil {
-			return nil, err
-		}
-		if n != recoveryKeyLen {
-			return nil, fmt.Errorf("BackupController.CreateCodes entropy error")
-		}
-		rawCodes[i] = base64.URLEncoding.EncodeToString(buf)
-	}
+	for i := range keys {
+		// Generate random key
 
-	// TODO: build friendly mnemonics (code name and data)
-	mnemonicKeys := make([]string, numRecoveryKeys)
-	mnemonicNames := make([]string, numRecoveryKeys)
-
-	// Hash raw codes for storage
-	hashedCodes := make([]string, numRecoveryKeys)
-	for i, code := range rawCodes {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(code), backupHashRounds)
+		code, err := cryptoBytes(recoveryKeyLen)
 		if err != nil {
-			return nil, err
+			return keys, err
 		}
-		hashedCodes[i] = string(hashed)
+
+		name, err := cryptoBytes(recoveryNameLen)
+		if err != nil {
+			return keys, err
+		}
+
+		// Generate mnemonic codes
+		mnemonicCode, err := mnemonics.ToPhrase(code, mnemonics.English)
+		if err != nil {
+			return keys, err
+		}
+
+		mnemonicName, err := mnemonics.ToPhrase(name, mnemonics.English)
+		if err != nil {
+			return keys, err
+		}
+
+		// Generate hashes
+		hash, err := bcrypt.GenerateFromPassword([]byte(code), backupHashRounds)
+		if err != nil {
+			return keys, err
+		}
+
+		keys[i] = BackupKey{mnemonicName.String(), mnemonicCode.String(), string(hash)}
 	}
 
 	// Save to database
-	for i := range hashedCodes {
-		_, err := bc.backupStore.AddBackupCode(userid, mnemonicNames[i], hashedCodes[i])
+	for _, key := range keys {
+		_, err := bc.backupStore.AddBackupCode(userid, key.Name, key.Hash)
 		if err != nil {
-			return nil, err
+			return keys, err
 		}
 	}
 
-	// Create Response for client
-	rc := CodeResponse{
-		Names: mnemonicNames,
-		Keys:  mnemonicKeys,
-	}
-
-	return &rc, nil
+	return keys, nil
 }
 
 // IsSupported checks whether the backup code method is supported
@@ -135,15 +160,50 @@ func (bc *Controller) ValidateName(userid string, name string) (bool, error) {
 	return false, nil
 }
 
-// ValidateCode validates a backup code use
-func (bc *Controller) ValidateCode(userid string, code string) (bool, error) {
-	// Fetch associated codes with for the provided user
+// ValidateCode validates a backup code use and marks the code as used
+func (bc *Controller) ValidateCode(userid string, codeString string) (bool, error) {
+
+	// Split codeString into words
+	phrase := strings.Split(codeString, " ")
+
+	// Fetch key name
+	name := strings.Join(phrase[:recoveryNameLen], " ")
 
 	// Translate mnemonic form to bytes
+	mnemonicKey := strings.Join(phrase[recoveryNameLen:], " ")
+	key, err := mnemonics.FromString(mnemonicKey, mnemonics.English)
 
-	// Check provided code against enabled codes
+	// Fetch associated codes with for the provided user
+	c, err := bc.backupStore.GetBackupCodeByName(userid, name)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+	if c == nil {
+		return false, nil
+	}
+	code := c.(Code)
+
+	// Check code matches
+	if (code.GetName() != name) || code.IsUsed() {
+		return false, nil
+	}
+
+	// Check provided code against stored hash
+	err = bcrypt.CompareHashAndPassword([]byte(code.GetHashedSecret()), key)
+	if err != nil {
+		return false, nil
+	}
 
 	// Mark code as disabled
+	code.SetUsed()
 
-	return false, nil
+	// Update code in database
+	_, err = bc.backupStore.UpdateBackupCode(code)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	return true, nil
 }
