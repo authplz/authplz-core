@@ -4,6 +4,7 @@ import (
 	"testing"
 	//"time"
 	"log"
+	"strings"
 )
 
 import (
@@ -49,6 +50,8 @@ func TestBackupModule(t *testing.T) {
 		log.Printf("Code: %+v", code)
 	})
 
+	var tokens *CreateResponse
+
 	t.Run("Create backup tokens for user", func(t *testing.T) {
 		codes, err := bc.CreateCodes(user.GetExtID())
 		if err != nil {
@@ -58,7 +61,31 @@ func TestBackupModule(t *testing.T) {
 			t.Errorf("Code is nil")
 		}
 
-		log.Printf("Codes: %+v", codes)
+		tokens = codes
+	})
+
+	t.Run("Validate backup tokens for user", func(t *testing.T) {
+		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
+
+		ok, err := bc.ValidateCode(user.GetExtID(), code)
+		if err != nil {
+			t.Error(err)
+		}
+		if !ok {
+			t.Errorf("Backup code validation failed")
+		}
+	})
+
+	t.Run("Backup codes can only be validated once", func(t *testing.T) {
+		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
+
+		ok, err := bc.ValidateCode(user.GetExtID(), code)
+		if err != nil {
+			t.Error(err)
+		}
+		if ok {
+			t.Errorf("Backup code validation succeeded (expected failure)")
+		}
 	})
 
 }
