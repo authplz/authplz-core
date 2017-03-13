@@ -11,7 +11,7 @@ type BackupToken struct {
 	gorm.Model
 	UserID   uint
 	Name     string
-	Key      string
+	Secret   string
 	Used     bool
 	LastUsed time.Time
 }
@@ -21,17 +21,17 @@ type BackupToken struct {
 // GetName fetches the token Name
 func (token *BackupToken) GetName() string { return token.Name }
 
-// GetKeyHandle fetches the token KeyHandle
-func (token *BackupToken) GetHashedKey() string { return token.Key }
+// GetHashedSecret fetches the hashed token secret
+func (token *BackupToken) GetHashedSecret() string { return token.Secret }
 
-// GetPublicKey fetches the token PublicKey
+// IsUsed checks if a token has been used
 func (token *BackupToken) IsUsed() bool { return token.Used }
 
-// GetCertificate fetches the token Certificate
+// SetUsed marks a token as used
 func (token *BackupToken) SetUsed() { token.Used = true }
 
 // AddBackupToken creates a backupt token token instance to a user in the database
-func (dataStore *DataStore) AddBackupToken(userid, name, key string) (interface{}, error) {
+func (dataStore *DataStore) AddBackupToken(userid, name, secret string) (interface{}, error) {
 
 	// Fetch user
 	u, err := dataStore.GetUserByExtID(userid)
@@ -45,7 +45,7 @@ func (dataStore *DataStore) AddBackupToken(userid, name, key string) (interface{
 	token := BackupToken{
 		UserID: user.ID,
 		Name:   name,
-		Key:    key,
+		Secret: secret,
 		Used:   false,
 	}
 
@@ -89,7 +89,7 @@ func (dataStore *DataStore) GetBackupTokenByName(userid, name string) (interface
 	user := u.(*User)
 
 	// Fetch backup token
-	err = dataStore.db.Model(user).Find(&backupToken, &BackupToken{UserID: user.ID, Name: name}).Error
+	err = dataStore.db.Find(&BackupToken{UserID: user.ID, Name: name}).First(&backupToken).Error
 
 	return &backupToken, err
 }

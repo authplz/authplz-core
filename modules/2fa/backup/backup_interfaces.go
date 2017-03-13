@@ -1,7 +1,7 @@
 package backup
 
 import (
-	"time"
+//"time"
 )
 
 // Code backup code instance interface
@@ -15,8 +15,6 @@ type Code interface {
 	IsUsed() bool
 	// Set a token used flag
 	SetUsed()
-	// Fetch the time a token was used
-	GetUsed() time.Time
 }
 
 // Storer Backup Code store interface
