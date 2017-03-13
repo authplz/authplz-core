@@ -38,15 +38,15 @@ func NewController(issuerName string, backupStore Storer) *Controller {
 }
 
 func cryptoBytes(size int) ([]byte, error) {
-	buf := make([]byte, size)
-	n, err := rand.Read(buf)
+	data := make([]byte, size)
+	n, err := rand.Read(data)
 	if err != nil {
-		return buf, err
+		return data, err
 	}
-	if n != recoveryKeyLen {
-		return buf, fmt.Errorf("BackupController.CreateCodes entropy error")
+	if n != size {
+		return data, fmt.Errorf("BackupController.CreateCodes entropy error")
 	}
-	return buf, nil
+	return data, nil
 }
 
 // BackupKey structure for API use
@@ -64,60 +64,76 @@ type CodeResponse struct {
 	Keys []BackupKey
 }
 
+func (bc *Controller) generateCode(len int) (*BackupKey, error) {
+	code, err := cryptoBytes(len)
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := cryptoBytes(recoveryNameLen)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate mnemonic codes
+	mnemonicCode, err := mnemonics.ToPhrase(code, mnemonics.English)
+	if err != nil {
+		return nil, err
+	}
+
+	mnemonicName, err := mnemonics.ToPhrase(name, mnemonics.English)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate hashes
+	hash, err := bcrypt.GenerateFromPassword([]byte(code), backupHashRounds)
+	if err != nil {
+		return nil, err
+	}
+
+	key := BackupKey{mnemonicName.String(), mnemonicCode.String(), string(hash)}
+
+	return &key, nil
+}
+
+type CreateResponse struct {
+	Service string
+	Tokens  []BackupKey
+}
+
 // CreateCodes creates a set of backup codes for a user
 // TODO: should this erase existing codes?
-func (bc *Controller) CreateCodes(userid string) ([]BackupKey, error) {
+func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
 	keys := make([]BackupKey, numRecoveryKeys)
 
-	// Generate raw codes
+	// Generate backup keys
 	for i := range keys {
-		// Generate random key
-
-		code, err := cryptoBytes(recoveryKeyLen)
+		key, err := bc.generateCode(recoveryKeyLen)
 		if err != nil {
-			return keys, err
+			return nil, err
 		}
 
-		name, err := cryptoBytes(recoveryNameLen)
-		if err != nil {
-			return keys, err
-		}
-
-		// Generate mnemonic codes
-		mnemonicCode, err := mnemonics.ToPhrase(code, mnemonics.English)
-		if err != nil {
-			return keys, err
-		}
-
-		mnemonicName, err := mnemonics.ToPhrase(name, mnemonics.English)
-		if err != nil {
-			return keys, err
-		}
-
-		// Generate hashes
-		hash, err := bcrypt.GenerateFromPassword([]byte(code), backupHashRounds)
-		if err != nil {
-			return keys, err
-		}
-
-		keys[i] = BackupKey{mnemonicName.String(), mnemonicCode.String(), string(hash)}
+		keys[i] = *key
 	}
 
 	// Save to database
 	for _, key := range keys {
-		_, err := bc.backupStore.AddBackupCode(userid, key.Name, key.Hash)
+		_, err := bc.backupStore.AddBackupToken(userid, key.Name, key.Hash)
 		if err != nil {
-			return keys, err
+			return nil, err
 		}
 	}
 
-	return keys, nil
+	resp := CreateResponse{bc.issuerName, keys}
+
+	return &resp, nil
 }
 
 // IsSupported checks whether the backup code method is supported
 func (bc *Controller) IsSupported(userid string) bool {
 	// Fetch codes for a user
-	codes, err := bc.backupStore.GetBackupCodes(userid)
+	codes, err := bc.backupStore.GetBackupTokens(userid)
 	if err != nil {
 		log.Printf("BackupController.IsSupported error fetching codes (%s)", err)
 		return false
@@ -142,7 +158,7 @@ func (bc *Controller) IsSupported(userid string) bool {
 // to ensure user still has access to recovery codes
 func (bc *Controller) ValidateName(userid string, name string) (bool, error) {
 	// Fetch associated codes with for the provided user
-	codes, err := bc.backupStore.GetBackupCodes(userid)
+	codes, err := bc.backupStore.GetBackupTokens(userid)
 	if err != nil {
 		log.Println(err)
 		return false, err
@@ -174,7 +190,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	key, err := mnemonics.FromString(mnemonicKey, mnemonics.English)
 
 	// Fetch associated codes with for the provided user
-	c, err := bc.backupStore.GetBackupCodeByName(userid, name)
+	c, err := bc.backupStore.GetBackupTokenByName(userid, name)
 	if err != nil {
 		log.Println(err)
 		return false, err
@@ -199,7 +215,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	code.SetUsed()
 
 	// Update code in database
-	_, err = bc.backupStore.UpdateBackupCode(code)
+	_, err = bc.backupStore.UpdateBackupToken(code)
 	if err != nil {
 		log.Println(err)
 		return false, err

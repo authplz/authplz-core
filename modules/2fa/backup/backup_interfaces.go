@@ -25,11 +25,11 @@ type Storer interface {
 	// Fetch a user instance by user id (should be able to remove this)
 	GetUserByExtID(userid string) (interface{}, error)
 	// Add a backup code to a given user
-	AddBackupCode(userid, name, secret string) (interface{}, error)
+	AddBackupToken(userid, name, secret string) (interface{}, error)
 	// Fetch backup codes for a given user
-	GetBackupCodes(userid string) ([]interface{}, error)
+	GetBackupTokens(userid string) ([]interface{}, error)
 	// Fetch a backup code by name for a given user
-	GetBackupCodeByName(userid, name string) (interface{}, error)
+	GetBackupTokenByName(userid, name string) (interface{}, error)
 	// Update a provided backup code
-	UpdateBackupCode(code interface{}) (interface{}, error)
+	UpdateBackupToken(code interface{}) (interface{}, error)
 }

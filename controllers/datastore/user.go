@@ -27,6 +27,7 @@ type User struct {
 	LastLogin       time.Time
 	FidoTokens      []FidoToken
 	TotpTokens      []TotpToken
+	BackupTokens    []BackupToken
 	AuditEvents     []AuditEvent
 }
 
