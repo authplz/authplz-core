@@ -8,6 +8,7 @@ import (
 type LoginProvider interface {
 	// Login method, returns boolean result, user interface for further use, error in case of failure
 	Login(email string, password string) (bool, interface{}, error)
+	GetUserByEmail(email string) (interface{}, error)
 }
 
 // TokenValidator Interface for token (creation and?) validation

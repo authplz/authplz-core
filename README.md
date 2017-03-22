@@ -47,7 +47,7 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] Account locking (and token + password based unlocking)
 - [X] User logout
 - [X] User password update
-- [ ] User Password reset
+- [X] User Password reset
 - [ ] Email notification
 - [X] Audit / Event logging
 - [ ] 2FA token enrolment

@@ -83,6 +83,26 @@ Seems like this could be more efficient / remove the need for the second login i
 4. browser posts code to /api/totp/authenticate
 5. server responds with 200 success or 403 unauthorized
 
+### Password Reset
+
+1. post email account to /api/recovery
+2. server sends recovery token to user email
+3. token submitted to /api/recovery (could be /api/token, but different process required so easier to split)
+4. if 2fa, require 2fa to validate recovery session. If lost, sms or recovery codes.
+5. user submits new password to /api/reset
+6. server responds 200 success or 400 bad request
+7. server sends alert email to user
+
+This requires that all stages be undertaken from the same session. Backup codes are treated just another 2fa provider.
+
+What if instead of imposing a security level on users, we informed them and let them pick?
+Users could then be given a security score on their account dashboard to gamify improving it.
+For example:
+- You only have password set, password resets and account recovery will currentl require only your email address, register a phone number or 2fa token to improve this
+- Good work registering 2fa! Password resets will now require this 2fa token. For account recovery purposes you must now either register a phone number or create recovery codes
+
+Other ideas:
+- Testing recoveries (non distruptive) to keep people in practice. If using named keys, test by requesting names.
 
 
 ## Questions

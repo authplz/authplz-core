@@ -112,6 +112,11 @@ func (coreModule *Controller) BindModule(name string, mod interface{}) {
 	}
 }
 
+// SecondFactorCompleted handles completion of a 2fa provider
+func (coreModule *Controller) SecondFactorCompleted(userid, action string) {
+	log.Printf("CoreModule.SecondFactorCompleted for user %s action %s", userid, action)
+}
+
 // CheckSecondFactors Determine whether a second factor is required for a user
 // This returns a bool indicating whether 2fa is required, and a map of the available 2fa mechanisms
 func (coreModule *Controller) CheckSecondFactors(userid string) (bool, map[string]bool) {
@@ -155,6 +160,32 @@ func (coreModule *Controller) HandleToken(userid string, user interface{}, token
 
 	log.Printf("CoreModule.HandleToken: token action %v executed for user %s\n", *action, userid)
 	return true, nil
+}
+
+// HandleRecoveryToken handles a password reset or account recovery token
+func (coreModule *Controller) HandleRecoveryToken(email string, tokenString string) (bool, interface{}, error) {
+
+	// Load user
+	u, err := coreModule.userControl.GetUserByEmail(email)
+	if err != nil {
+		log.Printf("CoreModule.HandleRecoveryToken: fetching user failed %s\n", err)
+		return false, nil, nil
+	}
+	user := u.(UserInterface)
+
+	// Validate token
+	action, err := coreModule.tokenControl.ValidateToken(user.GetExtID(), tokenString)
+	if err != nil {
+		log.Printf("CoreModule.HandleRecoveryToken: token validation failed %s\n", err)
+		return false, nil, nil
+	}
+
+	// Check for correct action
+	if *action != api.TokenActionRecovery {
+		return false, nil, nil
+	}
+
+	return true, u, nil
 }
 
 // PreLogin Runs bound login handlers to accept user logins

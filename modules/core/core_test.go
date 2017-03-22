@@ -21,12 +21,17 @@ type MockHandler struct {
 	SecondFactorRequired bool
 	TokenAction          api.TokenAction
 	LoginAllowed         bool
+	u                    interface{}
 }
 
 // user controller interface
 func (mh *MockHandler) Login(email string, password string) (bool, interface{}, error) {
 	var u interface{}
 	return mh.LoginCallResp, u, nil
+}
+
+func (mh *MockHandler) GetUserByEmail(email string) (interface{}, error) {
+	return mh.u, nil
 }
 
 // 2fa handler interface
@@ -48,7 +53,7 @@ func TestCoreModule(t *testing.T) {
 
 	tokenControl := token.NewTokenController("localhost", "ABCD")
 
-	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false}
+	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false, nil}
 	coreControl := NewController(tokenControl, &mockHandler)
 
 	t.Run("Bind and call token action handlers", func(t *testing.T) {
