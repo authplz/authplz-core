@@ -6,9 +6,14 @@ import "github.com/jinzhu/gorm"
 
 import _ "github.com/jinzhu/gorm/dialects/postgres" // Postgres engine required for GORM connection
 
+import (
+	"github.com/ryankurte/authplz/controllers/datastore/oauth2"
+)
+
 // DataStore instance storage
 type DataStore struct {
 	db *gorm.DB
+	*oauth2.OauthStore
 }
 
 // QueryFilter filter types
@@ -27,7 +32,15 @@ func NewDataStore(dbString string) (*DataStore, error) {
 
 	//db = db.LogMode(true)
 
-	return &DataStore{db}, nil
+	ds := &DataStore{db: db}
+
+	ds.OauthStore = oauth2.NewOauthStore(db, ds)
+
+	return ds, nil
+}
+
+type Module interface {
+	Sync(dataStore *DataStore)
 }
 
 // Close an open datastore instance
@@ -43,8 +56,6 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.Exec("DROP TABLE IF EXISTS fido_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS totp_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
-	db = db.Exec("DROP TABLE IF EXISTS oauth_clients CASCADE;")
-	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS users CASCADE;")
 
 	db = db.AutoMigrate(&User{})
@@ -52,8 +63,7 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.AutoMigrate(&TotpToken{})
 	db = db.AutoMigrate(&AuditEvent{})
 
-	db = db.AutoMigrate(&OauthClient{})
-	db = db.AutoMigrate(&OauthAuthorize{})
+	db = oauth2.Sync(db)
 
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")

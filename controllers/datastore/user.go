@@ -32,6 +32,9 @@ type User struct {
 
 // Getters and Setters
 
+// GetIntID fetches a users internal ID
+func (u *User) GetIntID() uint { return u.ID }
+
 // GetExtID fetches a users ExtID
 func (u *User) GetExtID() string { return u.ExtID }
 

@@ -1,4 +1,4 @@
-package datastore
+package oauth2
 
 import (
 	"time"
@@ -10,7 +10,8 @@ import (
 
 // OauthAuthorize Authorization data
 type OauthAuthorize struct {
-	ID       uint
+	gorm.Model
+
 	ClientID uint
 
 	ExtClientID string
@@ -34,7 +35,7 @@ type OauthAuthorize struct {
 	CreatedAt time.Time
 
 	// Data to be passed to storage. Not used by the library.
-	UserData interface{}
+	UserData string
 
 	// Optional code_challenge as described in rfc7636
 	CodeChallenge string
@@ -52,8 +53,8 @@ func (ad *OauthAuthorize) GetState() string        { return ad.State }
 func (ad *OauthAuthorize) GetCreatedAt() time.Time { return ad.CreatedAt }
 
 // AddAuthorization creates an authorization in the database
-func (dataStore *DataStore) AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error) {
-	c, err := dataStore.GetClientByID(clientID)
+func (oauthStore *OauthStore) AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error) {
+	c, err := oauthStore.GetClientByID(clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +71,8 @@ func (dataStore *DataStore) AddAuthorization(clientID, code string, expires int3
 		RedirectUri: redirect,
 	}
 
-	dataStore.db = dataStore.db.Create(authorize)
-	err = dataStore.db.Error
+	oauthStore.db = oauthStore.db.Create(authorize)
+	err = oauthStore.db.Error
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +80,9 @@ func (dataStore *DataStore) AddAuthorization(clientID, code string, expires int3
 }
 
 // GetAuthorizationByCode Fetch an authorization by authorization code
-func (dataStore *DataStore) GetAuthorizationByCode(code string) (interface{}, error) {
+func (oauthStore *OauthStore) GetAuthorizationByCode(code string) (interface{}, error) {
 	var authorize OauthAuthorize
-	err := dataStore.db.Where(&OauthAuthorize{Code: code}).First(&authorize).Error
+	err := oauthStore.db.Where(&OauthAuthorize{Code: code}).First(&authorize).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
@@ -92,12 +93,12 @@ func (dataStore *DataStore) GetAuthorizationByCode(code string) (interface{}, er
 }
 
 // RemoveClientByID removes a client application by id
-func (dataStore *DataStore) RemoveAuthorizationByCode(code string) error {
+func (oauthStore *OauthStore) RemoveAuthorizationByCode(code string) error {
 	authorization := OauthAuthorize{
 		Code: code,
 	}
 
-	dataStore.db = dataStore.db.Delete(&authorization)
+	oauthStore.db = oauthStore.db.Delete(&authorization)
 
-	return dataStore.db.Error
+	return oauthStore.db.Error
 }
