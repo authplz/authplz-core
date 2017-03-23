@@ -10,6 +10,7 @@ install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/lint/golint
 	go get -u github.com/jteeuwen/go-bindata/...
+	go get -u golang.org/x/oauth2
 	go get ./...
 
 # Build backend and frontend components
