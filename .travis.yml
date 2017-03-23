@@ -1,7 +1,6 @@
 language: go
 
-go:
-- 1.8.1
+go: 1.8
 
 services:
   - postgresql: 9.4

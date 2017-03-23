@@ -105,6 +105,27 @@ Other ideas:
 - Testing recoveries (non distruptive) to keep people in practice. If using named keys, test by requesting names.
 
 
+### OAuth Clients
+A variety of clients can be enrolled based on user account priviledges
+
+#### Authorisation Code (Explicit) Grant
+For trusted services, created by administrators, available to all users.
+
+#### Authorisation Code (Implicit) Grant
+For services that do not have secret storage, created by and available to individual users.
+
+#### Client Credentials Grant
+For end devices, created by and available to individual users.
+
+
+#### Introspection
+Explicit grants can be provided with the "introspection" scope, allowing introspection of other tokens using these credentials.
+This allows trusted services to evaluate the validity of credentials for broker-like behaviour.
+
+
+#### Refresh Token Grant
+Allows tokens to be refreshed / reissued. Available with both Authorization Code grant types.
+
 ## Questions
 
 - How do we manage password resets with/without 2fa?
