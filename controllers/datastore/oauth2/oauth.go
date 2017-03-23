@@ -7,7 +7,7 @@ import (
 // User defines the user interface required by the Oauth2 storage module
 type User interface {
 	GetIntID() uint
-	GetExtId() string
+	GetExtID() string
 }
 
 // BaseStore is the interface required by the oauth module for underlying storage
@@ -33,7 +33,7 @@ func Sync(dataStore *gorm.DB) *gorm.DB {
 
 	db = db.Exec("DROP TABLE IF EXISTS oauth_clients CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS oauth_authorize CASCADE;")
-	db = db.Exec("DROP TABLE IF EXISTS oauth_session CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS oauth_sessions CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS oauth_access CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS oauth_refresh CASCADE;")
 

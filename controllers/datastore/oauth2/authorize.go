@@ -10,7 +10,7 @@ import (
 
 // OauthAuthorize Authorization data
 type OauthAuthorize struct {
-	gorm.Model
+	ID uint
 
 	ClientID uint
 

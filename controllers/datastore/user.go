@@ -1,18 +1,23 @@
 package datastore
 
-import "time"
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/asaskevich/govalidator"
+	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
 
-import "github.com/satori/go.uuid"
-import "github.com/asaskevich/govalidator"
+	"github.com/ryankurte/authplz/controllers/datastore/oauth2"
+)
 
 // User represents the user for this application
 type User struct {
 	ID              uint      `gorm:"primary_key" description:"External user ID"`
-	CreatedAt       time.Time `description:"User creation time"`
-	UpdatedAt       time.Time
+	CreatedAt       time.Time `description:"Creation time"`
+	UpdatedAt       time.Time `description:"Last update time"`
 	DeletedAt       *time.Time
 	ExtID           string `gorm:"not null;unique"`
 	Email           string `gorm:"not null;unique"`
@@ -28,6 +33,7 @@ type User struct {
 	FidoTokens      []FidoToken
 	TotpTokens      []TotpToken
 	AuditEvents     []AuditEvent
+	OauthClients    []oauth.OauthClient
 }
 
 // Getters and Setters

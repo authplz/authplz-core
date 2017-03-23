@@ -175,7 +175,7 @@ func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	token, err := c.oc.GetAccessToken(tokenString)
 	if err != nil {
-		log.Printf("OAuthAPI InfoGet GetAccesToken error: %s", err)
+		log.Printf("OAuthAPI InfoGet GetAccessToken error: %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -210,13 +210,13 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch client from request
-	client := ar.(fosite.Requester).GetClient().(Client)
+	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
 
 	// Update fields
 	client.SetLastUsed(time.Now())
 
-	// Write back to storage
-	c.oc.UpdateClient(client)
+	// TODO: Write back to storage
+	//c.oc.UpdateClient(client.Client)
 
 	// Grant requested scopes
 	// TODO: limit by client..?

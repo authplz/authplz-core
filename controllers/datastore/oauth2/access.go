@@ -1,16 +1,14 @@
 package oauth
 
 import (
+	"github.com/jinzhu/gorm"
+	"log"
 	"time"
-)
-
-import (
-//"github.com/jinzhu/gorm"
 )
 
 // Oauth client application
 type OauthAccess struct {
-	ID        uint `gorm:"primary_key" description:"Internal Database ID"`
+	gorm.Model
 	ClientID  uint
 	Signature string
 	OauthRequest
@@ -23,7 +21,7 @@ func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID strin
 	if err != nil {
 		return nil, err
 	}
-	c := client.(OauthClient)
+	c := client.(*OauthClient)
 
 	or := OauthRequest{
 		RequestID:     requestID,
@@ -38,7 +36,7 @@ func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID strin
 		OauthRequest: or,
 	}
 
-	os.db = os.db.Create(oa)
+	os.db = os.db.Create(&oa)
 	err = os.db.Error
 	if err != nil {
 		return nil, err
@@ -47,12 +45,14 @@ func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID strin
 }
 
 // Fetch a client from an access token
-func (os *OauthStore) GetAccessByToken(signature string) (interface{}, error) {
+func (os *OauthStore) GetAccessBySignature(signature string) (interface{}, error) {
 	var oa OauthAccess
 	err := os.db.Where(&OauthAccess{Signature: signature}).First(&oa).Error
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("GetAccessBySignature")
 
 	return &oa, err
 }
@@ -71,7 +71,12 @@ func (os *OauthStore) GetClientByAccessToken(signature string) (interface{}, err
 		return nil, err
 	}
 
-	return &oc, nil
+	log.Printf("GetClientByAccessToken")
 
-	return &oa, err
+	return &oc, nil
+}
+
+func (os *OauthStore) RemoveAccessToken(signature string) error {
+	err := os.db.Delete(&OauthAccess{Signature: signature}).Error
+	return err
 }

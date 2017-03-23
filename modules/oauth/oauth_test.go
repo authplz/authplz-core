@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
-	oauthdb "github.com/ryankurte/authplz/controllers/datastore/oauth2"
 	"github.com/ryankurte/authplz/controllers/token"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
@@ -73,10 +72,9 @@ func TestMain(t *testing.T) {
 
 	address := "localhost:9000"
 
-	uuid := "fakeUuid"
 	redirect := "localhost:9000/auth"
 
-	var oauthClient *oauthdb.OauthClient
+	var oauthClient *ClientResp
 
 	handler := context.ClearHandler(router)
 	go func() {
@@ -126,15 +124,18 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
-		c, err := oauthModule.CreateClient(uuid, "scopeA", redirect, "client_credentials", "token", true)
+		c, err := oauthModule.CreateClient(userID, "scopeA", redirect, "client_credentials", "token", true)
 		if err != nil {
 			t.Error(err)
+			t.FailNow()
 		}
-		oauthClient = c.(*oauthdb.OauthClient)
+		oauthClient = c
+
+		log.Printf("OauthClient: %+v", oauthClient)
 	})
 
 	t.Run("OAuth list clients", func(t *testing.T) {
-		c, err := oauthModule.GetClients(uuid)
+		c, err := oauthModule.GetClients(userID)
 		if err != nil {
 			t.Error(err)
 		}

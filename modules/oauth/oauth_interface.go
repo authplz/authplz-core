@@ -14,14 +14,15 @@ type Client interface {
 	SetSecret(string)
 
 	// Base client uri
-	GetRedirectURIs() string
+	GetRedirectURIs() []string
 
 	// Data to be passed to storage. Not used by the library.
 	GetUserData() interface{}
 
-	GetScopes() string
-	GetGrants() string
-	GetResponseTypes() string
+	GetScopes() []string
+	GetGrantTypes() []string
+	GetResponseTypes() []string
+
 	IsPublic() bool
 
 	GetCreatedAt() time.Time
@@ -83,6 +84,7 @@ type Storer interface {
 	//AddAccess(clientID, authorizationID string)
 	AddAccessTokenSession(clientID, signature, requestID string, requestedAt time.Time,
 		scopes, grantedScopes, form string) (interface{}, error)
-	GetAccessByToken(token string) (interface{}, error)
+	GetAccessBySignature(sgnature string) (interface{}, error)
 	GetClientByAccessToken(token string) (interface{}, error)
+	RemoveAccessToken(token string) error
 }

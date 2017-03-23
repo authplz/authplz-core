@@ -26,7 +26,7 @@ type Config struct {
 // Controller OAuth module controller
 type Controller struct {
 	OAuth2 fosite.OAuth2Provider
-	store  *OauthAdaptor
+	store  Storer
 }
 
 func init() {
@@ -72,7 +72,7 @@ func NewController(store Storer) (*Controller, error) {
 		//compose.OpenIDConnectHybridFactory,
 	)
 
-	return &Controller{oauth2, wrappedStore}, nil
+	return &Controller{oauth2, store}, nil
 }
 
 func generateSecret(len int) (string, error) {
@@ -108,7 +108,7 @@ func (oc *Controller) CreateImplicit(clientId string, userId string, scope strin
 
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
 // This is used to authenticate simple devices and must be pre-created
-func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes string, public bool) (Client, error) {
+func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes string, public bool) (*ClientResp, error) {
 
 	// Generate Client ID and Secret
 	clientID := uuid.NewV4().String()
@@ -134,22 +134,28 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 
 	client := c.(Client)
 
-	// Set secret (this response only)
-	client.SetSecret(clientSecret)
+	resp := ClientResp{
+		ClientID:     client.GetID(),
+		CreatedAt:    client.GetCreatedAt(),
+		LastUsed:     client.GetLastUsed(),
+		Scopes:       client.GetScopes(),
+		RedirectURIs: client.GetRedirectURIs(),
+		UserData:     client.GetUserData(),
+		Secret:       clientSecret,
+	}
 
-	// Full client instance is only returned once (at creation)
-	// Following this, secret will not be returned
-	return client, nil
+	return &resp, nil
 }
 
 // ClientResp is the object returned by client requests
 type ClientResp struct {
-	ClientID    string
-	CreatedAt   time.Time
-	LastUsed    time.Time
-	Scope       string
-	RedirectURI string
-	UserData    interface{}
+	ClientID     string
+	CreatedAt    time.Time
+	LastUsed     time.Time
+	Scopes       []string
+	RedirectURIs []string
+	UserData     interface{}
+	Secret       string
 }
 
 func (oc *Controller) NewSession(username, subject string) (*Session, error) {
@@ -169,12 +175,12 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 		client := c.(Client)
 
 		clean := ClientResp{
-			ClientID:    client.GetID(),
-			CreatedAt:   client.GetCreatedAt(),
-			LastUsed:    client.GetLastUsed(),
-			Scope:       client.GetScopes(),
-			RedirectURI: client.GetRedirectURIs(),
-			UserData:    client.GetUserData(),
+			ClientID:     client.GetID(),
+			CreatedAt:    client.GetCreatedAt(),
+			LastUsed:     client.GetLastUsed(),
+			Scopes:       client.GetScopes(),
+			RedirectURIs: client.GetRedirectURIs(),
+			UserData:     client.GetUserData(),
 		}
 
 		clientResps = append(clientResps, clean)
@@ -193,9 +199,12 @@ func (oc *Controller) RemoveClient(clientId string) error {
 }
 
 func (oc *Controller) GetAccessToken(tokenString string) (Access, error) {
-	a, err := oc.store.GetAccessByToken(tokenString)
+	a, err := oc.store.GetAccessBySignature(tokenString)
 	if err != nil {
 		return nil, err
+	}
+	if a == nil {
+		return nil, nil
 	}
 
 	access := a.(Access)
