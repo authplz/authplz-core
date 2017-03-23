@@ -1,3 +1,11 @@
+/*
+ * OAuth Module Tests
+ * Tests the functionality of the OAuth module
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package oauth
 
 import (

@@ -11,6 +11,7 @@ import (
 // OauthRefreshToken Refresh token storage
 type OauthRefreshToken struct {
 	gorm.Model
+	UserID    uint
 	ClientID  uint
 	Signature string
 	OauthRequest
@@ -48,6 +49,7 @@ func (os *OauthStore) AddRefreshTokenSession(userID, clientID, signature, reques
 
 	oa := OauthRefreshToken{
 		ClientID:     c.ID,
+		UserID:       user.GetIntID(),
 		Signature:    signature,
 		OauthRequest: request,
 		OauthSession: session,

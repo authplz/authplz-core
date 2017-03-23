@@ -1,6 +1,10 @@
-// Test storage interface for OSIN Oauth2
-// From Osin package, but not exposed so copied here.
-
+/*
+ * OAuth Module Session Definitions
+ * This session object is used internally to transfer user and expiry information to the storage providers
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
 package oauth
 
 import (

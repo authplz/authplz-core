@@ -9,6 +9,7 @@ import (
 type OauthAuthorizeCode struct {
 	gorm.Model
 	ClientID        uint
+	UserID          uint
 	Code            string // Authorization code
 	Challenge       string // Optional code_challenge as described in rfc7636
 	ChallengeMethod string // Optional code_challenge_method as described in rfc7636
@@ -47,6 +48,7 @@ func (oauthStore *OauthStore) AddAuthorizeCodeSession(userID, clientID, code, re
 
 	authorize := OauthAuthorizeCode{
 		ClientID:     client.ID,
+		UserID:       user.GetIntID(),
 		Code:         code,
 		OauthRequest: or,
 		OauthSession: session,

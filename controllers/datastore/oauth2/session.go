@@ -7,7 +7,6 @@ import (
 // OauthSession session storage base type
 // Used by grants for session storage
 type OauthSession struct {
-	UserID          uint
 	UserExtID       string
 	Username        string
 	Subject         string

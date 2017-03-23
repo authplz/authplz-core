@@ -9,6 +9,7 @@ import (
 // OauthAccessToken Oauth Access token session
 type OauthAccessToken struct {
 	gorm.Model
+	UserID    uint
 	ClientID  uint
 	Signature string
 	OauthRequest
@@ -44,6 +45,7 @@ func (os *OauthStore) AddAccessTokenSession(userID, clientID, signature, request
 
 	oa := OauthAccessToken{
 		ClientID:     client.ID,
+		UserID:       user.GetIntID(),
 		Signature:    signature,
 		OauthRequest: request,
 		OauthSession: session,
