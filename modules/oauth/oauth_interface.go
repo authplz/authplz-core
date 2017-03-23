@@ -40,19 +40,16 @@ type Authorizaton interface {
 	GetCreatedAt() time.Time
 }
 
-type Access interface {
-	//GetClient() interface{}
-	//GetClientID() string
-	//GetAuthorizeData() interface{}
-	//GetAccessData() interface{}
-	//GetAccessToken() string
-	//GetRefreshToken() string
-	//GetExpiresIn() int32
-	//GetScope() string
-	//GetRedirectURI() string
+type Refresh interface {
+	GetSignature() string
 	GetRequestedAt() time.Time
 	GetExpiresAt() time.Time
-	//GetUserData() interface{}
+}
+
+type Access interface {
+	GetSignature() string
+	GetRequestedAt() time.Time
+	GetExpiresAt() time.Time
 }
 
 type Session interface {
@@ -78,19 +75,23 @@ type Storer interface {
 	UpdateClient(client interface{}) (interface{}, error)
 	RemoveClientByID(clientID string) error
 
-	AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error)
-	GetAuthorizationByCode(code string) (interface{}, error)
-	RemoveAuthorizationByCode(code string) error
+	// Authorization code storage
+	AddAuthorizeCodeSession(clientID, code, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error)
+	GetAuthorizeCodeSession(code string) (interface{}, error)
+	GetAuthorizeCodeSessionByRequestID(requestID string) (interface{}, error)
+	RemoveAuthorizeCodeSession(code string) error
 
-	// Access Token functions
+	// Access Token storage
 	AddAccessTokenSession(clientID, signature, requestID string, requestedAt time.Time,
-		scopes, grantedScopes, form string) (interface{}, error)
-	GetAccessBySignature(sgnature string) (interface{}, error)
-	GetClientByAccessToken(token string) (interface{}, error)
-	RemoveAccessToken(token string) error
+		scopes, grantedScopes []string) (interface{}, error)
+	GetAccessTokenSession(sgnature string) (interface{}, error)
+	GetClientByAccessTokenSession(token string) (interface{}, error)
+	GetAccessTokenSessionByRequestID(requestID string) (interface{}, error)
+	RemoveAccessTokenSession(token string) error
 
-	// Refresh token functions
+	// Refresh token storage
 	AddRefreshTokenSession(clientID, signature, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error)
 	GetRefreshTokenBySignature(signature string) (interface{}, error)
+	GetRefreshTokenSessionByRequestID(requestID string) (interface{}, error)
 	RemoveRefreshToken(signature string) error
 }

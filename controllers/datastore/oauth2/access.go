@@ -14,8 +14,10 @@ type OauthAccess struct {
 	OauthRequest
 }
 
+func (oa *OauthAccess) GetSignature() string { return oa.Signature }
+
 func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID string,
-	requestedAt time.Time, scopes, grantedScopes, form string) (interface{}, error) {
+	requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
 
 	client, err := os.GetClientByID(clientID)
 	if err != nil {
@@ -24,12 +26,13 @@ func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID strin
 	c := client.(*OauthClient)
 
 	or := OauthRequest{
-		RequestID:     requestID,
-		RequestedAt:   requestedAt,
-		Scopes:        scopes,
-		GrantedScopes: grantedScopes,
-		Form:          form,
+		RequestID:   requestID,
+		RequestedAt: requestedAt,
 	}
+
+	or.SetScopes(scopes)
+	or.SetGrantedScopes(grantedScopes)
+
 	oa := OauthAccess{
 		ClientID:     c.ID,
 		Signature:    signature,
@@ -45,7 +48,7 @@ func (os *OauthStore) AddAccessTokenSession(clientID, signature, requestID strin
 }
 
 // Fetch a client from an access token
-func (os *OauthStore) GetAccessBySignature(signature string) (interface{}, error) {
+func (os *OauthStore) GetAccessTokenSession(signature string) (interface{}, error) {
 	var oa OauthAccess
 	err := os.db.Where(&OauthAccess{Signature: signature}).First(&oa).Error
 	if err != nil {
@@ -55,8 +58,18 @@ func (os *OauthStore) GetAccessBySignature(signature string) (interface{}, error
 	return &oa, err
 }
 
+func (os *OauthStore) GetAccessTokenSessionByRequestID(requestID string) (interface{}, error) {
+	var oa OauthAccess
+	err := os.db.Where(&OauthAccess{OauthRequest: OauthRequest{RequestID: requestID}}).First(&oa).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &oa, err
+}
+
 // Fetch a client from an access token
-func (os *OauthStore) GetClientByAccessToken(signature string) (interface{}, error) {
+func (os *OauthStore) GetClientByAccessTokenSession(signature string) (interface{}, error) {
 	var oa OauthAccess
 	err := os.db.Where(&OauthAccess{Signature: signature}).First(&oa).Error
 	if err != nil {
@@ -74,7 +87,7 @@ func (os *OauthStore) GetClientByAccessToken(signature string) (interface{}, err
 	return &oc, nil
 }
 
-func (os *OauthStore) RemoveAccessToken(signature string) error {
+func (os *OauthStore) RemoveAccessTokenSession(signature string) error {
 	err := os.db.Delete(&OauthAccess{Signature: signature}).Error
 	return err
 }

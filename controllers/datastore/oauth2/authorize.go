@@ -1,74 +1,43 @@
 package oauth
 
 import (
-	"time"
-)
-
-import (
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 // OauthAuthorize Authorization data
 type OauthAuthorize struct {
-	ID uint
-
-	ClientID uint
-
-	ExtClientID string
-
-	// Authorization code
-	Code string
-
-	// Token expiration in seconds
-	ExpiresIn int32
-
-	// Requested scope
-	Scope string
-
-	// Redirect Uri from request
-	RedirectUri string
-
-	// State data from request
-	State string
-
-	// Date created
-	CreatedAt time.Time
-
-	// Data to be passed to storage. Not used by the library.
-	UserData string
-
-	// Optional code_challenge as described in rfc7636
-	CodeChallenge string
-
-	// Optional code_challenge_method as described in rfc7636
-	CodeChallengeMethod string
+	gorm.Model
+	ClientID        uint
+	Code            string // Authorization code
+	Challenge       string // Optional code_challenge as described in rfc7636
+	ChallengeMethod string // Optional code_challenge_method as described in rfc7636
+	OauthRequest
 }
 
-func (ad *OauthAuthorize) GetClientID() string     { return ad.ExtClientID }
 func (ad *OauthAuthorize) GetCode() string         { return ad.Code }
-func (ad *OauthAuthorize) GetExpiresIn() int32     { return ad.ExpiresIn }
-func (ad *OauthAuthorize) GetScope() string        { return ad.Scope }
-func (ad *OauthAuthorize) GetRedirectUri() string  { return ad.RedirectUri }
-func (ad *OauthAuthorize) GetState() string        { return ad.State }
 func (ad *OauthAuthorize) GetCreatedAt() time.Time { return ad.CreatedAt }
 
-// AddAuthorization creates an authorization in the database
-func (oauthStore *OauthStore) AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error) {
+// AddAuthorizeCodeSession creates an authorization code session in the database
+func (oauthStore *OauthStore) AddAuthorizeCodeSession(clientID, code, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
 	c, err := oauthStore.GetClientByID(clientID)
 	if err != nil {
 		return nil, err
 	}
 	client := c.(*OauthClient)
 
+	or := OauthRequest{
+		RequestID:   requestID,
+		RequestedAt: requestedAt,
+	}
+
+	or.SetScopes(scopes)
+	or.SetGrantedScopes(grantedScopes)
+
 	authorize := OauthAuthorize{
-		ClientID:    client.ID,
-		ExtClientID: clientID,
-		Code:        code,
-		ExpiresIn:   expires,
-		Scope:       scope,
-		State:       state,
-		CreatedAt:   time.Now(),
-		RedirectUri: redirect,
+		ClientID:     client.ID,
+		Code:         code,
+		OauthRequest: or,
 	}
 
 	oauthStore.db = oauthStore.db.Create(authorize)
@@ -79,8 +48,8 @@ func (oauthStore *OauthStore) AddAuthorization(clientID, code string, expires in
 	return &client, nil
 }
 
-// GetAuthorizationByCode Fetch an authorization by authorization code
-func (oauthStore *OauthStore) GetAuthorizationByCode(code string) (interface{}, error) {
+// GetAuthorizeCodeSession fetches an authorization code session
+func (oauthStore *OauthStore) GetAuthorizeCodeSession(code string) (interface{}, error) {
 	var authorize OauthAuthorize
 	err := oauthStore.db.Where(&OauthAuthorize{Code: code}).First(&authorize).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
@@ -92,8 +61,19 @@ func (oauthStore *OauthStore) GetAuthorizationByCode(code string) (interface{}, 
 	return &authorize, nil
 }
 
-// RemoveClientByID removes a client application by id
-func (oauthStore *OauthStore) RemoveAuthorizationByCode(code string) error {
+// GetAuthorizeCodeSessionByRequestID fetches an authorization code session by the originator request ID
+func (oauthStore *OauthStore) GetAuthorizeCodeSessionByRequestID(requestID string) (interface{}, error) {
+	var oa OauthAuthorize
+	err := oauthStore.db.Where(&OauthAuthorize{OauthRequest: OauthRequest{RequestID: requestID}}).First(&oa).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &oa, err
+}
+
+// RemoveAuthorizeCodeSession removes an authorization code session using the provided code
+func (oauthStore *OauthStore) RemoveAuthorizeCodeSession(code string) error {
 	authorization := OauthAuthorize{
 		Code: code,
 	}

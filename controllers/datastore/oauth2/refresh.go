@@ -22,6 +22,8 @@ type OauthRefresh struct {
 	OauthRequest
 }
 
+func (or *OauthRefresh) GetSignature() string { return or.Signature }
+
 //AccessExpiry, RefreshExpiry, AuthorizeExpiry, IDExpiry time.Time
 func (os *OauthStore) AddRefreshTokenSession(clientID, signature, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
 
@@ -35,6 +37,9 @@ func (os *OauthStore) AddRefreshTokenSession(clientID, signature, requestID stri
 		RequestID:   requestID,
 		RequestedAt: time.Now(),
 	}
+	or.SetScopes(scopes)
+	or.SetGrantedScopes(grantedScopes)
+
 	oa := OauthRefresh{
 		ClientID:  c.ID,
 		Signature: signature,
@@ -55,30 +60,40 @@ func (os *OauthStore) AddRefreshTokenSession(clientID, signature, requestID stri
 
 // Fetch a client from an access token
 func (os *OauthStore) GetRefreshTokenBySignature(signature string) (interface{}, error) {
-	var oa OauthAccess
-	err := os.db.Where(&OauthRefresh{Signature: signature}).First(&oa).Error
+	var refresh OauthRefresh
+	err := os.db.Where(&OauthRefresh{Signature: signature}).First(&refresh).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &oa, err
+	return &refresh, err
+}
+
+func (oauthStore *OauthStore) GetRefreshTokenSessionByRequestID(requestID string) (interface{}, error) {
+	var refresh OauthRefresh
+	err := oauthStore.db.Where(&OauthRefresh{OauthRequest: OauthRequest{RequestID: requestID}}).First(&refresh).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &refresh, err
 }
 
 // Fetch a client from an access token
 func (os *OauthStore) GetClientByRefreshToken(signature string) (interface{}, error) {
-	var oa OauthAccess
-	err := os.db.Where(&OauthRefresh{Signature: signature}).First(&oa).Error
+	var refresh OauthRefresh
+	err := os.db.Where(&OauthRefresh{Signature: signature}).First(&refresh).Error
 	if err != nil {
 		return nil, err
 	}
 
-	var oc OauthClient
-	err = os.db.Where(&OauthClient{ID: oa.ClientID}).First(&oc).Error
+	var client OauthClient
+	err = os.db.Where(&OauthClient{ID: refresh.ClientID}).First(&client).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &oc, nil
+	return &client, nil
 }
 
 func (os *OauthStore) RemoveRefreshToken(signature string) error {

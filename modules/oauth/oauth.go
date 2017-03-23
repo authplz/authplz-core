@@ -58,14 +58,13 @@ func NewController(store Storer) (*Controller, error) {
 		wrappedStore,
 		strat,
 
-		//compose.OAuth2AuthorizeExplicitFactory,
-		//compose.OAuth2AuthorizeImplicitFactory,
+		compose.OAuth2AuthorizeExplicitFactory,
+		compose.OAuth2AuthorizeImplicitFactory,
 		compose.OAuth2ClientCredentialsGrantFactory,
 		compose.OAuth2RefreshTokenGrantFactory,
-		//compose.OAuth2ResourceOwnerPasswordCredentialsFactory,
 
-		//compose.OAuth2TokenRevocationFactory,
-		//compose.OAuth2TokenIntrospectionFactory,
+		compose.OAuth2TokenRevocationFactory,
+		compose.OAuth2TokenIntrospectionFactory,
 
 		//compose.OpenIDConnectExplicitFactory,
 		//compose.OpenIDConnectImplicitFactory,
@@ -204,7 +203,7 @@ type AccessResponse struct {
 }
 
 func (oc *Controller) GetAccessToken(tokenString string) (*AccessResponse, error) {
-	a, err := oc.store.GetAccessBySignature(tokenString)
+	a, err := oc.store.GetAccessTokenSession(tokenString)
 	if err != nil {
 		return nil, err
 	}
