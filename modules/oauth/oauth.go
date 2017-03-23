@@ -51,7 +51,7 @@ func init() {
 }
 
 // NewController Creates a new OAuth2 controller instance
-func NewController(store Storer) (*Controller, error) {
+func NewController(store Storer, config Config) (*Controller, error) {
 
 	// Create configuration
 	var oauthConfig = &compose.Config{
@@ -86,12 +86,12 @@ func NewController(store Storer) (*Controller, error) {
 		//compose.OpenIDConnectHybridFactory,
 	)
 
-	scopeMatcher, err := regexp.Compile(`^((\/[a-z0-9]+))+$`)
+	scopeMatcher, err := regexp.Compile(config.ScopeMatcher)
 	if err != nil {
 		return nil, err
 	}
 
-	scopeValidator, err := template.New("runner").Parse("/u/{{.username}}/")
+	scopeValidator, err := template.New("runner").Parse(config.ScopeValidator)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func NewController(store Storer) (*Controller, error) {
 }
 
 // ValidateScopes enforces scope rules from the configuration
-func (oc *Controller) ValidateScopes(session UserSession, scopes []string) []string {
+func (oc *Controller) ValidateScopes(username string, scopes []string) []string {
 	granted := make([]string, 0)
 
 	for _, s := range scopes {
@@ -118,8 +118,7 @@ func (oc *Controller) ValidateScopes(session UserSession, scopes []string) []str
 
 		// Check scope matches template validator
 		data := make(map[string]string)
-		data["userid"] = session.GetUserID()
-		data["username"] = session.GetUsername()
+		data["username"] = username
 
 		// Generate validator from session
 		var buf bytes.Buffer

@@ -33,8 +33,13 @@ func TestOauthAPI(t *testing.T) {
 		t.FailNow()
 	}
 
+	config := Config{
+		ScopeMatcher:   `^((\/[a-z0-9]+))+$`,
+		ScopeValidator: "/u/{{.username}}/",
+	}
+
 	// Create and bind oauth server instance
-	oauthModule, _ := NewController(ts.DataStore)
+	oauthModule, _ := NewController(ts.DataStore, config)
 	oauthModule.BindAPI(ts.Router)
 
 	ts.Run()
