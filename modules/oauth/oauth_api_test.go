@@ -15,6 +15,8 @@ import (
 	"testing"
 
 	"github.com/ryankurte/authplz/controllers/datastore"
+	"github.com/ryankurte/authplz/modules/core"
+	"github.com/ryankurte/authplz/modules/user"
 	"github.com/ryankurte/authplz/test"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -37,6 +39,13 @@ func TestOauthAPI(t *testing.T) {
 		ScopeMatcher:   `^((\/[a-z0-9]+))+$`,
 		ScopeValidator: "/u/{{.username}}/",
 	}
+
+	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
+
+	coreModule := core.NewController(ts.TokenControl, userModule)
+	coreModule.BindModule("user", userModule)
+	coreModule.BindAPI(ts.Router)
+	userModule.BindAPI(ts.Router)
 
 	// Create and bind oauth server instance
 	oauthModule, _ := NewController(ts.DataStore, config)

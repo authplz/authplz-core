@@ -10,8 +10,6 @@ import (
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/controllers/token"
-	"github.com/ryankurte/authplz/modules/core"
-	"github.com/ryankurte/authplz/modules/user"
 )
 
 const (
@@ -25,7 +23,7 @@ const (
 type TestServer struct {
 	Router       *web.Router
 	DataStore    *datastore.DataStore
-	CoreModule   *core.Controller
+	TokenControl *token.TokenController
 	EventEmitter *MockEventEmitter
 }
 
@@ -44,20 +42,13 @@ func NewTestServer() (*TestServer, error) {
 	tokenControl := token.NewTokenController("localhost", "abcDEF123")
 
 	mockEventEmitter := MockEventEmitter{}
-	userModule := user.NewController(ds, &mockEventEmitter)
-
-	coreModule := core.NewController(tokenControl, userModule)
-	coreModule.BindModule("user", userModule)
 
 	// Create router with base context
 	router := web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&ac)).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware)
 
-	coreModule.BindAPI(router)
-	userModule.BindAPI(router)
-
-	return &TestServer{router, ds, coreModule, &mockEventEmitter}, nil
+	return &TestServer{router, ds, tokenControl, &mockEventEmitter}, nil
 }
 
 func (ts *TestServer) Run() {
