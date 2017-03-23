@@ -82,10 +82,15 @@ type Storer interface {
 	GetAuthorizationByCode(code string) (interface{}, error)
 	RemoveAuthorizationByCode(code string) error
 
-	//AddAccess(clientID, authorizationID string)
+	// Access Token functions
 	AddAccessTokenSession(clientID, signature, requestID string, requestedAt time.Time,
 		scopes, grantedScopes, form string) (interface{}, error)
 	GetAccessBySignature(sgnature string) (interface{}, error)
 	GetClientByAccessToken(token string) (interface{}, error)
 	RemoveAccessToken(token string) error
+
+	// Refresh token functions
+	AddRefreshTokenSession(clientID, signature, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error)
+	GetRefreshTokenBySignature(signature string) (interface{}, error)
+	RemoveRefreshToken(signature string) error
 }

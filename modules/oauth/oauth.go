@@ -61,7 +61,7 @@ func NewController(store Storer) (*Controller, error) {
 		//compose.OAuth2AuthorizeExplicitFactory,
 		//compose.OAuth2AuthorizeImplicitFactory,
 		compose.OAuth2ClientCredentialsGrantFactory,
-		//compose.OAuth2RefreshTokenGrantFactory,
+		compose.OAuth2RefreshTokenGrantFactory,
 		//compose.OAuth2ResourceOwnerPasswordCredentialsFactory,
 
 		//compose.OAuth2TokenRevocationFactory,

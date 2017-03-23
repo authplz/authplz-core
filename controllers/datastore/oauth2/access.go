@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Oauth client application
+// OauthAccess Oauth Access token session
 type OauthAccess struct {
 	gorm.Model
 	ClientID  uint

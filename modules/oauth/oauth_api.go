@@ -202,7 +202,8 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Create session
 	session := &MockSession{}
 
-	session.Username = "testUsername"
+	session.Username = ""
+	session.Subject = ""
 	session.AccessExpiry = time.Now().Add(time.Hour * 1)
 	session.IDExpiry = time.Now().Add(time.Hour * 2)
 	session.RefreshExpiry = time.Now().Add(time.Hour * 3)

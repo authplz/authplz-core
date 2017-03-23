@@ -8,13 +8,13 @@ import (
 // OauthRequest Base Type
 // This is not stored directly, but used in other oauth types
 type OauthRequest struct {
-	RequestID string
-	//Client        OauthClient `sql:"-"`
+	RequestID     string
 	RequestedAt   time.Time
 	ExpiresAt     time.Time
 	Scopes        string
 	GrantedScopes string
 	Form          string
+	//Client        OauthClient `sql:"-"`
 	//Session       OauthSession `sql:"-"`
 }
 
