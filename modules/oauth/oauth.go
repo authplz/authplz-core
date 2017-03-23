@@ -1,3 +1,13 @@
+/*
+ * OAuth Module Controller
+ * This manages OAuth registration/alteration/revocation
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
+
+// TODO: move all database operations and things into the controller.
+
 package oauth
 
 import (
@@ -157,7 +167,7 @@ type ClientResp struct {
 	Secret       string
 }
 
-func (oc *Controller) NewSession(username, subject string) (*Session, error) {
+func (oc *Controller) NewSession(username, subject string) (*UserSession, error) {
 	return nil, nil
 }
 
@@ -213,7 +223,7 @@ func (oc *Controller) GetAccessToken(tokenString string) (*AccessResponse, error
 
 	log.Printf("Fetching access token %+v", a)
 
-	access := a.(Access)
+	access := a.(AccessTokenSession)
 
 	ar := AccessResponse{
 		RequestedAt: access.GetRequestedAt(),

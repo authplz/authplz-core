@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// OauthClient is a client application registration
 type OauthClient struct {
 	ID            uint      `gorm:"primary_key" description:"Internal Database ID"`
 	CreatedAt     time.Time `description:"Creation time"`

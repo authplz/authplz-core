@@ -8,6 +8,7 @@ import (
 type User interface {
 	GetIntID() uint
 	GetExtID() string
+	GetUsername() string
 }
 
 // BaseStore is the interface required by the oauth module for underlying storage
@@ -39,9 +40,9 @@ func Sync(dataStore *gorm.DB) *gorm.DB {
 
 	db = db.AutoMigrate(&OauthClient{})
 	db = db.AutoMigrate(&OauthSession{})
-	db = db.AutoMigrate(&OauthAuthorize{})
-	db = db.AutoMigrate(&OauthAccess{})
-	db = db.AutoMigrate(&OauthRefresh{})
+	db = db.AutoMigrate(&OauthAuthorizeCode{})
+	db = db.AutoMigrate(&OauthAccessToken{})
+	db = db.AutoMigrate(&OauthRefreshToken{})
 
 	return db
 }

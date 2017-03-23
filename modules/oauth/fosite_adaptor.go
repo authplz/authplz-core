@@ -7,14 +7,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-// OauthAdaptor adapts a generic interface for osin compliance
-type OauthAdaptor struct {
+// FositeAdaptor adapts a generic interface for osin compliance
+type FositeAdaptor struct {
 	Storer Storer
 }
 
 // NewAdaptor creates a new wraper/adaptor around a Storer interface
-func NewAdaptor(s Storer) *OauthAdaptor {
-	return &OauthAdaptor{s}
+func NewAdaptor(s Storer) *FositeAdaptor {
+	return &FositeAdaptor{s}
 }
 
 func PackRequest(req *fosite.Request) (string, error) {
@@ -34,7 +34,7 @@ func UnpackRequest(data string) (fosite.Request, error) {
 
 // Client storage
 
-func (oa *OauthAdaptor) GetClient(id string) (fosite.Client, error) {
+func (oa *FositeAdaptor) GetClient(id string) (fosite.Client, error) {
 	c, err := oa.Storer.GetClientByID(id)
 	if err != nil {
 		return nil, err
@@ -51,18 +51,20 @@ func (oa *OauthAdaptor) GetClient(id string) (fosite.Client, error) {
 
 // Authorize code storage
 
-func (oa *OauthAdaptor) CreateAuthorizeCodeSession(ctx context.Context, code string, request fosite.Requester) (err error) {
+func (oa *FositeAdaptor) CreateAuthorizeCodeSession(ctx context.Context, code string, request fosite.Requester) (err error) {
 	client := request.GetClient().(*ClientWrapper)
+	session := request.GetSession().(*SessionWrap)
 
 	requestedScopes := []string(request.GetRequestedScopes())
 	grantedScopes := []string(request.GetGrantedScopes())
 
-	_, err = oa.Storer.AddAuthorizeCodeSession(client.GetID(), code, request.GetID(), request.GetRequestedAt(), requestedScopes, grantedScopes)
+	_, err = oa.Storer.AddAuthorizeCodeSession(session.GetUserID(), client.GetID(), code, request.GetID(), request.GetRequestedAt(),
+		session.GetAuthorizeExpiry(), requestedScopes, grantedScopes)
 
 	return err
 }
 
-func (oa *OauthAdaptor) GetAuthorizeCodeSession(ctx context.Context, code string, session fosite.Session) (request fosite.Requester, err error) {
+func (oa *FositeAdaptor) GetAuthorizeCodeSession(ctx context.Context, code string, session fosite.Session) (request fosite.Requester, err error) {
 	a, err := oa.Storer.GetAuthorizeCodeSession(code)
 	if err != nil {
 		return nil, err
@@ -71,7 +73,9 @@ func (oa *OauthAdaptor) GetAuthorizeCodeSession(ctx context.Context, code string
 	return a.(fosite.Requester), nil
 }
 
-func (oa *OauthAdaptor) PersistAuthorizeCodeGrantSession(ctx context.Context, authorizeCode, accessSignature, refreshSignature string, request fosite.Requester) error {
+func (oa *FositeAdaptor) PersistAuthorizeCodeGrantSession(ctx context.Context, authorizeCode, accessSignature, refreshSignature string,
+	request fosite.Requester) error {
+
 	if err := oa.DeleteAuthorizeCodeSession(ctx, authorizeCode); err != nil {
 		return err
 	} else if err := oa.CreateAccessTokenSession(ctx, accessSignature, request); err != nil {
@@ -85,24 +89,26 @@ func (oa *OauthAdaptor) PersistAuthorizeCodeGrantSession(ctx context.Context, au
 	return nil
 }
 
-func (oa *OauthAdaptor) DeleteAuthorizeCodeSession(ctx context.Context, code string) (err error) {
+func (oa *FositeAdaptor) DeleteAuthorizeCodeSession(ctx context.Context, code string) (err error) {
 	return oa.Storer.RemoveAuthorizeCodeSession(code)
 }
 
 // Access code storage (used by all implementations)
 
-func (oa *OauthAdaptor) CreateAccessTokenSession(c context.Context, signature string, request fosite.Requester) (err error) {
+func (oa *FositeAdaptor) CreateAccessTokenSession(c context.Context, signature string, request fosite.Requester) (err error) {
 	client := request.GetClient().(*ClientWrapper)
+	session := request.GetSession().(*SessionWrap)
 
 	requestedScopes := []string(request.GetRequestedScopes())
 	grantedScopes := []string(request.GetGrantedScopes())
 
-	_, err = oa.Storer.AddAccessTokenSession(client.GetID(), signature, request.GetID(), request.GetRequestedAt(), requestedScopes, grantedScopes)
+	_, err = oa.Storer.AddAccessTokenSession(session.GetUserID(), client.GetID(), signature, request.GetID(), request.GetRequestedAt(),
+		session.GetAccessExpiry(), requestedScopes, grantedScopes)
 
 	return err
 }
 
-func (oa *OauthAdaptor) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+func (oa *FositeAdaptor) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
 	a, err := oa.Storer.GetAccessTokenSession(signature)
 	if err != nil {
 		return nil, err
@@ -111,35 +117,37 @@ func (oa *OauthAdaptor) GetAccessTokenSession(ctx context.Context, signature str
 	return a.(fosite.Requester), nil
 }
 
-func (oa *OauthAdaptor) RevokeAccessToken(ctx context.Context, requestID string) error {
+func (oa *FositeAdaptor) RevokeAccessToken(ctx context.Context, requestID string) error {
 	token, err := oa.Storer.GetAccessTokenSessionByRequestID(requestID)
 	if err != nil {
 		return err
 	}
 
-	t := token.(Access)
+	t := token.(AccessTokenSession)
 
 	return oa.DeleteAccessTokenSession(ctx, t.GetSignature())
 }
 
-func (oa *OauthAdaptor) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
+func (oa *FositeAdaptor) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
 	return oa.Storer.RemoveAccessTokenSession(signature)
 }
 
 // Refresh token storage
 
-func (oa *OauthAdaptor) CreateRefreshTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
+func (oa *FositeAdaptor) CreateRefreshTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
 	client := request.GetClient().(*ClientWrapper)
+	session := request.GetSession().(*SessionWrap)
 
 	requestedScopes := []string(request.GetRequestedScopes())
 	grantedScopes := []string(request.GetGrantedScopes())
 
-	_, err = oa.Storer.AddRefreshTokenSession(client.GetID(), signature, request.GetID(), request.GetRequestedAt(), requestedScopes, grantedScopes)
+	_, err = oa.Storer.AddRefreshTokenSession(session.GetUserID(), client.GetID(), signature, request.GetID(), request.GetRequestedAt(),
+		session.GetRefreshExpiry(), requestedScopes, grantedScopes)
 
 	return err
 }
 
-func (oa *OauthAdaptor) GetRefreshTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+func (oa *FositeAdaptor) GetRefreshTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
 	a, err := oa.Storer.GetRefreshTokenBySignature(signature)
 	if err != nil {
 		return nil, err
@@ -148,7 +156,9 @@ func (oa *OauthAdaptor) GetRefreshTokenSession(ctx context.Context, signature st
 	return a.(fosite.Requester), nil
 }
 
-func (oa *OauthAdaptor) PersistRefreshTokenGrantSession(ctx context.Context, originalRefreshSignature, accessSignature, refreshSignature string, request fosite.Requester) error {
+func (oa *FositeAdaptor) PersistRefreshTokenGrantSession(ctx context.Context, originalRefreshSignature, accessSignature,
+	refreshSignature string, request fosite.Requester) error {
+
 	if err := oa.DeleteRefreshTokenSession(ctx, originalRefreshSignature); err != nil {
 		return err
 	} else if err := oa.CreateAccessTokenSession(ctx, accessSignature, request); err != nil {
@@ -159,17 +169,17 @@ func (oa *OauthAdaptor) PersistRefreshTokenGrantSession(ctx context.Context, ori
 	return fosite.ErrAccessDenied
 }
 
-func (oa *OauthAdaptor) RevokeRefreshToken(ctx context.Context, requestID string) error {
+func (oa *FositeAdaptor) RevokeRefreshToken(ctx context.Context, requestID string) error {
 	token, err := oa.Storer.GetRefreshTokenSessionByRequestID(requestID)
 	if err != nil {
 		return err
 	}
 
-	t := token.(Refresh)
+	t := token.(RefreshTokenSession)
 
 	return oa.DeleteRefreshTokenSession(ctx, t.GetSignature())
 }
 
-func (oa *OauthAdaptor) DeleteRefreshTokenSession(ctx context.Context, signature string) (err error) {
+func (oa *FositeAdaptor) DeleteRefreshTokenSession(ctx context.Context, signature string) (err error) {
 	return oa.Storer.RemoveRefreshToken(signature)
 }

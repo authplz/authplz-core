@@ -1,3 +1,11 @@
+/*
+ * OAuth Module API
+ *
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package oauth
 
 import (
@@ -134,7 +142,7 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 
 	// TODO: Create Grants
 
-	session := &MockSession{}
+	session := NewSession(c.GetUserID(), "")
 
 	// Create response
 	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(session))
@@ -152,7 +160,7 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 
 	ctx := fosite.NewContext()
-	session := &MockSession{}
+	session := NewSession(c.GetUserID(), "")
 
 	response, err := c.oc.OAuth2.NewIntrospectionRequest(ctx, req.Request, NewSessionWrap(session))
 	if err != nil {
@@ -200,10 +208,8 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("Access Token Request")
 
 	// Create session
-	session := &MockSession{}
+	session := NewSession(c.GetUserID(), "")
 
-	session.Username = ""
-	session.Subject = ""
 	session.AccessExpiry = time.Now().Add(time.Hour * 1)
 	session.IDExpiry = time.Now().Add(time.Hour * 2)
 	session.RefreshExpiry = time.Now().Add(time.Hour * 3)

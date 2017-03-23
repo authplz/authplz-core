@@ -5,21 +5,29 @@ import (
 	"time"
 )
 
-// OauthAuthorize Authorization data
-type OauthAuthorize struct {
+// OauthAuthorizeCode Authorization data
+type OauthAuthorizeCode struct {
 	gorm.Model
 	ClientID        uint
 	Code            string // Authorization code
 	Challenge       string // Optional code_challenge as described in rfc7636
 	ChallengeMethod string // Optional code_challenge_method as described in rfc7636
 	OauthRequest
+	OauthSession
 }
 
-func (ad *OauthAuthorize) GetCode() string         { return ad.Code }
-func (ad *OauthAuthorize) GetCreatedAt() time.Time { return ad.CreatedAt }
+func (oa *OauthAuthorizeCode) GetCode() string { return oa.Code }
 
 // AddAuthorizeCodeSession creates an authorization code session in the database
-func (oauthStore *OauthStore) AddAuthorizeCodeSession(clientID, code, requestID string, requestedAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
+func (oauthStore *OauthStore) AddAuthorizeCodeSession(userID, clientID, code, requestID string,
+	requestedAt, expiresAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
+
+	u, err := oauthStore.base.GetUserByExtID(userID)
+	if err != nil {
+		return nil, err
+	}
+	user := u.(User)
+
 	c, err := oauthStore.GetClientByID(clientID)
 	if err != nil {
 		return nil, err
@@ -34,10 +42,14 @@ func (oauthStore *OauthStore) AddAuthorizeCodeSession(clientID, code, requestID 
 	or.SetScopes(scopes)
 	or.SetGrantedScopes(grantedScopes)
 
-	authorize := OauthAuthorize{
+	session := NewSession(user.GetExtID(), user.GetUsername())
+	session.AuthorizeExpiry = expiresAt
+
+	authorize := OauthAuthorizeCode{
 		ClientID:     client.ID,
 		Code:         code,
 		OauthRequest: or,
+		OauthSession: session,
 	}
 
 	oauthStore.db = oauthStore.db.Create(authorize)
@@ -50,8 +62,8 @@ func (oauthStore *OauthStore) AddAuthorizeCodeSession(clientID, code, requestID 
 
 // GetAuthorizeCodeSession fetches an authorization code session
 func (oauthStore *OauthStore) GetAuthorizeCodeSession(code string) (interface{}, error) {
-	var authorize OauthAuthorize
-	err := oauthStore.db.Where(&OauthAuthorize{Code: code}).First(&authorize).Error
+	var authorize OauthAuthorizeCode
+	err := oauthStore.db.Where(&OauthAuthorizeCode{Code: code}).First(&authorize).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
@@ -63,8 +75,8 @@ func (oauthStore *OauthStore) GetAuthorizeCodeSession(code string) (interface{},
 
 // GetAuthorizeCodeSessionByRequestID fetches an authorization code session by the originator request ID
 func (oauthStore *OauthStore) GetAuthorizeCodeSessionByRequestID(requestID string) (interface{}, error) {
-	var oa OauthAuthorize
-	err := oauthStore.db.Where(&OauthAuthorize{OauthRequest: OauthRequest{RequestID: requestID}}).First(&oa).Error
+	var oa OauthAuthorizeCode
+	err := oauthStore.db.Where(&OauthAuthorizeCode{OauthRequest: OauthRequest{RequestID: requestID}}).First(&oa).Error
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +86,7 @@ func (oauthStore *OauthStore) GetAuthorizeCodeSessionByRequestID(requestID strin
 
 // RemoveAuthorizeCodeSession removes an authorization code session using the provided code
 func (oauthStore *OauthStore) RemoveAuthorizeCodeSession(code string) error {
-	authorization := OauthAuthorize{
+	authorization := OauthAuthorizeCode{
 		Code: code,
 	}
 

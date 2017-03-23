@@ -1,7 +1,8 @@
 package oauth
 
 import (
-	"strings"
+	"bytes"
+	"encoding/json"
 	"time"
 )
 
@@ -20,6 +21,23 @@ type OauthRequest struct {
 
 // Getters and Setters
 
+func stringToArray(str string) []string {
+	buf := bytes.NewBuffer([]byte(str))
+	var arr []string
+
+	json.NewDecoder(buf).Decode(&arr)
+
+	return arr
+}
+
+func arrayToString(arr []string) string {
+	var buf bytes.Buffer
+
+	json.NewEncoder(&buf).Encode(&arr)
+
+	return buf.String()
+}
+
 func (or OauthRequest) GetRequestedAt() time.Time {
 	return or.RequestedAt
 }
@@ -29,17 +47,17 @@ func (or OauthRequest) GetExpiresAt() time.Time {
 }
 
 func (c OauthRequest) GetGrantedScopes() []string {
-	return strings.Split(c.GrantedScopes, ";")
+	return stringToArray(c.GrantedScopes)
 }
 
 func (c OauthRequest) GetScopes() []string {
-	return strings.Split(c.Scopes, ";")
+	return stringToArray(c.Scopes)
 }
 
 func (c OauthRequest) SetGrantedScopes(scopes []string) {
-	c.Scopes = strings.Join(scopes, ";")
+	c.Scopes = arrayToString(scopes)
 }
 
 func (c OauthRequest) SetScopes(scopes []string) {
-	c.GrantedScopes = strings.Join(scopes, ";")
+	c.GrantedScopes = arrayToString(scopes)
 }
