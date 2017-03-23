@@ -169,14 +169,11 @@ func TestMain(t *testing.T) {
 			TokenURL:     "http://" + address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
-
-		tc := test.NewTestClientFromHttp("http://"+address+"/api/oauth", httpClient)
-
-		var oauthError OauthError
-		tc.BindTest(t).TestGet("/info", http.StatusOK).TestParseJson(&oauthError)
-		if oauthError.Error == "" {
-			t.Errorf("Expected error response")
+		_, err := httpClient.Get("http://" + address + "/api/oauth/info")
+		if err == nil {
+			t.Errorf("Expected error attempting oauth")
 		}
+
 	})
 
 	t.Run("OAuth users can register interactive clients", func(t *testing.T) {

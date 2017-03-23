@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ory-am/fosite"
 	"golang.org/x/net/context"
+	"log"
 	"strings"
 )
 
@@ -69,6 +70,9 @@ func (oa* OauthAdaptor) DeleteAuthorizeCodeSession(ctx context.Context, code str
 // Access code storage (used by all implementations)
 
 func (oa *OauthAdaptor) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+
+	log.Printf("GetAccessTokenSession sig: %s session: %+v", signature, session)
+
 	a, err := oa.Storer.GetAccessBySignature(signature)
 	if err != nil {
 		return nil, err

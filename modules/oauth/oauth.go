@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"errors"
+	"log"
 	"time"
 )
 
@@ -57,7 +58,6 @@ func NewController(store Storer) (*Controller, error) {
 		wrappedStore,
 		strat,
 
-		// enabled handlers
 		//compose.OAuth2AuthorizeExplicitFactory,
 		//compose.OAuth2AuthorizeImplicitFactory,
 		compose.OAuth2ClientCredentialsGrantFactory,
@@ -198,7 +198,12 @@ func (oc *Controller) RemoveClient(clientId string) error {
 	return oc.store.RemoveClientByID(clientId)
 }
 
-func (oc *Controller) GetAccessToken(tokenString string) (Access, error) {
+type AccessResponse struct {
+	RequestedAt time.Time
+	ExpiresAt   time.Time
+}
+
+func (oc *Controller) GetAccessToken(tokenString string) (*AccessResponse, error) {
 	a, err := oc.store.GetAccessBySignature(tokenString)
 	if err != nil {
 		return nil, err
@@ -207,9 +212,16 @@ func (oc *Controller) GetAccessToken(tokenString string) (Access, error) {
 		return nil, nil
 	}
 
+	log.Printf("Fetching access token %+v", a)
+
 	access := a.(Access)
 
-	return access, nil
+	ar := AccessResponse{
+		RequestedAt: access.GetRequestedAt(),
+		ExpiresAt:   access.GetExpiresAt(),
+	}
+
+	return &ar, nil
 }
 
 func (oc *Controller) Authorize() {

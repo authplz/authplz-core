@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -47,6 +48,7 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
 	router.Post("/token", (*APICtx).TokenPost)
 	router.Get("/info", (*APICtx).InfoGet)
+	router.Get("/introspect", (*APICtx).IntrospectPost)
 	router.Get("/test", (*APICtx).TestGet)
 
 	// Return router for external use
@@ -165,22 +167,25 @@ func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 // InfoGet Information endpoint
 func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
 
+	log.Printf("Information get")
+
 	tokenString := fosite.AccessTokenFromRequest(req.Request)
 	if tokenString == "" {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("%s", tokenString)
+	log.Printf("Token string: %s", tokenString)
+	sig := strings.Split(tokenString, ".")[1]
 
-	token, err := c.oc.GetAccessToken(tokenString)
+	token, err := c.oc.GetAccessToken(sig)
 	if err != nil {
 		log.Printf("OAuthAPI InfoGet GetAccessToken error: %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if token != nil {
+	if token == nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -191,6 +196,8 @@ func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
 // TokenPost Uses an authorization to fetch an access token
 func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
+
+	log.Printf("Access Token Request")
 
 	// Create session
 	session := &MockSession{}
@@ -231,6 +238,8 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
+
+	log.Printf("Access response: %+v", response)
 
 	// Write response to client
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)

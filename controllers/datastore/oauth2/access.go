@@ -52,8 +52,6 @@ func (os *OauthStore) GetAccessBySignature(signature string) (interface{}, error
 		return nil, err
 	}
 
-	log.Printf("GetAccessBySignature")
-
 	return &oa, err
 }
 

@@ -41,17 +41,18 @@ type Authorizaton interface {
 }
 
 type Access interface {
-	GetClient() interface{}
-	GetClientID() string
-	GetAuthorizeData() interface{}
-	GetAccessData() interface{}
-	GetAccessToken() string
-	GetRefreshToken() string
-	GetExpiresIn() int32
-	GetScope() string
-	GetRedirectURI() string
-	GetCreatedAt() time.Time
-	GetUserData() interface{}
+	//GetClient() interface{}
+	//GetClientID() string
+	//GetAuthorizeData() interface{}
+	//GetAccessData() interface{}
+	//GetAccessToken() string
+	//GetRefreshToken() string
+	//GetExpiresIn() int32
+	//GetScope() string
+	//GetRedirectURI() string
+	GetRequestedAt() time.Time
+	GetExpiresAt() time.Time
+	//GetUserData() interface{}
 }
 
 type Session interface {
