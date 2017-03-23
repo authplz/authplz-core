@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
+	oauthdb "github.com/ryankurte/authplz/controllers/datastore/oauth2"
 	"github.com/ryankurte/authplz/controllers/token"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
@@ -63,13 +64,8 @@ func TestMain(t *testing.T) {
 
 	//router.Middleware(api.BindContext(&server.ctx))
 
-	//ocs := OauthClientStore{}
-
-	// Fake storage backend for oauth creds
-	store := NewTestingStorage()
-
 	// Create oauth server instance
-	oauthModule, _ := NewController(store)
+	oauthModule, _ := NewController(ds)
 
 	coreModule.BindAPI(router)
 	oauthModule.BindAPI(router)
@@ -80,7 +76,7 @@ func TestMain(t *testing.T) {
 	uuid := "fakeUuid"
 	redirect := "localhost:9000/auth"
 
-	var oauthClient *OauthClient = nil
+	var oauthClient *oauthdb.OauthClient
 
 	handler := context.ClearHandler(router)
 	go func() {
@@ -130,11 +126,11 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
-		c, err := oauthModule.CreateClient(uuid, "scopeA", redirect)
+		c, err := oauthModule.CreateClient(uuid, "scopeA", redirect, "client_credentials", "token", true)
 		if err != nil {
 			t.Error(err)
 		}
-		oauthClient = c
+		oauthClient = c.(*oauthdb.OauthClient)
 	})
 
 	t.Run("OAuth list clients", func(t *testing.T) {
@@ -147,7 +143,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("OAuth login as non-interactive client", func(t *testing.T) {
 		config := &clientcredentials.Config{
-			ClientID:     oauthClient.ClientId,
+			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
 			TokenURL:     "http://" + address + "/api/oauth/token"}
 
@@ -159,7 +155,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("OAuth can remove non-interactive clients", func(t *testing.T) {
-		err := oauthModule.RemoveClient(oauthClient.ClientId)
+		err := oauthModule.RemoveClient(oauthClient.ClientID)
 		if err != nil {
 			t.Error(err)
 		}
@@ -167,7 +163,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Removing non-interactive client causes OAuth to fail", func(t *testing.T) {
 		config := &clientcredentials.Config{
-			ClientID:     oauthClient.ClientId,
+			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
 			TokenURL:     "http://" + address + "/api/oauth/token"}
 

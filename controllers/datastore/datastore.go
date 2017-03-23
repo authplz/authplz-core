@@ -13,7 +13,7 @@ import (
 // DataStore instance storage
 type DataStore struct {
 	db *gorm.DB
-	*oauth2.OauthStore
+	*oauth.OauthStore
 }
 
 // QueryFilter filter types
@@ -34,13 +34,9 @@ func NewDataStore(dbString string) (*DataStore, error) {
 
 	ds := &DataStore{db: db}
 
-	ds.OauthStore = oauth2.NewOauthStore(db, ds)
+	ds.OauthStore = oauth.NewOauthStore(db, ds)
 
 	return ds, nil
-}
-
-type Module interface {
-	Sync(dataStore *DataStore)
 }
 
 // Close an open datastore instance
@@ -63,7 +59,7 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.AutoMigrate(&TotpToken{})
 	db = db.AutoMigrate(&AuditEvent{})
 
-	db = oauth2.Sync(db)
+	db = oauth.Sync(db)
 
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")

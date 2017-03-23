@@ -1,16 +1,22 @@
-package oauth2
+package oauth
 
 import (
-//"time"
+	"time"
 )
 
 import (
-	"github.com/jinzhu/gorm"
+//	"github.com/jinzhu/gorm"
 )
 
-// Oauth client application
+// Oauth Request Base Type
 type OauthRequest struct {
-	gorm.Model
+	RequestID     string
+	Client        OauthClient `sql:"-"`
+	RequestedAt   time.Time
+	Scopes        string
+	GrantedScopes string
+	Form          string
+	Session       OauthSession `sql:"-"`
 }
 
 // Getters and Setters

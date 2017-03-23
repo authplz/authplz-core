@@ -7,16 +7,26 @@ import (
 // Client OAuth client interface
 type Client interface {
 	// Client id
-	GetId() string
+	GetID() string
 
 	// Client secret
 	GetSecret() string
+	SetSecret(string)
 
 	// Base client uri
-	GetRedirectUri() string
+	GetRedirectURIs() string
 
 	// Data to be passed to storage. Not used by the library.
 	GetUserData() interface{}
+
+	GetScopes() string
+	GetGrants() string
+	GetResponseTypes() string
+	IsPublic() bool
+
+	GetCreatedAt() time.Time
+	GetLastUsed() time.Time
+	SetLastUsed(time.Time)
 }
 
 type Authorizaton interface {
@@ -31,6 +41,7 @@ type Authorizaton interface {
 
 type Access interface {
 	GetClient() interface{}
+	GetClientID() string
 	GetAuthorizeData() interface{}
 	GetAccessData() interface{}
 	GetAccessToken() string
@@ -42,14 +53,36 @@ type Access interface {
 	GetUserData() interface{}
 }
 
+type Session interface {
+	GetUsername() string
+	GetSubject() string
+
+	// Get and Set expiry times
+	SetAccessExpiry(time.Time)
+	GetAccessExpiry() time.Time
+	SetRefreshExpiry(time.Time)
+	GetRefreshExpiry() time.Time
+	SetAuthorizeExpiry(time.Time)
+	GetAuthorizeExpiry() time.Time
+	SetIDExpiry(time.Time)
+	GetIDExpiry() time.Time
+}
+
 // Storer OAuth storage interface
 type Storer interface {
-	AddClient(userID, clientID, secret, scope, redirect string) (interface{}, error)
+	AddClient(userID, clientID, secret, scopes, redirects, grants, responseTypes string, public bool) (interface{}, error)
 	GetClientByID(clientID string) (interface{}, error)
 	GetClientsByUserID(userID string) ([]interface{}, error)
+	UpdateClient(client interface{}) (interface{}, error)
 	RemoveClientByID(clientID string) error
+
 	AddAuthorization(clientID, code string, expires int32, scope, redirect, state string) (interface{}, error)
 	GetAuthorizationByCode(code string) (interface{}, error)
 	RemoveAuthorizationByCode(code string) error
-	AddAccess(clientID, authorizationID string)
+
+	//AddAccess(clientID, authorizationID string)
+	AddAccessTokenSession(clientID, signature, requestID string, requestedAt time.Time,
+		scopes, grantedScopes, form string) (interface{}, error)
+	GetAccessByToken(token string) (interface{}, error)
+	GetClientByAccessToken(token string) (interface{}, error)
 }

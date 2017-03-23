@@ -1,4 +1,4 @@
-package oauth2
+package oauth
 
 import (
 	"time"
@@ -9,29 +9,42 @@ import (
 )
 
 type OauthClient struct {
-	gorm.Model
-	UserID      uint
-	ClientID    string
-	CreatedAt   time.Time
-	LastUsed    time.Time
-	Secret      string
-	Scope       string
-	RedirectURI string
-	UserData    string
+	ID            uint      `gorm:"primary_key" description:"Internal Database ID"`
+	CreatedAt     time.Time `description:"Creation time"`
+	UpdatedAt     time.Time `description:"Last update time"`
+	UserID        uint
+	ClientID      string
+	LastUsed      time.Time
+	Secret        string
+	Scopes        string
+	RedirectURIs  string
+	Grants        string
+	ResponseTypes string
+	UserData      string
+	Public        bool
 }
 
 func (c OauthClient) GetID() string            { return c.ClientID }
 func (c OauthClient) GetSecret() string        { return c.Secret }
-func (c OauthClient) GetRedirectURI() string   { return c.RedirectURI }
+func (c OauthClient) GetScopes() string        { return c.Scopes }
+func (c OauthClient) GetRedirectURIs() string  { return c.RedirectURIs }
+func (c OauthClient) GetGrants() string        { return c.Grants }
 func (c OauthClient) GetUserData() interface{} { return c.UserData }
+func (c OauthClient) GetLastUsed() time.Time   { return c.LastUsed }
+func (c OauthClient) GetCreatedAt() time.Time  { return c.CreatedAt }
+func (c OauthClient) GetResponseTypes() string { return c.ResponseTypes }
+func (c OauthClient) IsPublic() bool           { return c.Public }
 
-func (c OauthClient) SetID(id string)                   { c.ClientID = id }
-func (c OauthClient) SetSecret(secret string)           { c.Secret = secret }
-func (c OauthClient) SetRedirectURI(RedirectURI string) { c.RedirectURI = RedirectURI }
-func (c OauthClient) SetUserData(userData string)       { c.UserData = userData }
+func (c OauthClient) SetID(id string)         { c.ClientID = id }
+func (c OauthClient) SetLastUsed(t time.Time) { c.LastUsed = t }
+
+func (c OauthClient) SetSecret(secret string)             { c.Secret = secret }
+func (c OauthClient) SetUserData(userData string)         { c.UserData = userData }
+func (c OauthClient) SetRedirectURIs(RedirectURIs string) { c.RedirectURIs = RedirectURIs }
 
 // AddClient adds an OAuth2 client application to the database
-func (oauthStore *OauthStore) AddClient(userID, clientID, secret, scope, redirect string) (interface{}, error) {
+func (oauthStore *OauthStore) AddClient(userID, clientID, secret, scopes, redirects, grants,
+	responseTypes string, public bool) (interface{}, error) {
 	// Fetch user
 	u, err := oauthStore.base.GetUserByExtID(userID)
 	if err != nil {
@@ -40,13 +53,15 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret, scope, redirec
 	user := u.(User)
 
 	client := OauthClient{
-		UserID:      user.GetIntID(),
-		ClientID:    clientID,
-		CreatedAt:   time.Now(),
-		LastUsed:    time.Now(),
-		Secret:      secret,
-		Scope:       scope,
-		RedirectURI: redirect,
+		UserID:        user.GetIntID(),
+		ClientID:      clientID,
+		CreatedAt:     time.Now(),
+		LastUsed:      time.Now(),
+		Secret:        secret,
+		Scopes:        scopes,
+		RedirectURIs:  redirects,
+		Grants:        grants,
+		ResponseTypes: responseTypes,
 	}
 
 	oauthStore.db = oauthStore.db.Create(client)
@@ -70,8 +85,8 @@ func (oauthStore *OauthStore) GetClientByID(clientID string) (interface{}, error
 	return &client, nil
 }
 
-// GetClientsByUser fetches the OauthClients for a provided user
-func (oauthStore *OauthStore) GetClientsByUser(userID string) ([]interface{}, error) {
+// GetClientsByUserID fetches the OauthClients for a provided userID
+func (oauthStore *OauthStore) GetClientsByUserID(userID string) ([]interface{}, error) {
 	var oauthClients []OauthClient
 
 	// Fetch user
@@ -89,6 +104,18 @@ func (oauthStore *OauthStore) GetClientsByUser(userID string) ([]interface{}, er
 	}
 
 	return interfaces, err
+}
+
+// UpdateClient Update a user object
+func (oauthStore *OauthStore) UpdateClient(client interface{}) (interface{}, error) {
+	c := client.(*OauthClient)
+
+	err := oauthStore.db.Save(&c).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // RemoveClientByID removes a client application by id
