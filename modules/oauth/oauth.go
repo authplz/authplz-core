@@ -11,12 +11,12 @@
 package oauth
 
 import (
-	"crypto/rand"
+	"bytes"
 	"crypto/rsa"
-	"encoding/base64"
 	"encoding/gob"
-	"errors"
 	"log"
+	"regexp"
+	"text/template"
 	"time"
 )
 
@@ -25,19 +25,24 @@ import (
 	"github.com/ory-am/fosite/compose"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 const OAuthSecretBytes int = 64
 
 // Config structure
 type Config struct {
-	Key *rsa.PrivateKey // Private key for OAuth token attestation
+	Key            *rsa.PrivateKey // Private key for OAuth token attestation
+	ScopeMatcher   string          // Regex expression for validating scopes
+	ScopeValidator string          // Template that must be matched as a prefix for a valid scope
 }
 
 // Controller OAuth module controller
 type Controller struct {
-	OAuth2 fosite.OAuth2Provider
-	store  Storer
+	OAuth2         fosite.OAuth2Provider
+	store          Storer
+	scopeMatcher   *regexp.Regexp
+	scopeValidator *template.Template
 }
 
 func init() {
@@ -81,36 +86,67 @@ func NewController(store Storer) (*Controller, error) {
 		//compose.OpenIDConnectHybridFactory,
 	)
 
-	return &Controller{oauth2, store}, nil
-}
-
-func generateSecret(len int) (string, error) {
-	data := make([]byte, len)
-	n, err := rand.Read(data)
+	scopeMatcher, err := regexp.Compile(`^((\/[a-z0-9]+))+$`)
 	if err != nil {
-		return "", err
-	}
-	if n != len {
-		return "", errors.New("Config: RNG failed")
+		return nil, err
 	}
 
-	return base64.URLEncoding.EncodeToString(data), nil
+	scopeValidator, err := template.New("runner").Parse("/u/{{.username}}/")
+	if err != nil {
+		return nil, err
+	}
+
+	c := Controller{
+		OAuth2:         oauth2,
+		store:          store,
+		scopeMatcher:   scopeMatcher,
+		scopeValidator: scopeValidator,
+	}
+
+	return &c, nil
 }
 
-func (oc *Controller) Fake() {
+// ValidateScopes enforces scope rules from the configuration
+func (oc *Controller) ValidateScopes(session UserSession, scopes []string) []string {
+	granted := make([]string, 0)
 
+	for _, s := range scopes {
+		// Check scope matches regex matcher
+		if matches := oc.scopeMatcher.MatchString(s); !matches {
+			continue
+		}
+
+		// Check scope matches template validator
+		data := make(map[string]string)
+		data["userid"] = session.GetUserID()
+		data["username"] = session.GetUsername()
+
+		// Generate validator from session
+		var buf bytes.Buffer
+		err := oc.scopeValidator.Execute(&buf, data)
+		if err != nil {
+			continue
+		}
+
+		// Append to granted if the validator matches
+		if strings.HasPrefix(s, buf.String()) {
+			granted = append(granted, s)
+		}
+	}
+
+	return granted
 }
 
-// Create an OAuth authorization code grant based client for a given user
+// CreateExplicit Create an OAuth explicit authorization code grant based client for a given user
 // This is used to authenticate first party applications that can store client information
-func (oc *Controller) CreateAuthorization(clientId string, userId string, scope string, redirect string) (*Client, error) {
+func (oc *Controller) CreateExplicit(clientID string, userID string, scope string, redirect string) (*Client, error) {
 
 	return nil, nil
 }
 
-// Create an OAuth implicit grant based client for a given user
+// CreateImplicit Creates an OAuth implicit grant based client for a given user
 // This is used to authenticate web services (or other services without persistence)
-func (oc *Controller) CreateImplicit(clientId string, userId string, scope string, redirect string) (Client, error) {
+func (oc *Controller) CreateImplicit(clientID string, userID string, scope string, redirect string) (Client, error) {
 
 	return nil, nil
 }
@@ -167,11 +203,7 @@ type ClientResp struct {
 	Secret       string
 }
 
-func (oc *Controller) NewSession(username, subject string) (*UserSession, error) {
-	return nil, nil
-}
-
-// GetClients Fetch clients for a given user id
+// GetClients Fetch clients owned by a given user
 func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 	clientResps := make([]ClientResp, 0)
 
@@ -198,21 +230,25 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 	return clientResps, nil
 }
 
+// UpdateClient Update a client instance
 func (oc *Controller) UpdateClient(client Client) error {
 	_, err := oc.store.UpdateClient(&client)
 	return err
 }
 
+// RemoveClient Removes a client instance
 func (oc *Controller) RemoveClient(clientId string) error {
 	return oc.store.RemoveClientByID(clientId)
 }
 
-type AccessResponse struct {
+// AccessTokenInfo is an access token information response
+type AccessTokenInfo struct {
 	RequestedAt time.Time
 	ExpiresAt   time.Time
 }
 
-func (oc *Controller) GetAccessToken(tokenString string) (*AccessResponse, error) {
+// GetAccessTokenInfo fetches information for a provided access token
+func (oc *Controller) GetAccessTokenInfo(tokenString string) (*AccessTokenInfo, error) {
 	a, err := oc.store.GetAccessTokenSession(tokenString)
 	if err != nil {
 		return nil, err
@@ -225,14 +261,10 @@ func (oc *Controller) GetAccessToken(tokenString string) (*AccessResponse, error
 
 	access := a.(AccessTokenSession)
 
-	ar := AccessResponse{
+	ar := AccessTokenInfo{
 		RequestedAt: access.GetRequestedAt(),
 		ExpiresAt:   access.GetExpiresAt(),
 	}
 
 	return &ar, nil
-}
-
-func (oc *Controller) Authorize() {
-
 }

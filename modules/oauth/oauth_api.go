@@ -55,9 +55,10 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 	router.Post("/auth", (*APICtx).AuthorizeConfirmPost)
 
 	router.Post("/token", (*APICtx).TokenPost)
-	router.Get("/info", (*APICtx).InfoGet)
 	router.Get("/introspect", (*APICtx).IntrospectPost)
 	router.Get("/test", (*APICtx).TestGet)
+
+	router.Get("/info", (*APICtx).AccessTokenInfoGet)
 
 	// Return router for external use
 	return router
@@ -103,7 +104,7 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-// AuthorizePendingGet Fetch pending authorizations
+// AuthorizePendingGet Fetch pending authorizations for a user
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
@@ -138,11 +139,12 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	}
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
 
+	session := NewSession(c.GetUserID(), "")
+
 	// TODO: Validate authorization
+	//granted := c.oc.ValidateScopes(ar.GetRequestedScopes)
 
 	// TODO: Create Grants
-
-	session := NewSession(c.GetUserID(), "")
 
 	// Create response
 	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(session))
@@ -172,8 +174,8 @@ func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 	c.oc.OAuth2.WriteIntrospectionResponse(rw, response)
 }
 
-// InfoGet Information endpoint
-func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
+// AccessTokenInfoGet Access Token Information endpoint
+func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	log.Printf("Information get")
 
@@ -186,7 +188,7 @@ func (c *APICtx) InfoGet(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("Token string: %s", tokenString)
 	sig := strings.Split(tokenString, ".")[1]
 
-	token, err := c.oc.GetAccessToken(sig)
+	token, err := c.oc.GetAccessTokenInfo(sig)
 	if err != nil {
 		log.Printf("OAuthAPI InfoGet GetAccessToken error: %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)

@@ -1,6 +1,6 @@
 /*
- * OAuth Module Tests
- * Tests the functionality of the OAuth module
+ * OAuth Module API Tests
+ * Tests the functionality of the OAuth API
  *
  * AuthEngine Project (https://github.com/ryankurte/authengine)
  * Copyright 2017 Ryan Kurte
@@ -13,17 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
-)
 
-import (
-	"github.com/gocraft/web"
-	"github.com/gorilla/context"
-	"github.com/gorilla/sessions"
-	"github.com/ryankurte/authplz/appcontext"
 	"github.com/ryankurte/authplz/controllers/datastore"
-	"github.com/ryankurte/authplz/controllers/token"
-	"github.com/ryankurte/authplz/modules/core"
-	"github.com/ryankurte/authplz/modules/user"
 	"github.com/ryankurte/authplz/test"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -34,82 +25,41 @@ type OauthError struct {
 	ErrorDescription string
 }
 
-func TestMain(t *testing.T) {
+func TestOauthAPI(t *testing.T) {
 
-	// Setup user controller for testing
-	var fakeEmail = "test@abc.com"
-	var fakePass = "abcDEF123@9c"
-	var fakeName = "user.sdfsfdF"
-	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
-
-	// Attempt database connection
-
-	ds, err := datastore.NewDataStore(dbString)
+	ts, err := test.NewTestServer()
 	if err != nil {
-		t.Error("Error opening database")
+		t.Error(err)
 		t.FailNow()
 	}
-	ds.ForceSync()
 
-	sessionStore := sessions.NewCookieStore([]byte("abcDEF123"))
-	ac := appcontext.AuthPlzGlobalCtx{
-		SessionStore: sessionStore,
-	}
+	// Create and bind oauth server instance
+	oauthModule, _ := NewController(ts.DataStore)
+	oauthModule.BindAPI(ts.Router)
 
-	tokenControl := token.NewTokenController("localhost", "abcDEF123")
-
-	mockEventEmitter := test.MockEventEmitter{}
-	userModule := user.NewController(ds, &mockEventEmitter)
-
-	coreModule := core.NewController(tokenControl, userModule)
-	coreModule.BindModule("user", userModule)
-
-	// Create router with base context
-	router := web.New(appcontext.AuthPlzCtx{}).
-		Middleware(appcontext.BindContext(&ac)).
-		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware)
-
-	//router.Middleware(api.BindContext(&server.ctx))
-
-	// Create oauth server instance
-	oauthModule, _ := NewController(ds)
-
-	coreModule.BindAPI(router)
-	oauthModule.BindAPI(router)
-	userModule.BindAPI(router)
-
-	address := "localhost:9000"
+	ts.Run()
 
 	redirect := "localhost:9000/auth"
 
 	var oauthClient *ClientResp
 
-	handler := context.ClearHandler(router)
-	go func() {
-		err := http.ListenAndServe(address, handler)
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
-		}
-		t.FailNow()
-	}()
-
-	client := test.NewTestClient("http://" + address + "/api")
+	client := test.NewTestClient("http://" + test.Address + "/api")
 	var userID string
 
 	t.Run("Create User", func(t *testing.T) {
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
-		v.Set("password", fakePass)
-		v.Set("username", fakeName)
+		v.Set("email", test.FakeEmail)
+		v.Set("password", test.FakePass)
+		v.Set("username", test.FakeName)
 
 		client.BindTest(t).TestPostForm("/create", http.StatusOK, v)
 
-		u, _ := ds.GetUserByEmail(fakeEmail)
+		u, _ := ts.DataStore.GetUserByEmail(test.FakeEmail)
 
 		user := u.(*datastore.User)
 		user.SetActivated(true)
-		ds.UpdateUser(user)
+		ts.DataStore.UpdateUser(user)
 
 		userID = user.GetExtID()
 	})
@@ -118,8 +68,8 @@ func TestMain(t *testing.T) {
 
 		// Attempt login
 		v := url.Values{}
-		v.Set("email", fakeEmail)
-		v.Set("password", fakePass)
+		v.Set("email", test.FakeEmail)
+		v.Set("password", test.FakePass)
 		client.BindTest(t).TestPostForm("/login", http.StatusOK, v)
 
 		// Check user status
@@ -154,11 +104,11 @@ func TestMain(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
-			TokenURL:     "http://" + address + "/api/oauth/token"}
+			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
 
-		tc := test.NewTestClientFromHttp("http://"+address+"/api/oauth", httpClient)
+		tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
 
 		tc.BindTest(t).TestGet("/info", http.StatusOK)
 	})
@@ -174,10 +124,10 @@ func TestMain(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
-			TokenURL:     "http://" + address + "/api/oauth/token"}
+			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
-		_, err := httpClient.Get("http://" + address + "/api/oauth/info")
+		_, err := httpClient.Get("http://" + test.Address + "/api/oauth/info")
 		if err == nil {
 			t.Errorf("Expected error attempting oauth")
 		}
