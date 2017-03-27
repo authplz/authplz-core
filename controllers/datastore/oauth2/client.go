@@ -53,16 +53,16 @@ func (c OauthClient) GetScopes() []string {
 	return stringToArray(c.Scopes)
 }
 
-func (c OauthClient) SetRedirectURIs(redirectURIs []string) {
+func (c *OauthClient) SetRedirectURIs(redirectURIs []string) {
 	c.RedirectURIs = arrayToString(redirectURIs)
 }
-func (c OauthClient) SetGrantTypes(grantTypes []string) {
+func (c *OauthClient) SetGrantTypes(grantTypes []string) {
 	c.GrantTypes = arrayToString(grantTypes)
 }
-func (c OauthClient) SetResponseTypes(responseTypes []string) {
+func (c *OauthClient) SetResponseTypes(responseTypes []string) {
 	c.ResponseTypes = arrayToString(responseTypes)
 }
-func (c OauthClient) SetScopes(scopes []string) {
+func (c *OauthClient) SetScopes(scopes []string) {
 	c.Scopes = arrayToString(scopes)
 }
 
