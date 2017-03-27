@@ -13,7 +13,7 @@ import (
 // DataStore instance storage
 type DataStore struct {
 	db *gorm.DB
-	*oauth.OauthStore
+	*oauthstore.OauthStore
 }
 
 // QueryFilter filter types
@@ -34,7 +34,7 @@ func NewDataStore(dbString string) (*DataStore, error) {
 
 	ds := &DataStore{db: db}
 
-	ds.OauthStore = oauth.NewOauthStore(db, ds)
+	ds.OauthStore = oauthstore.NewOauthStore(db, ds)
 
 	return ds, nil
 }

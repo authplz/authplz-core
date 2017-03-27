@@ -1,4 +1,4 @@
-package oauth
+package oauthstore
 
 import (
 	"fmt"
@@ -26,30 +26,30 @@ type OauthClient struct {
 	Public   bool
 }
 
-func (c OauthClient) GetID() string     { return c.ClientID }
-func (c OauthClient) GetSecret() string { return c.Secret }
+func (c *OauthClient) GetID() string     { return c.ClientID }
+func (c *OauthClient) GetSecret() string { return c.Secret }
 
-func (c OauthClient) GetUserData() interface{} { return c.UserData }
-func (c OauthClient) GetLastUsed() time.Time   { return c.LastUsed }
-func (c OauthClient) GetCreatedAt() time.Time  { return c.CreatedAt }
-func (c OauthClient) IsPublic() bool           { return c.Public }
+func (c *OauthClient) GetUserData() interface{} { return c.UserData }
+func (c *OauthClient) GetLastUsed() time.Time   { return c.LastUsed }
+func (c *OauthClient) GetCreatedAt() time.Time  { return c.CreatedAt }
+func (c *OauthClient) IsPublic() bool           { return c.Public }
 
-func (c OauthClient) SetID(id string)         { c.ClientID = id }
-func (c OauthClient) SetLastUsed(t time.Time) { c.LastUsed = t }
+func (c *OauthClient) SetID(id string)         { c.ClientID = id }
+func (c *OauthClient) SetLastUsed(t time.Time) { c.LastUsed = t }
 
-func (c OauthClient) SetSecret(secret string)     { c.Secret = secret }
-func (c OauthClient) SetUserData(userData string) { c.UserData = userData }
+func (c *OauthClient) SetSecret(secret string)     { c.Secret = secret }
+func (c *OauthClient) SetUserData(userData string) { c.UserData = userData }
 
-func (c OauthClient) GetRedirectURIs() []string {
+func (c *OauthClient) GetRedirectURIs() []string {
 	return stringToArray(c.RedirectURIs)
 }
-func (c OauthClient) GetGrantTypes() []string {
+func (c *OauthClient) GetGrantTypes() []string {
 	return stringToArray(c.GrantTypes)
 }
-func (c OauthClient) GetResponseTypes() []string {
+func (c *OauthClient) GetResponseTypes() []string {
 	return stringToArray(c.ResponseTypes)
 }
-func (c OauthClient) GetScopes() []string {
+func (c *OauthClient) GetScopes() []string {
 	return stringToArray(c.Scopes)
 }
 

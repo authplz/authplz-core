@@ -1,4 +1,4 @@
-package oauth
+package oauthstore
 
 import (
 	"github.com/jinzhu/gorm"

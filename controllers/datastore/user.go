@@ -33,7 +33,7 @@ type User struct {
 	FidoTokens      []FidoToken
 	TotpTokens      []TotpToken
 	AuditEvents     []AuditEvent
-	OauthClients    []oauth.OauthClient
+	OauthClients    []oauthstore.OauthClient
 }
 
 // Getters and Setters
