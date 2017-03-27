@@ -1,8 +1,6 @@
 package oauth
 
 import (
-	"bytes"
-	"encoding/json"
 	"time"
 )
 
@@ -20,23 +18,6 @@ type OauthRequest struct {
 }
 
 // Getters and Setters
-
-func stringToArray(str string) []string {
-	buf := bytes.NewBuffer([]byte(str))
-	var arr []string
-
-	json.NewDecoder(buf).Decode(&arr)
-
-	return arr
-}
-
-func arrayToString(arr []string) string {
-	var buf bytes.Buffer
-
-	json.NewEncoder(&buf).Encode(&arr)
-
-	return buf.String()
-}
 
 func (or OauthRequest) GetRequestedAt() time.Time {
 	return or.RequestedAt

@@ -30,6 +30,9 @@ import (
 
 const OAuthSecretBytes int = 64
 
+var GrantTypes = []string{"implicit", "explicit", "code", "client_credentials"}
+var ClientScopes = []string{"user"}
+
 // Config structure
 type Config struct {
 	Key            *rsa.PrivateKey // Private key for OAuth token attestation
@@ -138,21 +141,21 @@ func (oc *Controller) ValidateScopes(username string, scopes []string) []string 
 
 // CreateExplicit Create an OAuth explicit authorization code grant based client for a given user
 // This is used to authenticate first party applications that can store client information
-func (oc *Controller) CreateExplicit(clientID string, userID string, scope string, redirect string) (*Client, error) {
+func (oc *Controller) CreateExplicit(clientID string, userID string, scopes, redirects []string) (*Client, error) {
 
 	return nil, nil
 }
 
 // CreateImplicit Creates an OAuth implicit grant based client for a given user
 // This is used to authenticate web services (or other services without persistence)
-func (oc *Controller) CreateImplicit(clientID string, userID string, scope string, redirect string) (Client, error) {
+func (oc *Controller) CreateImplicit(clientID string, userID string, scopes, redirects []string) (Client, error) {
 
 	return nil, nil
 }
 
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
 // This is used to authenticate simple devices and must be pre-created
-func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes string, public bool) (*ClientResp, error) {
+func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes []string, public bool) (*ClientResp, error) {
 
 	// Generate Client ID and Secret
 	clientID := uuid.NewV4().String()
@@ -184,7 +187,6 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 		LastUsed:     client.GetLastUsed(),
 		Scopes:       client.GetScopes(),
 		RedirectURIs: client.GetRedirectURIs(),
-		UserData:     client.GetUserData(),
 		Secret:       clientSecret,
 	}
 
@@ -198,7 +200,6 @@ type ClientResp struct {
 	LastUsed     time.Time
 	Scopes       []string
 	RedirectURIs []string
-	UserData     interface{}
 	Secret       string
 }
 
@@ -220,7 +221,6 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 			LastUsed:     client.GetLastUsed(),
 			Scopes:       client.GetScopes(),
 			RedirectURIs: client.GetRedirectURIs(),
-			UserData:     client.GetUserData(),
 		}
 
 		clientResps = append(clientResps, clean)

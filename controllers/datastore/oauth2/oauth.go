@@ -1,6 +1,8 @@
 package oauth
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/jinzhu/gorm"
 )
 
@@ -51,4 +53,21 @@ func Sync(dataStore *gorm.DB) *gorm.DB {
 // Force causes existing table to be dropped
 func (os *OauthStore) Sync(force bool) *gorm.DB {
 	return Sync(os.db)
+}
+
+func stringToArray(str string) []string {
+	buf := bytes.NewBuffer([]byte(str))
+	var arr []string
+
+	json.NewDecoder(buf).Decode(&arr)
+
+	return arr
+}
+
+func arrayToString(arr []string) string {
+	var buf bytes.Buffer
+
+	json.NewEncoder(&buf).Encode(&arr)
+
+	return buf.String()
 }

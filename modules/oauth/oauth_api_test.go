@@ -95,8 +95,13 @@ func TestOauthAPI(t *testing.T) {
 		client.BindTest(t).TestGet("/oauth/test", http.StatusOK)
 	})
 
+	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
+	redirects := []string{redirect}
+	grants := []string{"client_credentials"}
+	responses := []string{"token"}
+
 	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
-		c, err := oauthModule.CreateClient(userID, "scopeA", redirect, "client_credentials", "token", true)
+		c, err := oauthModule.CreateClient(userID, scopes, redirects, grants, responses, true)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()

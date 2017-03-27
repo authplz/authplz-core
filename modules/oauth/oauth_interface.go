@@ -75,7 +75,7 @@ type UserSession interface {
 // This must be implemented by the underlying storage device
 type Storer interface {
 	// Client (application) storage
-	AddClient(userID, clientID, secret, scopes, redirects, grants, responseTypes string, public bool) (interface{}, error)
+	AddClient(userID, clientID, secret string, scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error)
 	GetClientByID(clientID string) (interface{}, error)
 	GetClientsByUserID(userID string) ([]interface{}, error)
 	UpdateClient(client interface{}) (interface{}, error)

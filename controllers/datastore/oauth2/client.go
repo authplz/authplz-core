@@ -3,7 +3,6 @@ package oauth
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"strings"
 	"time"
 )
 
@@ -35,26 +34,38 @@ func (c OauthClient) IsPublic() bool           { return c.Public }
 func (c OauthClient) SetID(id string)         { c.ClientID = id }
 func (c OauthClient) SetLastUsed(t time.Time) { c.LastUsed = t }
 
-func (c OauthClient) SetSecret(secret string)             { c.Secret = secret }
-func (c OauthClient) SetUserData(userData string)         { c.UserData = userData }
-func (c OauthClient) SetRedirectURIs(RedirectURIs string) { c.RedirectURIs = RedirectURIs }
+func (c OauthClient) SetSecret(secret string)     { c.Secret = secret }
+func (c OauthClient) SetUserData(userData string) { c.UserData = userData }
 
 func (c OauthClient) GetRedirectURIs() []string {
-	return strings.Split(c.RedirectURIs, ";")
+	return stringToArray(c.RedirectURIs)
 }
 func (c OauthClient) GetGrantTypes() []string {
-	return strings.Split(c.GrantTypes, ";")
+	return stringToArray(c.GrantTypes)
 }
 func (c OauthClient) GetResponseTypes() []string {
-	return strings.Split(c.ResponseTypes, ";")
+	return stringToArray(c.ResponseTypes)
 }
 func (c OauthClient) GetScopes() []string {
-	return strings.Split(c.Scopes, ";")
+	return stringToArray(c.Scopes)
+}
+
+func (c OauthClient) SetRedirectURIs(redirectURIs []string) {
+	c.RedirectURIs = arrayToString(redirectURIs)
+}
+func (c OauthClient) SetGrantTypes(grantTypes []string) {
+	c.GrantTypes = arrayToString(grantTypes)
+}
+func (c OauthClient) SetResponseTypes(responseTypes []string) {
+	c.ResponseTypes = arrayToString(responseTypes)
+}
+func (c OauthClient) SetScopes(scopes []string) {
+	c.Scopes = arrayToString(scopes)
 }
 
 // AddClient adds an OAuth2 client application to the database
-func (oauthStore *OauthStore) AddClient(userID, clientID, secret, scopes, redirects, grantTypes,
-	responseTypes string, public bool) (interface{}, error) {
+func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
+	scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error) {
 	// Fetch user
 	u, err := oauthStore.base.GetUserByExtID(userID)
 	if err != nil {
@@ -65,18 +76,20 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret, scopes, redire
 	}
 	user := u.(User)
 
+	// Create Client object
 	client := OauthClient{
-		UserID:        user.GetIntID(),
-		ClientID:      clientID,
-		CreatedAt:     time.Now(),
-		LastUsed:      time.Now(),
-		Secret:        secret,
-		Scopes:        scopes,
-		RedirectURIs:  redirects,
-		GrantTypes:    grantTypes,
-		ResponseTypes: responseTypes,
+		UserID:    user.GetIntID(),
+		ClientID:  clientID,
+		CreatedAt: time.Now(),
+		LastUsed:  time.Now(),
+		Secret:    secret,
 	}
+	client.SetScopes(scopes)
+	client.SetRedirectURIs(redirects)
+	client.SetGrantTypes(grantTypes)
+	client.SetResponseTypes(responseTypes)
 
+	// Save to store
 	oauthStore.db = oauthStore.db.Create(&client)
 	err = oauthStore.db.Error
 	if err != nil {
