@@ -3,24 +3,27 @@ package oauth
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"log"
 	"time"
 )
 
 // OauthClient is a client application registration
 type OauthClient struct {
-	ID            uint      `gorm:"primary_key" description:"Internal Database ID"`
-	CreatedAt     time.Time `description:"Creation time"`
-	UpdatedAt     time.Time `description:"Last update time"`
-	UserID        uint
-	ClientID      string
-	LastUsed      time.Time
-	Secret        string
+	ID        uint      `gorm:"primary_key" description:"Internal Database ID"`
+	CreatedAt time.Time `description:"Creation time"`
+	UpdatedAt time.Time `description:"Last update time"`
+	UserID    uint
+	ClientID  string
+	LastUsed  time.Time
+	Secret    string
+
 	Scopes        string
 	RedirectURIs  string
 	GrantTypes    string
 	ResponseTypes string
-	UserData      string
-	Public        bool
+
+	UserData string
+	Public   bool
 }
 
 func (c OauthClient) GetID() string     { return c.ClientID }
@@ -89,6 +92,8 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
 	client.SetGrantTypes(grantTypes)
 	client.SetResponseTypes(responseTypes)
 
+	log.Printf("Save client: %+v", client)
+
 	// Save to store
 	oauthStore.db = oauthStore.db.Create(&client)
 	err = oauthStore.db.Error
@@ -107,6 +112,8 @@ func (oauthStore *OauthStore) GetClientByID(clientID string) (interface{}, error
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
+
+	log.Printf("Fetched client: %+v", client)
 
 	return &client, nil
 }
