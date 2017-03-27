@@ -93,6 +93,7 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
 	client.SetResponseTypes(responseTypes)
 
 	log.Printf("Save client: %+v", client)
+	log.Printf("Scopes: %+v Redirects: %+v Grants: %+v Responses: %+v", scopes, redirects, grantTypes, responseTypes)
 
 	// Save to store
 	oauthStore.db = oauthStore.db.Create(&client)
