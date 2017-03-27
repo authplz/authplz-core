@@ -186,6 +186,7 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 		CreatedAt:    client.GetCreatedAt(),
 		LastUsed:     client.GetLastUsed(),
 		Scopes:       client.GetScopes(),
+		GrantTypes:   client.GetGrantTypes(),
 		RedirectURIs: client.GetRedirectURIs(),
 		Secret:       clientSecret,
 	}
@@ -199,6 +200,7 @@ type ClientResp struct {
 	CreatedAt    time.Time
 	LastUsed     time.Time
 	Scopes       []string
+	GrantTypes   []string
 	RedirectURIs []string
 	Secret       string
 }
@@ -220,6 +222,7 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 			CreatedAt:    client.GetCreatedAt(),
 			LastUsed:     client.GetLastUsed(),
 			Scopes:       client.GetScopes(),
+			GrantTypes:   client.GetGrantTypes(),
 			RedirectURIs: client.GetRedirectURIs(),
 		}
 

@@ -95,7 +95,7 @@ func TestOauthAPI(t *testing.T) {
 		client.BindTest(t).TestGet("/oauth/test", http.StatusOK)
 	})
 
-	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
+	scopes := []string{"ScopeA", "public.read", "public.write", "private.read", "private.write"}
 	redirects := []string{redirect}
 	grants := []string{"client_credentials"}
 	responses := []string{"token"}
