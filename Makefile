@@ -1,6 +1,8 @@
 # Helpers for AuthPlz development
 
 
+PACKAGES=$(shell go list ./... | grep -v '/vendor/')
+
 # Core Functions
 
 default: build
@@ -23,7 +25,7 @@ run: build
 
 # Test application
 test:
-	go test -p=1 ./...
+	@go test -p=1 $(PACKAGES)
 
 
 # Frontend components now in authplz-ui package
@@ -31,7 +33,7 @@ test:
 # Utilities
 
 lint:
-	golint ./...
+	golint $(PACKAGES)
 
 format:
 	gofmt -w -s ./
@@ -40,7 +42,7 @@ validate:
 	swagger validate swagger.yml
 
 coverage:
-	go test -p=1 -cover ./...
+	go test -p=1 -cover $(PACKAGES)
 	
 checks: format lint coverage
 
