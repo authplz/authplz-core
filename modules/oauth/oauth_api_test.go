@@ -133,6 +133,7 @@ func TestOauthAPI(t *testing.T) {
 		tc.BindTest(t).TestGet("/info", http.StatusOK)
 	})
 
+	// Implicit flow for browser based tokens (no secret storage)
 	t.Run("OAuth login as implicit client", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("response_type", "token")
@@ -140,10 +141,8 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
 		v.Set("scope", "public.read")
 
-		tc := test.NewTestClient("http://" + test.Address + "/api/oauth")
-
 		// Get to start authorization
-		tc.BindTest(t).TestGetWithParams("/auth", http.StatusOK, v)
+		client.BindTest(t).TestGetWithParams("/auth", http.StatusOK, v)
 
 		t.Skip("Not yet implemented")
 		// TODO: fetch pending authorizations

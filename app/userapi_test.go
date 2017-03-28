@@ -12,6 +12,7 @@ import (
 	"github.com/ryankurte/go-u2f"
 
 	"github.com/ryankurte/authplz/api"
+	"github.com/ryankurte/authplz/config"
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/modules/2fa/totp"
 	"github.com/ryankurte/authplz/test"
@@ -20,7 +21,7 @@ import (
 func TestMain(t *testing.T) {
 
 	// Fetch default configuration
-	c, err := DefaultConfig()
+	c, err := config.DefaultConfig()
 	if err != nil {
 		t.Error(err.Error())
 	}

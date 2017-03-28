@@ -1,4 +1,12 @@
-package app
+/*
+ * AuthPlz Application Configuration
+ * Defines configuration arguments and environmental variables
+ *
+ * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * Copyright 2017 Ryan Kurte
+ */
+
+package config
 
 import (
 	"crypto/rand"
@@ -20,12 +28,20 @@ type AuthPlzConfig struct {
 	Database              string `short:"d" long:"database" description:"Database connection string"`
 	CookieSecret          string `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
 	TokenSecret           string `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
+	OauthSecret           string `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
 	TLSCert               string `short:"c" long:"tls-cert" description:"TLS Certificate file"`
 	TLSKey                string `short:"k" long:"tls-key" description:"TLS Key File"`
 	NoTLS                 bool   `long:"disable-tls" description:"Disable TLS for testing or reverse proxying"`
 	StaticDir             string `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string `short:"t" long:"template-dir" description:"Directory to load templates from"`
 	MinimumPasswordLength int
+
+	routes Routes
+}
+
+// GetRoutes fetches routes from the configuration object
+func (apc *AuthPlzConfig) GetRoutes() *Routes {
+	return &apc.routes
 }
 
 // GenerateSecret Helper to generate a default secret to use
@@ -60,6 +76,8 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
 	c.MinimumPasswordLength = 12
 
+	c.routes = DefaultRoutes()
+
 	var err error
 
 	c.CookieSecret, err = GenerateSecret(32)
@@ -74,7 +92,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	return &c, nil
 }
 
-// GetConfig fetch the server configuration
+// GetConfig fetches the server configuration
 // This parses environmental variables, command line flags, and in future
 // will handle file based loading of configurations.
 func GetConfig() *AuthPlzConfig {
@@ -95,6 +113,8 @@ func GetConfig() *AuthPlzConfig {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	// TODO: load config file for routes/templates/languages/etc.
 
 	// Decode secrets to strings
 	tokenSecret, err := base64.URLEncoding.DecodeString(c.TokenSecret)

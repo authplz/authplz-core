@@ -14,6 +14,7 @@ import (
 
 	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
+	"github.com/ryankurte/authplz/config"
 
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/controllers/token"
@@ -30,7 +31,7 @@ import (
 type AuthPlzServer struct {
 	address        string
 	port           string
-	config         AuthPlzConfig
+	config         config.AuthPlzConfig
 	ds             *datastore.DataStore
 	ctx            appcontext.AuthPlzGlobalCtx
 	router         *web.Router
@@ -41,7 +42,7 @@ type AuthPlzServer struct {
 const bufferSize uint = 64
 
 // NewServer Create an AuthPlz server instance
-func NewServer(config AuthPlzConfig) *AuthPlzServer {
+func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server := AuthPlzServer{}
 
 	server.config = config
