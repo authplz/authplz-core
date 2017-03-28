@@ -1,32 +1,27 @@
 package appcontext
 
 import (
-	"encoding/json"
 	"log"
 	"net"
 	"net/http"
-)
 
-import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
 	"github.com/ryankurte/authplz/api"
 )
 
-// Application global context
-// TODO: this should probably be split and bound by module
+// AuthPlzGlobalCtx Application global / static context
 type AuthPlzGlobalCtx struct {
-	port         string
-	address      string
-	url          string
 	SessionStore *sessions.CookieStore
 }
 
-func NewGlobalCtx(port, address, url string, sessionStore *sessions.CookieStore) AuthPlzGlobalCtx {
-	return AuthPlzGlobalCtx{port, address, url, sessionStore}
+// NewGlobalCtx creates a new global context instance
+func NewGlobalCtx(sessionStore *sessions.CookieStore) AuthPlzGlobalCtx {
+	return AuthPlzGlobalCtx{sessionStore}
 }
 
-// Application handler context
+// AuthPlzCtx is the common per-request context
+// Modules implement their own contexts that extend this as a base
 type AuthPlzCtx struct {
 	Global       *AuthPlzGlobalCtx
 	session      *sessions.Session
@@ -39,6 +34,7 @@ type AuthPlzCtx struct {
 
 type User interface {
 	GetExtID() string
+	IsAdmin() string
 }
 
 func (c *AuthPlzCtx) GetLocale() string {
@@ -64,18 +60,6 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 		ctx.Global = globalCtx
 		next(rw, req)
 	}
-}
-
-// Helper to write objects out as JSON
-func (c *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
-	js, err := json.Marshal(i)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
 }
 
 // Helper to write API results out
@@ -283,7 +267,7 @@ func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request)
 }
 
 // UserAction executes a user action, such as `login`
-// This is provided to allow 2fa modules to execute actions by user across the API boundaries
+// This is provided to allow modules to execute global actions as a given user across the API boundaries
 // TODO: a more elegant solution to this could be nice.
 func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, req *web.Request) {
 	switch action {

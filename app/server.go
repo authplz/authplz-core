@@ -47,14 +47,6 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	server.config = config
 
-	// Generate URL string
-	var url string
-	if config.NoTLS == false {
-		url = "https://" + config.Address + ":" + config.Port
-	} else {
-		url = "http://" + config.Address + ":" + config.Port
-	}
-
 	// Attempt database connection
 	dataStore, err := datastore.NewDataStore(config.Database)
 	if err != nil {
@@ -99,7 +91,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager.BindService(&auditSvc)
 
 	// Create a global context object
-	server.ctx = appcontext.NewGlobalCtx(config.Port, config.Address, url, sessionStore)
+	server.ctx = appcontext.NewGlobalCtx(sessionStore)
 
 	// Create router
 	server.router = web.New(appcontext.AuthPlzCtx{}).
