@@ -145,6 +145,7 @@ func TestOauthAPI(t *testing.T) {
 		// Get to start authorization
 		tc.BindTest(t).TestGetWithParams("/auth", http.StatusOK, v)
 
+		t.Skip("Not yet implemented")
 		// TODO: fetch pending authorizations
 
 		// TODO: accept authorization (redirect to client)
