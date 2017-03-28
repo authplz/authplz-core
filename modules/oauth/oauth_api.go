@@ -10,6 +10,8 @@ package oauth
 
 import (
 	"context"
+	"encoding/gob"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -19,6 +21,7 @@ import (
 import (
 	"github.com/gocraft/web"
 	"github.com/ory-am/fosite"
+	"github.com/ryankurte/authplz/api"
 	"github.com/ryankurte/authplz/appcontext"
 )
 
@@ -30,6 +33,12 @@ type APICtx struct {
 	oc *Controller
 	// Fosite user context
 	fositeContext context.Context
+}
+
+func init() {
+	// Register AuthorizeRequests for session serialisation
+	gob.Register(fosite.AuthorizeRequest{})
+	gob.Register(ClientWrapper{})
 }
 
 // BindOauthContext Helper middleware to bind module controller to API context
@@ -69,13 +78,6 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
 	log.Printf("AuthorizeRequestGet\n")
 
-	// Check user is logged in
-	if c.GetUserID() == "" {
-		// TODO: Redirect if not
-		rw.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	// Process authorization request
 	ar, err := c.oc.OAuth2.NewAuthorizeRequest(c.fositeContext, req.Request)
 	if err != nil {
@@ -84,9 +86,9 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Authentication req: %+v\n", ar)
-	log.Printf("Response Types: %+v\n", ar.GetResponseTypes())
-	log.Printf("Scopes: %+v\n", ar.GetRequestedScopes())
+	//log.Printf("Authentication req: %+v\n", ar)
+	//log.Printf("Response Types: %+v\n", ar.GetResponseTypes())
+	//log.Printf("Scopes: %+v\n", ar.GetRequestedScopes())
 
 	// TODO: Check user authorization?
 
@@ -96,16 +98,29 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 	// TODO: Check if app is already authorized
 	// Redirect if so (and appropriate)
 
-	// Cache authorization request
-	c.GetSession().Values["oauth"] = ar
-	c.GetSession().Save(req.Request, rw)
+	log.Printf("Storing authorization request: %+v", ar)
 
-	// TODO: Redirect to user authorization if not
-	rw.WriteHeader(http.StatusOK)
+	// Cache authorization request
+	session := c.GetSession()
+	session.Values["oauth"] = ar
+	session.Save(req.Request, rw)
+
+	// Check user is logged in
+	if c.GetUserID() == "" {
+		// Bind redirect back and redirect to login page if not
+		c.BindRedirect("/oauth/pending", rw, req)
+		c.Redirect("/login", rw, req)
+		return
+	} else {
+		// Redirect to pending auth page if logged in
+		c.Redirect("/oauth/pending", rw, req)
+	}
 }
 
 // AuthorizePendingGet Fetch pending authorizations for a user
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
+	log.Printf("Authorize pending get")
+
 	// Check user is logged in
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -113,13 +128,25 @@ func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	if c.GetSession().Values["oauth"] == nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageEn.NoU2FPending)
 		return
 	}
 
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
 
-	c.WriteJson(rw, ar)
+	log.Printf("Pending: %+v", ar)
+
+	// Client is an interface so cannot be parsed to or from json
+	ar.Client = nil
+
+	c.WriteJson(rw, &ar)
+}
+
+// AuthorizeConfirm authorization confirmation object
+type AuthorizeConfirm struct {
+	Accept        bool
+	State         string
+	GrantedScopes []string
 }
 
 // AuthorizeConfirmPost Confirm authorization of a token
@@ -132,19 +159,29 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	// Fetch authorization request
+	// Fetch authorization request from session
 	if c.GetSession().Values["oauth"] == nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	ac := AuthorizeConfirm{}
+	defer req.Body.Close()
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&ac); err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+	}
+
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
 
 	session := NewSession(c.GetUserID(), "")
 
-	// TODO: Validate authorization
-	//granted := c.oc.ValidateScopes(ar.GetRequestedScopes)
-
-	// TODO: Create Grants
+	// Validate that granted scopes match those available in AuthorizeRequest
+	for _, granted := range ac.GrantedScopes {
+		if fosite.HierarchicScopeStrategy(ar.GetRequestedScopes(), granted) {
+			ar.GrantedScopes = append(ar.GrantedScopes, granted)
+		}
+	}
 
 	// Create response
 	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(session))
@@ -185,7 +222,6 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Token string: %s", tokenString)
 	sig := strings.Split(tokenString, ".")[1]
 
 	token, err := c.oc.GetAccessTokenInfo(sig)
@@ -248,7 +284,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Access response: %+v", response)
+	//log.Printf("Access response: %+v", response)
 
 	// Write response to client
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)

@@ -13,8 +13,7 @@ package oauth
 import (
 	"bytes"
 	"crypto/rsa"
-	"encoding/gob"
-	"log"
+	//"log"
 	"regexp"
 	"text/template"
 	"time"
@@ -46,11 +45,6 @@ type Controller struct {
 	store          Storer
 	scopeMatcher   *regexp.Regexp
 	scopeValidator *template.Template
-}
-
-func init() {
-	// Register AuthorizeRequests for session serialisation
-	gob.Register(&fosite.AuthorizeRequest{})
 }
 
 // NewController Creates a new OAuth2 controller instance
@@ -258,8 +252,6 @@ func (oc *Controller) GetAccessTokenInfo(tokenString string) (*AccessTokenInfo, 
 	if a == nil {
 		return nil, nil
 	}
-
-	log.Printf("Fetching access token %+v", a)
 
 	access := a.(AccessTokenSession)
 

@@ -9,17 +9,18 @@
 package oauth
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/ory-am/fosite"
 	"github.com/ryankurte/authplz/controllers/datastore"
 	"github.com/ryankurte/authplz/modules/core"
 	"github.com/ryankurte/authplz/modules/user"
 	"github.com/ryankurte/authplz/test"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+	"strings"
 )
 
 type OauthError struct {
@@ -108,7 +109,7 @@ func TestOauthAPI(t *testing.T) {
 		}
 		oauthClient = c
 
-		log.Printf("OauthClient: %+v", oauthClient)
+		//log.Printf("OauthClient: %+v", oauthClient)
 	})
 
 	t.Run("OAuth list clients", func(t *testing.T) {
@@ -116,7 +117,11 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		log.Printf("%+v\n", c)
+
+		if len(c) != 1 {
+			t.Errorf("Invalid client count (actual: %d expected: %d)", len(c), 1)
+		}
+
 	})
 
 	t.Run("OAuth login as non-interactive client", func(t *testing.T) {
@@ -140,16 +145,53 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("client_id", oauthClient.ClientID)
 		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
 		v.Set("scope", "public.read")
+		v.Set("state", "afrjkbhreiulqyaf3q974")
 
-		// Get to start authorization
-		client.BindTest(t).TestGetWithParams("/auth", http.StatusOK, v)
+		// Get to start authorization (this is the redirect from the client app)
+		resp, err := client.GetWithParams("/oauth/auth", 302, v)
+		if err != nil {
+			t.Error(err)
+		}
+		if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
+			t.Error(err)
+		}
 
-		t.Skip("Not yet implemented")
-		// TODO: fetch pending authorizations
+		// Fetch pending authorizations
+		resp, err = client.Get("/oauth/pending", http.StatusOK)
+		if err != nil {
+			t.Error(err)
+		}
 
-		// TODO: accept authorization (redirect to client)
+		authReq := fosite.AuthorizeRequest{}
+		if err = test.ParseJson(resp, &authReq); err != nil {
+			t.Error(err)
+		}
 
-		// TODO: check redirected token
+		if authReq.State != v.Get("state") {
+			t.Errorf("Invalid state")
+		}
+
+		// Accept authorization
+		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
+		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Check redirect
+		redirect := resp.Header.Get("Location")
+		if !strings.HasPrefix(redirect, oauthClient.RedirectURIs[0]) {
+			t.Errorf("Redirect invalid")
+		}
+
+		// Parse token args from response
+		tokenValues, err := url.ParseQuery(redirect)
+		if err != nil {
+			t.Error(err)
+		}
+
+		// TODO: Test token
+		t.Logf("Token: %+v", tokenValues)
 
 	})
 

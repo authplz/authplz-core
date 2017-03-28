@@ -37,12 +37,16 @@ type User interface {
 	IsAdmin() string
 }
 
-func (c *AuthPlzCtx) GetLocale() string {
-	return c.locale
-}
-
 func (c *AuthPlzCtx) GetSession() *sessions.Session {
 	return c.session
+}
+
+func (c *AuthPlzCtx) GetLocale() string {
+	if c.locale != "" {
+		return c.locale
+	} else {
+		return api.DefaultLocale
+	}
 }
 
 // Wrapper for API localisation
@@ -60,12 +64,6 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 		ctx.Global = globalCtx
 		next(rw, req)
 	}
-}
-
-// Helper to write API results out
-func (c *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := api.ApiResponse{Result: result, Message: message}
-	c.WriteJson(w, apiResp)
 }
 
 // User session layer
@@ -164,108 +162,6 @@ func (ctx *AuthPlzCtx) GetUserID() string {
 	}
 }
 
-// Helper function to set a flash message for display to the user
-func (c *AuthPlzCtx) SetFlashMessage(message string, rw web.ResponseWriter, req *web.Request) {
-	session, err := c.Global.SessionStore.Get(req.Request, "user-message")
-	if err != nil {
-		return
-	}
-	session.AddFlash(message)
-
-	c.session.Save(req.Request, rw)
-}
-
-// Helper function to get a flash message to display to the user
-func (c *AuthPlzCtx) GetFlashMessage(rw web.ResponseWriter, req *web.Request) string {
-	session, err := c.Global.SessionStore.Get(req.Request, "user-message")
-	if err != nil {
-		return ""
-	}
-
-	flashes := session.Flashes()
-	if len(flashes) > 0 {
-		return flashes[0].(string)
-	}
-
-	return ""
-}
-
-const secondFactorRequestSessionKey = "2fa-request"
-const secondFactorActionSessionKey = "2fa-action"
-
-// Bind2FARequest Bind a 2fa request and action for a user
-// TODO: the request should probably time-out eventually
-func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string, action string) {
-	secondFactorSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.Bind2faRequest error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return
-	}
-
-	log.Printf("AuthPlzCtx.Bind2faRequest adding authorization flash for user %s\n", userid)
-
-	secondFactorSession.Values[secondFactorRequestSessionKey] = userid
-	secondFactorSession.Values[secondFactorActionSessionKey] = action
-	secondFactorSession.Save(req.Request, rw)
-}
-
-// Get2FARequest Fetch a 2fa request and action for a user
-func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
-	u2fSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.Get2FARequest Error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return "", ""
-	}
-
-	if u2fSession.Values[secondFactorRequestSessionKey] == nil ||
-		u2fSession.Values[secondFactorActionSessionKey] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
-		log.Printf("AuthPlzCtx.Get2FARequest No userid found in session flash")
-		return "", ""
-	}
-	userid := u2fSession.Values[secondFactorRequestSessionKey].(string)
-	action := u2fSession.Values[secondFactorActionSessionKey].(string)
-	return userid, action
-}
-
-const (
-	recoveryRequestSessionKey = "recovery-request-session"
-	recoveryRequestUserIDKey  = "recovery-request-userid"
-)
-
-// BindRecoveryRequest binds an authenticated recovery request to the session
-// This should only be called after all [possible] authentication has been executed
-func (c *AuthPlzCtx) BindRecoveryRequest(userid string, rw web.ResponseWriter, req *web.Request) {
-	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.BindRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return
-	}
-
-	session.Values[recoveryRequestUserIDKey] = userid
-	session.Save(req.Request, rw)
-}
-
-// GetRecoveryRequest fetches an authenticated recovery request from the session
-// This allows a module to accept new password settings for the provided user id
-func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request) string {
-	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.GetRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
-		return ""
-	}
-
-	if session.Values[recoveryRequestUserIDKey] == nil {
-		return ""
-	}
-
-	return session.Values[recoveryRequestUserIDKey].(string)
-}
-
 // UserAction executes a user action, such as `login`
 // This is provided to allow modules to execute global actions as a given user across the API boundaries
 // TODO: a more elegant solution to this could be nice.
@@ -278,4 +174,28 @@ func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, re
 	default:
 		log.Printf("AuthPlzCtx.UserAction error: unrecognised user action (%s)", action)
 	}
+}
+
+const (
+	redirectSessionKey = "redirect-session"
+	redirectURLKey     = "redirect-url"
+)
+
+func (c *AuthPlzCtx) Redirect(url string, rw web.ResponseWriter, req *web.Request) {
+	http.Redirect(rw, req.Request, url, 302)
+}
+
+func (c *AuthPlzCtx) BindRedirect(url string, rw web.ResponseWriter, req *web.Request) {
+	c.BindInst(rw, req, redirectSessionKey, redirectURLKey, url)
+}
+
+func (c *AuthPlzCtx) GetRedirect(rw web.ResponseWriter, req *web.Request) string {
+	var url string
+
+	err := c.GetInst(rw, req, redirectSessionKey, redirectURLKey, &url)
+	if err != nil {
+		return ""
+	}
+
+	return url
 }

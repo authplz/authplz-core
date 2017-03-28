@@ -2,6 +2,7 @@ package appcontext
 
 import (
 	"encoding/json"
+	"github.com/ryankurte/authplz/api"
 	"log"
 	"net/http"
 )
@@ -17,4 +18,10 @@ func (c *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
+}
+
+// WriteApiResult Helper to write API results messages
+func (c *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
+	apiResp := api.ApiResponse{Result: result, Message: message}
+	c.WriteJson(w, apiResp)
 }

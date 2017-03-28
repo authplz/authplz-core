@@ -96,7 +96,7 @@ func (oa *FositeAdaptor) DeleteAuthorizeCodeSession(ctx context.Context, code st
 // Access code storage (used by all implementations)
 
 func (oa *FositeAdaptor) CreateAccessTokenSession(c context.Context, signature string, request fosite.Requester) (err error) {
-	client := request.GetClient().(*ClientWrapper)
+	client := request.GetClient()
 	session := request.GetSession().(*SessionWrap)
 
 	requestedScopes := []string(request.GetRequestedScopes())

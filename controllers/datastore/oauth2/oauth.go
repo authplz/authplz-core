@@ -2,9 +2,19 @@ package oauthstore
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"github.com/jinzhu/gorm"
 )
+
+func init() {
+	// Register database objects for future serialisation if required
+	gob.Register(&OauthClient{})
+	gob.Register(&OauthSession{})
+	gob.Register(&OauthAuthorizeCode{})
+	gob.Register(&OauthAccessToken{})
+	gob.Register(&OauthRefreshToken{})
+}
 
 // User defines the user interface required by the Oauth2 storage module
 type User interface {

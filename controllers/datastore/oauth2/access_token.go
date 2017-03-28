@@ -2,7 +2,6 @@ package oauthstore
 
 import (
 	"github.com/jinzhu/gorm"
-	"log"
 	"time"
 )
 
@@ -93,8 +92,6 @@ func (os *OauthStore) GetClientByAccessTokenSession(signature string) (interface
 	if err != nil {
 		return nil, err
 	}
-
-	log.Printf("GetClientByAccessToken")
 
 	return &oc, nil
 }

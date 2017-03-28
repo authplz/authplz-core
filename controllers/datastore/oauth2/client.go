@@ -3,7 +3,6 @@ package oauthstore
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"log"
 	"time"
 )
 
@@ -92,9 +91,6 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
 	client.SetGrantTypes(grantTypes)
 	client.SetResponseTypes(responseTypes)
 
-	log.Printf("Save client: %+v", client)
-	log.Printf("Scopes: %+v Redirects: %+v Grants: %+v Responses: %+v", scopes, redirects, grantTypes, responseTypes)
-
 	// Save to store
 	oauthStore.db = oauthStore.db.Create(&client)
 	err = oauthStore.db.Error
@@ -113,8 +109,6 @@ func (oauthStore *OauthStore) GetClientByID(clientID string) (interface{}, error
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
-
-	log.Printf("Fetched client: %+v", client)
 
 	return &client, nil
 }

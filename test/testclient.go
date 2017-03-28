@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"fmt"
 	"github.com/ryankurte/authplz/api"
 )
 
@@ -37,12 +38,21 @@ type TestResponse struct {
 // Create a new TestClient instance
 func NewTestClient(path string) TestClient {
 	jar, _ := cookiejar.New(nil)
-	return TestClient{&http.Client{Jar: jar}, path, nil}
+	httpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Jar: jar,
+	}
+	return TestClient{httpClient, path, nil}
 }
 
 func NewTestClientFromHttp(path string, client *http.Client) TestClient {
 	jar, _ := cookiejar.New(nil)
 	client.Jar = jar
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 	return TestClient{client, path, nil}
 }
 
@@ -69,12 +79,97 @@ func (tc *TestClient) testHandleErr(resp *http.Response, err error, path string,
 func (tc *TestClient) TestGet(path string, statusCode int) *TestResponse {
 	queryPath := tc.basePath + path
 
-	resp, err := tc.Get(queryPath)
+	resp, err := tc.Client.Get(queryPath)
 	tc.testHandleErr(resp, err, queryPath, statusCode)
 
 	tr := &TestResponse{resp, err, tc.t}
 
 	return tr
+}
+
+func (tc *TestClient) Get(path string, statusCode int) (*http.Response, error) {
+	queryPath := tc.basePath + path
+
+	req, _ := http.NewRequest("GET", queryPath, nil)
+
+	resp, err := tc.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != statusCode {
+		return resp, fmt.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
+	}
+
+	return resp, err
+}
+
+func (tc *TestClient) GetWithParams(path string, statusCode int, v url.Values) (*http.Response, error) {
+	queryPath := tc.basePath + path
+
+	req, _ := http.NewRequest("GET", queryPath, nil)
+
+	req.URL.RawQuery = v.Encode()
+
+	resp, err := tc.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != statusCode {
+		return resp, fmt.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
+	}
+
+	return resp, err
+}
+
+func CheckRedirect(url string, resp *http.Response) error {
+	if loc := resp.Header.Get("Location"); loc != url {
+		return fmt.Errorf("Invalid location header (actual: %s expected: %s", loc, url)
+	}
+	return nil
+}
+
+func ParseJson(resp *http.Response, inst interface{}) error {
+	defer resp.Body.Close()
+	err := json.NewDecoder(resp.Body).Decode(&inst)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckApiResponse(status api.ApiResponse, result string, message string) error {
+	if status.Result != result {
+		return fmt.Errorf("Incorrect API result, expected: %s received: %s message: %s", result, status.Result, status.Message)
+	}
+
+	if status.Message != message {
+		return fmt.Errorf("Incorrect API message, expected: %s received: %s", message, status.Message)
+	}
+
+	return nil
+}
+
+// Post JSON to an api endpoint
+func (tc *TestClient) PostJSON(path string, statusCode int, requestInst interface{}) (*http.Response, error) {
+	queryPath := tc.basePath + path
+
+	js, err := json.Marshal(requestInst)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := tc.Post(queryPath, "application/json", bytes.NewReader(js))
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != statusCode {
+		return resp, fmt.Errorf("Incorrect status code from %s received: %d expected: %d", path, resp.StatusCode, statusCode)
+	}
+
+	return resp, nil
 }
 
 func (tc *TestClient) TestGetWithParams(path string, statusCode int, v url.Values) *TestResponse {
