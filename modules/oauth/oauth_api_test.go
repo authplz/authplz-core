@@ -97,7 +97,7 @@ func TestOauthAPI(t *testing.T) {
 
 	scopes := []string{"ScopeA", "public.read", "public.write", "private.read", "private.write"}
 	redirects := []string{redirect}
-	grants := []string{"client_credentials"}
+	grants := []string{"client_credentials", "implicit", "explicit"}
 	responses := []string{"token"}
 
 	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
@@ -123,6 +123,7 @@ func TestOauthAPI(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
+			Scopes:       []string{"public.read", "private.read"},
 			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
@@ -130,6 +131,40 @@ func TestOauthAPI(t *testing.T) {
 		tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
 
 		tc.BindTest(t).TestGet("/info", http.StatusOK)
+	})
+
+	t.Run("OAuth login as implicit client", func(t *testing.T) {
+		v := url.Values{}
+		v.Set("response_type", "token")
+		v.Set("client_id", oauthClient.ClientID)
+		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
+		v.Set("scope", "public.read")
+
+		tc := test.NewTestClient("http://" + test.Address + "/api/oauth")
+
+		// Get to start authorization
+		tc.BindTest(t).TestGetWithParams("/auth", http.StatusOK, v)
+
+		// TODO: fetch pending authorizations
+
+		// TODO: accept authorization (redirect to client)
+
+		// TODO: check redirected token
+
+	})
+
+	t.Run("OAuth rejects invalid scopes", func(t *testing.T) {
+		config := &clientcredentials.Config{
+			ClientID:     oauthClient.ClientID,
+			ClientSecret: oauthClient.Secret,
+			Scopes:       []string{"not-a-scope"},
+			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
+
+		httpClient := config.Client(oauth2.NoContext)
+		_, err := httpClient.Get("http://" + test.Address + "/api/oauth/info")
+		if err == nil {
+			t.Errorf("Expected error attempting oauth")
+		}
 	})
 
 	t.Run("OAuth can remove non-interactive clients", func(t *testing.T) {
