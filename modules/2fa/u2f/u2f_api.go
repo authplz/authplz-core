@@ -54,7 +54,7 @@ func init() {
 func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Build U2F challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 	u2fReq := challenge.RegisterRequest()
@@ -89,14 +89,14 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 
 	// Fetch request from session vars
 	// TODO: move this to a separate session flash
 	if c.GetSession().Values[u2fRegisterChallengeKey] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No challenge found")
+		c.WriteApiResult(rw, api.ResultError, "No challenge found")
 		fmt.Println("No challenge found in session flash")
 		return
 	}
@@ -110,24 +110,24 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	var registerResp u2f.RegisterResponse
 	jsonErr := json.NewDecoder(req.Body).Decode(&registerResp)
 	if jsonErr != nil {
-		c.WriteApiResult(rw, api.ApiResultError, "Invalid U2F registration response")
+		c.WriteApiResult(rw, api.ResultError, "Invalid U2F registration response")
 		return
 	}
 
 	// Validate registration
 	ok, err := c.um.ValidateRegistration(c.GetUserID(), keyName, challenge, &registerResp)
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 	if !ok {
 		log.Printf("U2F enrolment failed for user %s\n", c.GetUserID())
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().U2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().U2FRegistrationFailed)
 		return
 	}
 
 	log.Printf("Enrolled U2F token for account %s\n", c.GetUserID())
-	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().U2FRegistrationComplete)
+	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().U2FRegistrationComplete)
 	return
 }
 
@@ -140,7 +140,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 3  %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 
@@ -149,7 +149,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 
 	if userid == "" {
 		log.Printf("u2f.U2FAuthenticateGet No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 
@@ -158,7 +158,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	// Generate challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 	u2fSignReq := challenge.SignRequest()
@@ -179,14 +179,14 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 	if err != nil {
 		log.Printf("Error fetching u2f-sign-session 3  %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 
 	// Fetch request from session vars
 	// TODO: move this to a separate session flash
 	if u2fSession.Values[u2fSignChallengeKey] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No challenge found")
+		c.WriteApiResult(rw, api.ResultError, "No challenge found")
 		fmt.Println("No challenge found in session flash")
 		return
 	}
@@ -194,7 +194,7 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	u2fSession.Values[u2fSignChallengeKey] = ""
 
 	if u2fSession.Values[u2fSignUserIDKey] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
+		c.WriteApiResult(rw, api.ResultError, "No userid found")
 		fmt.Println("No userid found in session flash")
 		return
 	}
@@ -214,25 +214,25 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	err = json.NewDecoder(req.Body).Decode(&u2fSignResp)
 	if err != nil {
 		log.Printf("U2FAuthenticatePost: error decoding sign response (%s)", err)
-		c.WriteApiResult(rw, api.ApiResultError, "Invalid U2F registration response")
+		c.WriteApiResult(rw, api.ResultError, "Invalid U2F registration response")
 		return
 	}
 
 	// Validate signature
 	ok, err := c.um.ValidateSignature(c.GetUserID(), challenge, &u2fSignResp)
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 	if !ok {
 		log.Printf("U2FAuthenticatePost: authentication failed for user %s\n", c.GetUserID())
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().U2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().U2FRegistrationFailed)
 		return
 	}
 
 	log.Printf("U2FAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
-	c.WriteApiResult(rw, api.ApiResultOk, c.GetApiLocale().LoginSuccessful)
+	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().LoginSuccessful)
 }
 
 // U2FTokensGet Lists u2f tokens for the logged in user user
@@ -240,7 +240,7 @@ func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 
@@ -248,7 +248,7 @@ func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 	tokens, err := c.um.ListTokens(c.GetUserID())
 	if err != nil {
 		log.Printf("Error fetching U2F tokens %s", err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 

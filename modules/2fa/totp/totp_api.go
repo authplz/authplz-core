@@ -133,7 +133,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 
@@ -181,7 +181,7 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
 		log.Printf("totp.TOTPAuthenticatePost No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 

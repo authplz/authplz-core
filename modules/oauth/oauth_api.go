@@ -111,7 +111,7 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 
 	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, err.Error())
+		c.WriteApiResult(rw, api.ResultError, err.Error())
 		return
 	}
 
@@ -160,7 +160,7 @@ func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch OAuth Authorization Request from session
 	if c.GetSession().Values["oauth"] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageEn.NoOAuthPending)
+		c.WriteApiResult(rw, api.ResultError, api.ApiMessageEn.NoOAuthPending)
 		return
 	}
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
@@ -252,12 +252,12 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	token, err := c.oc.GetAccessTokenInfo(sig)
 	if err != nil {
-		c.WriteApiResult(rw, api.ApiResultError, err.Error())
+		c.WriteApiResult(rw, api.ResultError, err.Error())
 		return
 	}
 
 	if token == nil {
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().NoOAuthTokenFound)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().NoOAuthTokenFound)
 		return
 	}
 

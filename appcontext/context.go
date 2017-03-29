@@ -124,7 +124,7 @@ func (c *AuthPlzCtx) GetApiMessageInst() *api.ApiMessageContainer {
 // Middleware to ensure only logged in access to an endpoint
 func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	if c.userid == "" {
-		c.WriteApiResult(rw, api.ApiResultError, "You must be signed in to view this page")
+		c.WriteApiResult(rw, api.ResultError, "You must be signed in to view this page")
 	} else {
 		next(rw, req)
 	}

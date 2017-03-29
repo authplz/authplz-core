@@ -7,8 +7,8 @@ import (
 )
 
 // API result types
-const ApiResultOk string = "ok"
-const ApiResultError string = "error"
+const ResultOk string = "ok"
+const ResultError string = "error"
 
 // Common API response object
 type ApiResponse struct {
@@ -82,11 +82,11 @@ func GetApiLocale(lang string) *ApiMessageContainer {
 
 // API Response instances
 // TODO: deprecate these
-var ApiResponseLoginSuccess = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).LoginSuccessful}
-var ApiResponseLogoutSuccess = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).LogoutSuccessful}
-var ApiResponseActivationSuccessful = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).ActivationSuccessful}
-var ApiResponseUnlockSuccessful = ApiResponse{ApiResultOk, GetApiLocale(DefaultLocale).UnlockSuccessful}
+var ApiResponseLoginSuccess = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).LoginSuccessful}
+var ApiResponseLogoutSuccess = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).LogoutSuccessful}
+var ApiResponseActivationSuccessful = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).ActivationSuccessful}
+var ApiResponseUnlockSuccessful = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).UnlockSuccessful}
 
-var ApiResponseUnauthorized = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).Unauthorized}
-var ApiResponseInvalidToken = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InvalidToken}
-var ApiResponseInternalError = ApiResponse{ApiResultError, GetApiLocale(DefaultLocale).InternalError}
+var ApiResponseUnauthorized = ApiResponse{ResultError, GetApiLocale(DefaultLocale).Unauthorized}
+var ApiResponseInvalidToken = ApiResponse{ResultError, GetApiLocale(DefaultLocale).InvalidToken}
+var ApiResponseInternalError = ApiResponse{ResultError, GetApiLocale(DefaultLocale).InternalError}

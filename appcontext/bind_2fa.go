@@ -18,7 +18,7 @@ func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, use
 	secondFactorSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.Bind2faRequest error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 
@@ -34,13 +34,13 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (str
 	u2fSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.Get2FARequest Error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return "", ""
 	}
 
 	if u2fSession.Values[secondFactorRequestSessionKey] == nil ||
 		u2fSession.Values[secondFactorActionSessionKey] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, "No userid found")
+		c.WriteApiResult(rw, api.ResultError, "No userid found")
 		log.Printf("AuthPlzCtx.Get2FARequest No userid found in session flash")
 		return "", ""
 	}
