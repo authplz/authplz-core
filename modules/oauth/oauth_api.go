@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -59,6 +58,9 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 	router.Middleware(BindOauthContext(oc))
 
 	// Bind paths to endpoint
+	router.Get("/clients", (*APICtx).ClientsGet)
+	router.Post("/clients", (*APICtx).ClientsPost)
+
 	router.Get("/auth", (*APICtx).AuthorizeRequestGet)
 	router.Get("/pending", (*APICtx).AuthorizePendingGet)
 	router.Post("/auth", (*APICtx).AuthorizeConfirmPost)
@@ -73,32 +75,62 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 	return router
 }
 
+// ClientsGet Lists clients bound owned by a user account
+func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
+	// Check user is logged in
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+}
+
+// ClientReq is a client request object used to create an OAuth client
+type ClientReq struct {
+	Scopes    []string
+	Redirects []string
+	Grants    []string
+	Responses []string
+}
+
+// ClientsPost creates a new OAuth client
+func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
+	// Check user is logged in
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Decode client request
+	clientReq := ClientReq{}
+	defer req.Body.Close()
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&clientReq); err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+	}
+
+	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
+	if err != nil {
+		c.WriteApiResult(rw, api.ApiResultError, err.Error())
+		return
+	}
+
+	c.WriteJson(rw, client)
+}
+
 // AuthorizeRequestGet External OAuth authorization endpoint
 func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
-
-	log.Printf("AuthorizeRequestGet\n")
 
 	// Process authorization request
 	ar, err := c.oc.OAuth2.NewAuthorizeRequest(c.fositeContext, req.Request)
 	if err != nil {
-		log.Printf("OAUTH NewAuthorizeRequest error: %s\n", err)
 		c.oc.OAuth2.WriteAuthorizeError(rw, ar, err)
 		return
 	}
 
-	//log.Printf("Authentication req: %+v\n", ar)
-	//log.Printf("Response Types: %+v\n", ar.GetResponseTypes())
-	//log.Printf("Scopes: %+v\n", ar.GetRequestedScopes())
+	// Note that checks occur at the AuthorizeConfirmPost stage
 
-	// TODO: Check user authorization?
-
-	// TODO: Check scopes
-	// Fail if invalid
-
-	// TODO: Check if app is already authorized
-	// Redirect if so (and appropriate)
-
-	log.Printf("Storing authorization request: %+v", ar)
+	// TODO: Check if app is already authorized and redirect if so (and appropriate)
 
 	// Cache authorization request
 	session := c.GetSession()
@@ -109,36 +141,34 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
 		// Bind redirect back and redirect to login page if not
 		c.BindRedirect("/oauth/pending", rw, req)
-		c.Redirect("/login", rw, req)
+		c.DoRedirect("/login", rw, req)
 		return
-	} else {
-		// Redirect to pending auth page if logged in
-		c.Redirect("/oauth/pending", rw, req)
 	}
+
+	// Redirect to pending auth page if logged in
+	c.DoRedirect("/oauth/pending", rw, req)
+
 }
 
 // AuthorizePendingGet Fetch pending authorizations for a user
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
-	log.Printf("Authorize pending get")
-
 	// Check user is logged in
 	if c.GetUserID() == "" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// Fetch OAuth Authorization Request from session
 	if c.GetSession().Values["oauth"] == nil {
-		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageEn.NoU2FPending)
+		c.WriteApiResult(rw, api.ApiResultError, api.ApiMessageEn.NoOAuthPending)
 		return
 	}
-
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
-
-	log.Printf("Pending: %+v", ar)
 
 	// Client is an interface so cannot be parsed to or from json
 	ar.Client = nil
 
+	// Write back to user
 	c.WriteJson(rw, &ar)
 }
 
@@ -186,7 +216,6 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	// Create response
 	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(session))
 	if err != nil {
-		log.Printf("OAUTH NewAuthorizeResponse error: %s\n", err)
 		c.oc.OAuth2.WriteAuthorizeError(rw, &ar, err)
 		return
 	}
@@ -195,7 +224,7 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	c.oc.OAuth2.WriteAuthorizeResponse(rw, &ar, response)
 }
 
-// Introspection endpoint
+// IntrospectPost Token Introspection endpoint
 func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 
 	ctx := fosite.NewContext()
@@ -203,7 +232,6 @@ func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 
 	response, err := c.oc.OAuth2.NewIntrospectionRequest(ctx, req.Request, NewSessionWrap(session))
 	if err != nil {
-		log.Printf("OAUTH IntrospectionRequest error: %s\n", err)
 		c.oc.OAuth2.WriteIntrospectionError(rw, err)
 		return
 	}
@@ -213,8 +241,6 @@ func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 
 // AccessTokenInfoGet Access Token Information endpoint
 func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
-
-	log.Printf("Information get")
 
 	tokenString := fosite.AccessTokenFromRequest(req.Request)
 	if tokenString == "" {
@@ -226,13 +252,12 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	token, err := c.oc.GetAccessTokenInfo(sig)
 	if err != nil {
-		log.Printf("OAuthAPI InfoGet GetAccessToken error: %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteApiResult(rw, api.ApiResultError, err.Error())
 		return
 	}
 
 	if token == nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResult(rw, api.ApiResultError, c.GetApiLocale().NoOAuthTokenFound)
 		return
 	}
 
@@ -242,8 +267,6 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 // TokenPost Uses an authorization to fetch an access token
 func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
-
-	log.Printf("Access Token Request")
 
 	// Create session
 	session := NewSession(c.GetUserID(), "")
@@ -256,7 +279,6 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Create access request
 	ar, err := c.oc.OAuth2.NewAccessRequest(ctx, req.Request, NewSessionWrap(session))
 	if err != nil {
-		log.Printf("OAUTH NewAccessRequest error: %s\n", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
@@ -267,8 +289,8 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Update fields
 	client.SetLastUsed(time.Now())
 
-	// TODO: Write back to storage
-	//c.oc.UpdateClient(client.Client)
+	// Write back to storage
+	c.oc.UpdateClient(client.Client)
 
 	// Grant requested scopes
 	// TODO: limit by client..?
@@ -279,12 +301,9 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Build response
 	response, err := c.oc.OAuth2.NewAccessResponse(ctx, req.Request, ar)
 	if err != nil {
-		log.Printf("OAUTH NewAccessResponse error: %s\n", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
-
-	//log.Printf("Access response: %+v", response)
 
 	// Write response to client
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)

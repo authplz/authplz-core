@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+// User OAuth user interface
+type User interface {
+	GetExtID() string
+	IsAdmin() bool
+}
+
 // Client OAuth client application interface
 type Client interface {
 	GetID() string
@@ -74,6 +80,9 @@ type UserSession interface {
 // Storer OAuth storage interface
 // This must be implemented by the underlying storage device
 type Storer interface {
+	// User storage
+	GetUserByExtID(userid string) (interface{}, error)
+
 	// Client (application) storage
 	AddClient(userID, clientID, secret string, scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error)
 	GetClientByID(clientID string) (interface{}, error)

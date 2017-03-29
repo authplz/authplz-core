@@ -130,7 +130,7 @@ func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Re
 	}
 }
 
-// Helper function to login a user
+// LoginUser Helper function to login a user
 func (c *AuthPlzCtx) LoginUser(userid string, rw web.ResponseWriter, req *web.Request) {
 	if c.session == nil {
 		log.Printf("Error logging in user, no session found")
@@ -143,7 +143,7 @@ func (c *AuthPlzCtx) LoginUser(userid string, rw web.ResponseWriter, req *web.Re
 	log.Printf("Context: logged in user %d", userid)
 }
 
-// Helper function to logout a user
+// LogoutUser Helper function to logout a user
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("Context: logging out user %d", c.userid)
 	c.session.Options.MaxAge = -1
@@ -151,10 +151,10 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.userid = ""
 }
 
-// Fetch user id from a session
+// GetUserID Fetch user id from a session
 // Blank if a user is not logged in
-func (ctx *AuthPlzCtx) GetUserID() string {
-	id := ctx.session.Values["userId"]
+func (c *AuthPlzCtx) GetUserID() string {
+	id := c.session.Values["userId"]
 	if id != nil {
 		return id.(string)
 	} else {
@@ -181,21 +181,29 @@ const (
 	redirectURLKey     = "redirect-url"
 )
 
-func (c *AuthPlzCtx) Redirect(url string, rw web.ResponseWriter, req *web.Request) {
+// DoRedirect writes a redirect to the client
+func (c *AuthPlzCtx) DoRedirect(url string, rw web.ResponseWriter, req *web.Request) {
 	http.Redirect(rw, req.Request, url, 302)
 }
 
+// BindRedirect binds a redirect URL to the user session
+// This is called post-login (or other action) to allow users to return to
 func (c *AuthPlzCtx) BindRedirect(url string, rw web.ResponseWriter, req *web.Request) {
 	c.BindInst(rw, req, redirectSessionKey, redirectURLKey, url)
 }
 
+// GetRedirect fetches a redirect from a user session to allow for
+// post-login (or reauth) user redirection
 func (c *AuthPlzCtx) GetRedirect(rw web.ResponseWriter, req *web.Request) string {
-	var url string
-
-	err := c.GetInst(rw, req, redirectSessionKey, redirectURLKey, &url)
+	url, err := c.GetInst(rw, req, redirectSessionKey, redirectURLKey)
 	if err != nil {
 		return ""
 	}
 
-	return url
+	urlStr, ok := url.(string)
+	if !ok {
+		return ""
+	}
+
+	return urlStr
 }

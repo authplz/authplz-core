@@ -37,8 +37,7 @@ func TestOauthAPI(t *testing.T) {
 	}
 
 	config := Config{
-		ScopeMatcher:   `^((\/[a-z0-9]+))+$`,
-		ScopeValidator: "/u/{{.username}}/",
+		TokenSecret: "reasonable-test-secret-here-plz",
 	}
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
@@ -56,64 +55,79 @@ func TestOauthAPI(t *testing.T) {
 
 	redirect := "localhost:9000/auth"
 
-	var oauthClient *ClientResp
+	var oauthClient ClientResp
 
 	client := test.NewTestClient("http://" + test.Address + "/api")
-	var userID string
 
-	t.Run("Create User", func(t *testing.T) {
+	v := url.Values{}
+	v.Set("email", test.FakeEmail)
+	v.Set("password", test.FakePass)
+	v.Set("username", test.FakeName)
 
-		v := url.Values{}
-		v.Set("email", test.FakeEmail)
-		v.Set("password", test.FakePass)
-		v.Set("username", test.FakeName)
+	if _, err := client.PostForm("/create", http.StatusOK, v); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
-		client.BindTest(t).TestPostForm("/create", http.StatusOK, v)
+	u, _ := ts.DataStore.GetUserByEmail(test.FakeEmail)
 
-		u, _ := ts.DataStore.GetUserByEmail(test.FakeEmail)
-
-		user := u.(*datastore.User)
-		user.SetActivated(true)
-		ts.DataStore.UpdateUser(user)
-
-		userID = user.GetExtID()
-	})
+	// Activate user and create admin credentals
+	user := u.(*datastore.User)
+	user.SetActivated(true)
+	user.SetAdmin(true)
+	ts.DataStore.UpdateUser(user)
 
 	t.Run("Login user", func(t *testing.T) {
-
-		// Attempt login
 		v := url.Values{}
 		v.Set("email", test.FakeEmail)
 		v.Set("password", test.FakePass)
-		client.BindTest(t).TestPostForm("/login", http.StatusOK, v)
+
+		// Attempt login
+		if _, err := client.PostForm("/login", http.StatusOK, v); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 
 		// Check user status
-		client.TestGet("/status", http.StatusOK)
+		if _, err = client.Get("/status", http.StatusOK); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 	})
 
 	// Run tests
-	t.Run("OAuth check API is bound", func(t *testing.T) {
-		client.BindTest(t).TestGet("/oauth/test", http.StatusOK)
+	t.Run("OAuthAPI check API is bound", func(t *testing.T) {
+		if _, err := client.Get("/oauth/test", http.StatusOK); err != nil {
+			t.Error(err)
+		}
 	})
 
-	scopes := []string{"ScopeA", "public.read", "public.write", "private.read", "private.write"}
+	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
 	redirects := []string{redirect}
 	grants := []string{"client_credentials", "implicit", "explicit"}
 	responses := []string{"token"}
 
-	t.Run("OAuth enrol non-interactive client", func(t *testing.T) {
-		c, err := oauthModule.CreateClient(userID, scopes, redirects, grants, responses, true)
+	t.Run("OAuthAPI enrol client", func(t *testing.T) {
+		cr := ClientReq{
+			Scopes:    scopes,
+			Redirects: redirects,
+			Grants:    grants,
+			Responses: responses,
+		}
+
+		resp, err := client.PostJSON("/oauth/clients", 200, &cr)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
-		oauthClient = c
-
-		//log.Printf("OauthClient: %+v", oauthClient)
+		if err = test.ParseJson(resp, &oauthClient); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 	})
 
-	t.Run("OAuth list clients", func(t *testing.T) {
-		c, err := oauthModule.GetClients(userID)
+	t.Run("OAuthAPI list clients", func(t *testing.T) {
+		c, err := oauthModule.GetClients(user.GetExtID())
 		if err != nil {
 			t.Error(err)
 		}
@@ -124,7 +138,7 @@ func TestOauthAPI(t *testing.T) {
 
 	})
 
-	t.Run("OAuth login as non-interactive client", func(t *testing.T) {
+	t.Run("OAuthAPI login as non-interactive client", func(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
@@ -135,11 +149,13 @@ func TestOauthAPI(t *testing.T) {
 
 		tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
 
-		tc.BindTest(t).TestGet("/info", http.StatusOK)
+		if _, err := tc.Get("/info", http.StatusOK); err != nil {
+			t.Error(err)
+		}
 	})
 
 	// Implicit flow for browser based tokens (no secret storage)
-	t.Run("OAuth login as implicit client", func(t *testing.T) {
+	t.Run("OAuthAPI login as implicit client", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("response_type", "token")
 		v.Set("client_id", oauthClient.ClientID)
@@ -161,24 +177,22 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-
 		authReq := fosite.AuthorizeRequest{}
 		if err = test.ParseJson(resp, &authReq); err != nil {
 			t.Error(err)
 		}
-
 		if authReq.State != v.Get("state") {
 			t.Errorf("Invalid state")
 		}
 
-		// Accept authorization
+		// Accept authorization (post confirm object)
 		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
 		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
 		if err != nil {
 			t.Error(err)
 		}
 
-		// Check redirect
+		// Check redirect matches
 		redirect := resp.Header.Get("Location")
 		if !strings.HasPrefix(redirect, oauthClient.RedirectURIs[0]) {
 			t.Errorf("Redirect invalid")
@@ -195,7 +209,7 @@ func TestOauthAPI(t *testing.T) {
 
 	})
 
-	t.Run("OAuth rejects invalid scopes", func(t *testing.T) {
+	t.Run("OAuthAPI rejects invalid scopes", func(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
@@ -203,15 +217,14 @@ func TestOauthAPI(t *testing.T) {
 			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
-		_, err := httpClient.Get("http://" + test.Address + "/api/oauth/info")
-		if err == nil {
+
+		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
 			t.Errorf("Expected error attempting oauth")
 		}
 	})
 
-	t.Run("OAuth can remove non-interactive clients", func(t *testing.T) {
-		err := oauthModule.RemoveClient(oauthClient.ClientID)
-		if err != nil {
+	t.Run("OAuthAPI can remove non-interactive clients", func(t *testing.T) {
+		if err := oauthModule.RemoveClient(oauthClient.ClientID); err != nil {
 			t.Error(err)
 		}
 	})
@@ -223,19 +236,11 @@ func TestOauthAPI(t *testing.T) {
 			TokenURL:     "http://" + test.Address + "/api/oauth/token"}
 
 		httpClient := config.Client(oauth2.NoContext)
-		_, err := httpClient.Get("http://" + test.Address + "/api/oauth/info")
-		if err == nil {
+
+		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
 			t.Errorf("Expected error attempting oauth")
 		}
 
-	})
-
-	t.Run("OAuth users can register interactive clients", func(t *testing.T) {
-		t.Skipf("Unimplemented")
-	})
-
-	t.Run("Interactive clients can login with OAuth", func(t *testing.T) {
-		t.Skipf("Unimplemented")
 	})
 
 }

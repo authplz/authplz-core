@@ -18,3 +18,12 @@ func generateSecret(len int) (string, error) {
 
 	return base64.URLEncoding.EncodeToString(data), nil
 }
+
+func arrayContains(arr []string, line string) bool {
+	for _, l := range arr {
+		if l == line {
+			return true
+		}
+	}
+	return false
+}
