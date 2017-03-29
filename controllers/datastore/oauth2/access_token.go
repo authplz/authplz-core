@@ -79,6 +79,21 @@ func (os *OauthStore) GetAccessTokenSessionByRequestID(requestID string) (interf
 	return &oa, err
 }
 
+func (os *OauthStore) GetAccessTokenSessionsByUserID(userID string) ([]interface{}, error) {
+	var oa []OauthAccessToken
+	err := os.db.Where(&OauthAccessToken{OauthSession: OauthSession{UserExtID: userID}}).Find(&oa).Error
+	if err != nil {
+		return nil, err
+	}
+
+	interfaces := make([]interface{}, len(oa))
+	for i := range oa {
+		interfaces[i] = &oa[i]
+	}
+
+	return interfaces, err
+}
+
 // Fetch a client from an access token
 func (os *OauthStore) GetClientByAccessTokenSession(signature string) (interface{}, error) {
 	var oa OauthAccessToken

@@ -35,6 +35,7 @@ type Client interface {
 
 // AuthorizeCodeSession is an OAuth Authorization Code Grant Session
 type AuthorizeCodeSession interface {
+	GetRequestID() string
 	GetUserID() string
 	GetCode() string
 	GetScopes() []string
@@ -44,6 +45,7 @@ type AuthorizeCodeSession interface {
 
 // RefreshTokenSession is an OAuth Refresh Token Session
 type RefreshTokenSession interface {
+	GetRequestID() string
 	GetUserID() string
 	GetSignature() string
 	GetScopes() []string
@@ -53,6 +55,7 @@ type RefreshTokenSession interface {
 
 // AccessTokenSession is an OAuth Access Token Session
 type AccessTokenSession interface {
+	GetRequestID() string
 	GetUserID() string
 	GetSignature() string
 	GetScopes() []string
@@ -96,6 +99,7 @@ type Storer interface {
 	AddAuthorizeCodeSession(userID, clientID, code, requestID string, requestedAt, expiresAt time.Time, scopes, grantedScopes []string) (interface{}, error)
 	GetAuthorizeCodeSession(code string) (interface{}, error)
 	GetAuthorizeCodeSessionByRequestID(requestID string) (interface{}, error)
+	GetAuthorizeCodeSessionsByUserID(userID string) ([]interface{}, error)
 	RemoveAuthorizeCodeSession(code string) error
 
 	// Access Token storage
@@ -104,11 +108,13 @@ type Storer interface {
 	GetAccessTokenSession(sgnature string) (interface{}, error)
 	GetClientByAccessTokenSession(token string) (interface{}, error)
 	GetAccessTokenSessionByRequestID(requestID string) (interface{}, error)
+	GetAccessTokenSessionsByUserID(userID string) ([]interface{}, error)
 	RemoveAccessTokenSession(token string) error
 
 	// Refresh token storage
 	AddRefreshTokenSession(userID, clientID, signature, requestID string, requestedAt, expiresAt time.Time, scopes, grantedScopes []string) (interface{}, error)
 	GetRefreshTokenBySignature(signature string) (interface{}, error)
 	GetRefreshTokenSessionByRequestID(requestID string) (interface{}, error)
+	GetRefreshTokenSessionsByUserID(userID string) ([]interface{}, error)
 	RemoveRefreshToken(signature string) error
 }

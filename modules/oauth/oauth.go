@@ -258,3 +258,44 @@ func (oc *Controller) GetAccessTokenInfo(tokenString string) (*AccessTokenInfo, 
 
 	return &ar, nil
 }
+
+type GrantInfo struct {
+	ID          string
+	Type        string
+	Scopes      []string
+	RequestedAt time.Time
+	ExpiresAt   time.Time
+}
+
+func (oc *Controller) GetUserGrants(userID string) ([]GrantInfo, error) {
+
+	var grants []GrantInfo
+
+	// Fetch the associated user account
+	u, err := oc.store.GetUserByExtID(userID)
+	if err != nil {
+		log.Printf("OAuthController.CreateClient error fetching user: %s", err)
+		return nil, ErrInternal
+	}
+	user := u.(User)
+
+	accessCodes, err := oc.store.GetAccessTokenSessionsByUserID(user.GetExtID())
+	if err != nil {
+		log.Printf("OAuthController.CreateClient error fetching access codes for user: %s (%s)", userID, err)
+		return nil, ErrInternal
+	}
+
+	for _, ac := range accessCodes {
+		accessCode := ac.(AccessTokenSession)
+
+		grants = append(grants, GrantInfo{
+			ID:          accessCode.GetRequestID(),
+			Type:        "access_code",
+			Scopes:      accessCode.GetScopes(),
+			RequestedAt: accessCode.GetRequestedAt(),
+			ExpiresAt:   accessCode.GetExpiresAt(),
+		})
+	}
+
+	return grants, nil
+}

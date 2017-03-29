@@ -84,6 +84,21 @@ func (oauthStore *OauthStore) GetRefreshTokenSessionByRequestID(requestID string
 	return &refresh, err
 }
 
+func (os *OauthStore) GetRefreshTokenSessionsByUserID(userID string) ([]interface{}, error) {
+	var refreshes []OauthRefreshToken
+	err := os.db.Where(&OauthRefreshToken{OauthSession: OauthSession{UserExtID: userID}}).Find(&refreshes).Error
+	if err != nil {
+		return nil, err
+	}
+
+	interfaces := make([]interface{}, len(refreshes))
+	for i := range refreshes {
+		interfaces[i] = &refreshes[i]
+	}
+
+	return interfaces, err
+}
+
 // Fetch a client from an access token
 func (os *OauthStore) GetClientByRefreshToken(signature string) (interface{}, error) {
 	var refresh OauthRefreshToken

@@ -30,10 +30,16 @@ type User struct {
 	Admin           bool `gorm:"not null; default:false"`
 	LoginRetries    uint `gorm:"not null; default:0"`
 	LastLogin       time.Time
-	FidoTokens      []FidoToken
-	TotpTokens      []TotpToken
-	AuditEvents     []AuditEvent
-	OauthClients    []oauthstore.OauthClient
+
+	FidoTokens []FidoToken
+	TotpTokens []TotpToken
+
+	AuditEvents []AuditEvent
+
+	OauthClients               []oauthstore.OauthClient
+	OauthAccessTokenSessions   []oauthstore.OauthAccessToken
+	OauthAuthorizeCodeSessions []oauthstore.OauthAuthorizeCode
+	OauthRefreshTokenSessions  []oauthstore.OauthRefreshToken
 }
 
 // Getters and Setters

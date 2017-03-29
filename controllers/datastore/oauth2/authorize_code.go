@@ -86,6 +86,21 @@ func (oauthStore *OauthStore) GetAuthorizeCodeSessionByRequestID(requestID strin
 	return &oa, err
 }
 
+func (os *OauthStore) GetAuthorizeCodeSessionsByUserID(userID string) ([]interface{}, error) {
+	var codes []OauthAuthorizeCode
+	err := os.db.Where(&OauthAuthorizeCode{OauthSession: OauthSession{UserExtID: userID}}).Find(&codes).Error
+	if err != nil {
+		return nil, err
+	}
+
+	interfaces := make([]interface{}, len(codes))
+	for i := range codes {
+		interfaces[i] = &codes[i]
+	}
+
+	return interfaces, err
+}
+
 // RemoveAuthorizeCodeSession removes an authorization code session using the provided code
 func (oauthStore *OauthStore) RemoveAuthorizeCodeSession(code string) error {
 	authorization := OauthAuthorizeCode{

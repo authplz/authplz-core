@@ -19,6 +19,10 @@ type OauthRequest struct {
 
 // Getters and Setters
 
+func (or OauthRequest) GetRequestID() string {
+	return or.RequestID
+}
+
 func (or OauthRequest) GetRequestedAt() time.Time {
 	return or.RequestedAt
 }
