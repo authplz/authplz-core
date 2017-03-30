@@ -10,11 +10,12 @@ install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/lint/golint
 	go get -u github.com/jteeuwen/go-bindata/...
+	go get -u golang.org/x/oauth2
 	go get ./...
 
 # Build backend and frontend components
 build:
-	go build
+	go build ./cmd/authplz
 
 # Run application
 run: build
@@ -22,7 +23,7 @@ run: build
 
 # Test application
 test:
-	go test -p=1 ./...
+	@go test -p=1 ./lib/...
 
 
 # Frontend components now in authplz-ui package
@@ -30,7 +31,7 @@ test:
 # Utilities
 
 lint:
-	golint ./...
+	golint ./lib/...
 
 format:
 	gofmt -w -s ./
@@ -39,7 +40,7 @@ validate:
 	swagger validate swagger.yml
 
 coverage:
-	go test -p=1 -cover ./...
+	go test -p=1 -cover ./lib/...
 	
 checks: format lint coverage
 

@@ -10,13 +10,16 @@ This provides an alternative to hosted solutions such as [StormPath](https://sto
 
 Early WIP.
 
-[![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz)
+[![GitHub tag](https://img.shields.io/github/tag/ryankurte/authplz.svg)](https://github.com/ryankurte/authplz)
+[![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz/branches)
+[![Documentation](https://img.shields.io/badge/docs-godoc-blue.svg)](https://godoc.org/github.com/ryankurte/authplz)
+[![Chat](https://img.shields.io/gitter/room/gitterHQ/gitter.svg)](https://gitter.im/authplz/Lobby)
 
 ### Tasks
 
 - [X] Refactor to Modules
-- [ ] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
-- [ ] Refactor common test setup (datastore, fakeuser etc.) into common test module
+- [X] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
+- [X] Refactor common test setup (datastore, fakeuser etc.) into common test module
 
 Check out [design.md](design.md) for more.
 
@@ -35,7 +38,7 @@ For development purposes, it may be convenient to add these variables to your en
 ### Running
 
 1. Run `make install` to install dependencies
-2. Run `./gencert.sh` to generate TLS certificates
+2. Run `./gencert.sh` to generate self signed TLS certificates
 3. Run `make build-env` and `make start-env` to build and run dependencies
 4. Run `make run` to launch the app
 
@@ -44,48 +47,54 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] Account creation
 - [X] Account activation
 - [X] User login
+- [ ] User administration
 - [X] Account locking (and token + password based unlocking)
 - [X] User logout
 - [X] User password update
-- [ ] User Password reset
-- [ ] Email notification
+- [X] User Password reset
+- [ ] Email notifications
 - [X] Audit / Event logging
-- [ ] 2FA token enrolment
+- [X] 2FA token enrolment
   - [X] TOTP
   - [X] FIDO
+  - [ ] BACKUP
 - [X] 2FA token validation
-  - [ ] TOTP
+  - [X] TOTP
   - [X] FIDO
+  - [X] BACKUP
 - [ ] 2FA token management
   - [ ] TOTP
   - [ ] FIDO
 - [ ] OAuth2
-  - [ ] Authorization Code grant type
-  - [ ] Implicit grant type
+  - [X] Authorization Code grant type
+  - [X] Implicit grant type
+  - [ ] User client management
   - [ ] User token management
-- [ ] ACLs
+- [X] ACLs (based on fosite heirachicle ie. `public.something.read`)
 - [ ] Account linking (google, facebook, github)
 
 ## Project Layout
 
 Checkout [DESIGN.md](DESIGN.md) for design notes and API interaction flows.
 
-- [main.go](main.go) contains the launcher for the AuthPlz server
-- [api/](api/) contains internal and external API definitions
-- [app/](app/) contains the overall application including configuration and wiring (as well as integration tests)
-- [appcontext/](appcontext/) contains the base application context (shared across all API modules)
-- [controllers/](controllers/) contains controllers that can be shared across API modules
-  - [datastore/](datastore/) contains the data storage module and implements the interfaces required by other modules
-  - [token/](controllers/token/) contains a token generator and validator
-- [modules/](modules/) contains functional modules that can be bound into the system (including interface, controller and API)
-  - [core/](modules/core/) contains the core login/logout/action endpoints that further modules are bound into. Checkout this module for information on what components / bindings are available.
-  - [user/](modules/user/) contains the user account management module and API
-- [templates/](templates/) contains default template files used by components (ie. mailer)
-- [test/](test/) contains test helpers (and maybe one day integration tests)
+- [cmd/authplz/main.go](cmd/authplz/main.go) contains the launcher for the AuthPlz server
+- [lib/api](lib/api) contains internal and external API definitions
+- [lib/app](lib/app) contains the overall application including configuration and wiring (as well as integration tests)
+- [lib/appcontext](lib/appcontext) contains the base application context (shared across all API modules)
+- [lib/controllers](lib/controllers) contains controllers that can be shared across API modules
+  - [lib/datastore](lib/datastore) contains the data storage module and implements the interfaces required by other modules
+  - [lib/token](lib/controllers/token) contains a token generator and validator
+- [lib/modules](lib/modules) contains functional modules that can be bound into the system (including interface, controller and API)
+  - [lib/core](lib/modules/core) contains the core login/logout/action endpoints that further modules are bound into. Checkout this module for information on what components / bindings are available.
+  - [lib/user](lib/modules/user) contains the user account management module and API
+  - [lib/2fa](lib/modules/2fa) contains 2fa implementations
+  - [lib/user](lib/modules/audir) contains the account action / auditing API
+- [lib/templates](lib/templates) contains default template files used by components (ie. mailer)
+- [lib/test](lib/test) contains test helpers (and maybe one day integration tests)
 
 Modules are self-binding and should define interfaces required to function rather than including any (non api or appcontext) other modules.
 
-Each module should define the interfaces required, a controller for interaction / data processing, and an API if required by the module. For an example, checkout [modules/2fa/u2f](modules/2fa/u2f).
+Each module should define the interfaces required, a controller for interaction / data processing, and an API if required by the module. For an example, checkout [lib/modules/2fa/u2f](lib/modules/2fa/u2f).
 
 
 ------
