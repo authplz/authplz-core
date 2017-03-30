@@ -10,6 +10,12 @@ Design notes and quesions for AuthEngine/AuthPlz.
 - Internal errors will result in a 401 internal error with no (or a generic) error message to avoid leaking internal
 - Other endpoints will return JSON formatted API messages
 
+### Modules
+
+Modules consist of a set of interfaces, defining the dependencies of the module, a controller that uses these interfaces to implement the functionality of the module, and an api that wraps the controller in HTTP endpoints.
+
+All data structures returned from controllers should be safe for API use (ie. no internal structures may be returned, wrap / translate everything)
+
 
 ## Flows
 
@@ -95,15 +101,6 @@ Seems like this could be more efficient / remove the need for the second login i
 
 This requires that all stages be undertaken from the same session. Backup codes are treated just another 2fa provider.
 
-What if instead of imposing a security level on users, we informed them and let them pick?
-Users could then be given a security score on their account dashboard to gamify improving it.
-For example:
-- You only have password set, password resets and account recovery will currentl require only your email address, register a phone number or 2fa token to improve this
-- Good work registering 2fa! Password resets will now require this 2fa token. For account recovery purposes you must now either register a phone number or create recovery codes
-
-Other ideas:
-- Testing recoveries (non distruptive) to keep people in practice. If using named keys, test by requesting names.
-
 
 ### OAuth Clients
 A variety of clients can be enrolled based on user account priviledges
@@ -134,4 +131,15 @@ Allows tokens to be refreshed / reissued. Available with both Authorization Code
 - How do we run multiple OAuth schemes for different clients?
   - Guess user interaction is going to be important here as to what is granted
 
+## Discussions
+
+What if instead of imposing a security level on users, we informed them and let them pick?
+Users could then be given a security score on their account dashboard to gamify improving it.
+For example:
+- You only have password set, password resets and account recovery will currently require only your email address, register a phone number or 2fa token to improve this
+- Good work registering 2fa! Password resets will now require this 2fa token. For account recovery purposes you must now either register a phone number or create recovery codes
+
+Other ideas:
+
+- Testing that users have recovery keys etc to keep people in practice. Users could be (optionally) prompted to enter a backup key name at a given interval, on failure given the option of regenerating backup keys.
 
