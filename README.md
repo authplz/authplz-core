@@ -11,18 +11,15 @@ This provides an alternative to hosted solutions such as [StormPath](https://sto
 Early WIP.
 
 [![GitHub tag](https://img.shields.io/github/tag/ryankurte/authplz.svg)](https://github.com/ryankurte/authplz)
-
 [![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz/branches)
-
 [![Documentation](https://img.shields.io/badge/docs-godoc-blue.svg)](https://godoc.org/github.com/ryankurte/authplz)
-
 [![Chat](https://img.shields.io/gitter/room/gitterHQ/gitter.svg)](https://gitter.im/authplz/Lobby)
 
 ### Tasks
 
 - [X] Refactor to Modules
-- [ ] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
-- [ ] Refactor common test setup (datastore, fakeuser etc.) into common test module
+- [X] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
+- [X] Refactor common test setup (datastore, fakeuser etc.) into common test module
 
 Check out [design.md](design.md) for more.
 
@@ -41,7 +38,7 @@ For development purposes, it may be convenient to add these variables to your en
 ### Running
 
 1. Run `make install` to install dependencies
-2. Run `./gencert.sh` to generate TLS certificates
+2. Run `./gencert.sh` to generate self signed TLS certificates
 3. Run `make build-env` and `make start-env` to build and run dependencies
 4. Run `make run` to launch the app
 
@@ -54,22 +51,25 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] User logout
 - [X] User password update
 - [X] User Password reset
-- [ ] Email notification
+- [ ] Email notifications
 - [X] Audit / Event logging
-- [ ] 2FA token enrolment
+- [X] 2FA token enrolment
   - [X] TOTP
   - [X] FIDO
+  - [ ] BACKUP
 - [X] 2FA token validation
-  - [ ] TOTP
+  - [X] TOTP
   - [X] FIDO
+  - [X] BACKUP
 - [ ] 2FA token management
   - [ ] TOTP
   - [ ] FIDO
 - [ ] OAuth2
-  - [ ] Authorization Code grant type
-  - [ ] Implicit grant type
+  - [X] Authorization Code grant type
+  - [X] Implicit grant type
+  - [ ] User client management
   - [ ] User token management
-- [ ] ACLs
+- [X] ACLs (based on fosite heirachicle ie. `public.something.read`)
 - [ ] Account linking (google, facebook, github)
 
 ## Project Layout
@@ -86,6 +86,8 @@ Checkout [DESIGN.md](DESIGN.md) for design notes and API interaction flows.
 - [modules/](modules/) contains functional modules that can be bound into the system (including interface, controller and API)
   - [core/](modules/core/) contains the core login/logout/action endpoints that further modules are bound into. Checkout this module for information on what components / bindings are available.
   - [user/](modules/user/) contains the user account management module and API
+  - [2fa/](modules/2fa/) contains 2fa implementations
+  - [user/](modules/audir/) contains the account action / auditing API
 - [templates/](templates/) contains default template files used by components (ie. mailer)
 - [test/](test/) contains test helpers (and maybe one day integration tests)
 
