@@ -1,13 +1,13 @@
 package test
 
 import (
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/ryankurte/authplz/lib/events"
 )
 
 type MockEventEmitter struct {
-	Event *api.AuthPlzEvent
+	Event *events.AuthPlzEvent
 }
 
 func (m *MockEventEmitter) SendEvent(e interface{}) {
-	m.Event = e.(*api.AuthPlzEvent)
+	m.Event = e.(*events.AuthPlzEvent)
 }

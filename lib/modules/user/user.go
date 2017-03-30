@@ -8,6 +8,7 @@ import (
 
 import (
 	"github.com/ryankurte/authplz/lib/api"
+	"github.com/ryankurte/authplz/lib/events"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,12 +19,12 @@ const hashRounds = 8
 // Controller User controller instance storage
 type Controller struct {
 	userStore  Storer
-	emitter    api.EventEmitter
+	emitter    events.EventEmitter
 	hashRounds int
 }
 
 // NewController Create a new user controller
-func NewController(userStore Storer, emitter api.EventEmitter) *Controller {
+func NewController(userStore Storer, emitter events.EventEmitter) *Controller {
 	return &Controller{userStore, emitter, hashRounds}
 }
 
@@ -65,7 +66,7 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 
 	// Emit user creation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountCreated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountCreated, data))
 
 	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtID())
 
@@ -98,7 +99,7 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 
 	// Emit user activation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountActivated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountActivated, data))
 
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtID())
 
@@ -131,7 +132,7 @@ func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Emit user unlock event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountUnlocked, data))
+	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountUnlocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtID())
 
@@ -280,7 +281,7 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 
 	// Emit password update event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
+	userModule.emitter.SendEvent(events.NewEvent(user, events.EventPasswordUpdate, data))
 
 	// Log update
 	log.Printf("UserModule.handleSetPassword: User %s password updated\r\n", user.GetExtID())
@@ -307,8 +308,11 @@ func (userModule *Controller) SetPassword(userid, password string) (User, error)
 
 	// Call password setting method
 	err = userModule.handleSetPassword(user, password)
+	if err != nil {
+		return user, err
+	}
 
-	return user, err
+	return user, nil
 }
 
 // UpdatePassword updates a user password

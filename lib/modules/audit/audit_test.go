@@ -6,8 +6,8 @@ import (
 )
 
 import (
-	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/events"
 	"github.com/ryankurte/go-async"
 )
 
@@ -39,7 +39,7 @@ func TestAuditController(t *testing.T) {
 
 	// Run tests
 	t.Run("Add login event", func(t *testing.T) {
-		err := ac.AddEvent(user, api.EventAccountCreated, time.Now(), make(map[string]string))
+		err := ac.AddEvent(user, events.EventAccountCreated, time.Now(), make(map[string]string))
 		if err != nil {
 			t.Error(err)
 		}
@@ -62,7 +62,7 @@ func TestAuditController(t *testing.T) {
 	t.Run("Post audit event", func(t *testing.T) {
 		d := make(map[string]string)
 		d["ip"] = "127.0.0.1"
-		e := api.AuthPlzEvent{user, time.Now(), api.EventAccountActivated, d}
+		e := events.AuthPlzEvent{user, time.Now(), events.EventAccountActivated, d}
 
 		serviceManager.SendEvent(&e)
 
