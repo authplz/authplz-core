@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	mnemonics "github.com/NebulousLabs/entropy-mnemonics"
+	"github.com/NebulousLabs/entropy-mnemonics"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -3,7 +3,6 @@ package backup
 import (
 	"testing"
 	//"time"
-	"log"
 	"strings"
 )
 
@@ -47,7 +46,7 @@ func TestBackupModule(t *testing.T) {
 			t.Errorf("Code is nil")
 		}
 
-		log.Printf("Code: %+v", code)
+		//log.Printf("Code: %+v", code)
 	})
 
 	var tokens *CreateResponse
