@@ -33,34 +33,31 @@ type Client interface {
 	SetLastUsed(time.Time)
 }
 
-// AuthorizeCodeSession is an OAuth Authorization Code Grant Session
-type AuthorizeCodeSession interface {
+// SessionBase defines the common interface across all OAuth sessions
+type SessionBase interface {
 	GetRequestID() string
 	GetUserID() string
-	GetCode() string
 	GetScopes() []string
 	GetRequestedAt() time.Time
 	GetExpiresAt() time.Time
+}
+
+// AuthorizeCodeSession is an OAuth Authorization Code Grant Session
+type AuthorizeCodeSession interface {
+	SessionBase
+	GetCode() string
 }
 
 // RefreshTokenSession is an OAuth Refresh Token Session
 type RefreshTokenSession interface {
-	GetRequestID() string
-	GetUserID() string
+	SessionBase
 	GetSignature() string
-	GetScopes() []string
-	GetRequestedAt() time.Time
-	GetExpiresAt() time.Time
 }
 
 // AccessTokenSession is an OAuth Access Token Session
 type AccessTokenSession interface {
-	GetRequestID() string
-	GetUserID() string
+	SessionBase
 	GetSignature() string
-	GetScopes() []string
-	GetRequestedAt() time.Time
-	GetExpiresAt() time.Time
 }
 
 // UserSession is user data associated with an OAuth session

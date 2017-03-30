@@ -71,6 +71,8 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
 	router.Get("/info", (*APICtx).AccessTokenInfoGet)
 
+	router.Get("/sessions", (*APICtx).SessionsInfoGet)
+
 	// Return router for external use
 	return router
 }
@@ -83,6 +85,13 @@ func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	clients, err := c.oc.GetClients(c.GetUserID())
+	if err != nil {
+		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth clients")
+		return
+	}
+
+	c.WriteJson(rw, clients)
 }
 
 // ClientReq is a client request object used to create an OAuth client
@@ -307,6 +316,23 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Write response to client
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)
+}
+
+// SessionsInfoGet Lists authorized sessions for a user
+func (c *APICtx) SessionsInfoGet(rw web.ResponseWriter, req *web.Request) {
+	// Check user is logged in
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	sessions, err := c.oc.GetUserSessions(c.GetUserID())
+	if err != nil {
+		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth sessions")
+		return
+	}
+
+	c.WriteJson(rw, sessions)
 }
 
 // TestGet test endpoint

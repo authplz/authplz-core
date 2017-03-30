@@ -138,7 +138,8 @@ func TestOauthAPI(t *testing.T) {
 
 	})
 
-	t.Run("OAuthAPI login as non-interactive client", func(t *testing.T) {
+	//
+	t.Run("OAuthAPI Client grant", func(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
@@ -155,7 +156,7 @@ func TestOauthAPI(t *testing.T) {
 	})
 
 	// Implicit flow for browser based tokens (no secret storage)
-	t.Run("OAuthAPI login as implicit client", func(t *testing.T) {
+	t.Run("OAuthAPI implicit grant", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("response_type", "token")
 		v.Set("client_id", oauthClient.ClientID)
@@ -206,6 +207,30 @@ func TestOauthAPI(t *testing.T) {
 
 		// TODO: Test token
 		t.Logf("Token: %+v", tokenValues)
+
+	})
+
+	t.Run("OAuthAPI create Authorization Code grant", func(t *testing.T) {
+		t.Skipf("Test not yet implemented (should be supported)")
+	})
+
+	t.Run("OAuthAPI lists user sessions", func(t *testing.T) {
+
+		sessions := UserSessions{}
+		if err := client.GetJSON("/oauth/sessions", http.StatusOK, &sessions); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		if expected := 2; len(sessions.AccessCodes) != expected {
+			t.Errorf("Invalid AccessCodes (explicit, implicit grant) session count (actual: %d expected: %d)", len(sessions.AccessCodes), expected)
+		}
+		if expected := 0; len(sessions.AuthorizationCodes) != expected {
+			t.Errorf("Invalid AuthorizationCodes session count (actual: %d expected: %d)", len(sessions.AuthorizationCodes), expected)
+		}
+		if expected := 0; len(sessions.RefreshTokens) != expected {
+			t.Errorf("Invalid RefreshTokens session count (actual: %d expected: %d)", len(sessions.RefreshTokens), expected)
+		}
 
 	})
 

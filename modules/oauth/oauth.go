@@ -267,9 +267,24 @@ type GrantInfo struct {
 	ExpiresAt   time.Time
 }
 
-func (oc *Controller) GetUserGrants(userID string) ([]GrantInfo, error) {
+type UserSessions struct {
+	AuthorizationCodes []GrantInfo
+	RefreshTokens      []GrantInfo
+	AccessCodes        []GrantInfo
+}
 
-	var grants []GrantInfo
+func sessionBaseToGrantInfo(s SessionBase) GrantInfo {
+	grant := GrantInfo{
+		ID:          s.GetRequestID(),
+		Scopes:      s.GetScopes(),
+		RequestedAt: s.GetRequestedAt(),
+		ExpiresAt:   s.GetExpiresAt(),
+	}
+	return grant
+}
+
+// GetUserSessions fetches a list of all OAuth sessions for a given user ID
+func (oc *Controller) GetUserSessions(userID string) (*UserSessions, error) {
 
 	// Fetch the associated user account
 	u, err := oc.store.GetUserByExtID(userID)
@@ -279,23 +294,37 @@ func (oc *Controller) GetUserGrants(userID string) ([]GrantInfo, error) {
 	}
 	user := u.(User)
 
-	accessCodes, err := oc.store.GetAccessTokenSessionsByUserID(user.GetExtID())
+	grants := UserSessions{}
+
+	// Fetch authorization code grants
+	authorizationCodes, err := oc.store.GetAuthorizeCodeSessionsByUserID(user.GetExtID())
 	if err != nil {
-		log.Printf("OAuthController.CreateClient error fetching access codes for user: %s (%s)", userID, err)
+		log.Printf("OAuthController.CreateClient error fetching authorization code sessions for user: %s (%s)", userID, err)
 		return nil, ErrInternal
 	}
-
-	for _, ac := range accessCodes {
-		accessCode := ac.(AccessTokenSession)
-
-		grants = append(grants, GrantInfo{
-			ID:          accessCode.GetRequestID(),
-			Type:        "access_code",
-			Scopes:      accessCode.GetScopes(),
-			RequestedAt: accessCode.GetRequestedAt(),
-			ExpiresAt:   accessCode.GetExpiresAt(),
-		})
+	for _, tokenSession := range authorizationCodes {
+		grants.AuthorizationCodes = append(grants.AuthorizationCodes, sessionBaseToGrantInfo(tokenSession.(SessionBase)))
 	}
 
-	return grants, nil
+	// Fetch refresh token grants
+	refreshTokens, err := oc.store.GetRefreshTokenSessionsByUserID(user.GetExtID())
+	if err != nil {
+		log.Printf("OAuthController.CreateClient error fetching refresh token sessions for user: %s (%s)", userID, err)
+		return nil, ErrInternal
+	}
+	for _, tokenSession := range refreshTokens {
+		grants.RefreshTokens = append(grants.RefreshTokens, sessionBaseToGrantInfo(tokenSession.(SessionBase)))
+	}
+
+	// Fetch access code grants
+	accessCodes, err := oc.store.GetAccessTokenSessionsByUserID(user.GetExtID())
+	if err != nil {
+		log.Printf("OAuthController.CreateClient error fetching access code sessions for user: %s (%s)", userID, err)
+		return nil, ErrInternal
+	}
+	for _, tokenSession := range accessCodes {
+		grants.AccessCodes = append(grants.AccessCodes, sessionBaseToGrantInfo(tokenSession.(SessionBase)))
+	}
+
+	return &grants, nil
 }
