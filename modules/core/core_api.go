@@ -202,7 +202,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 			return
 		}
 
-		log.Println("Core.Login: Login OK")
+		log.Printf("Core.Login: Login OK for user: %s", user.GetExtID())
 
 		// Create session
 		c.LoginUser(user.GetExtID(), rw, req)

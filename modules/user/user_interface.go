@@ -29,6 +29,8 @@ type User interface {
 
 	IsLocked() bool
 	SetLocked(locked bool)
+
+	IsAdmin() bool
 }
 
 // Storer Defines the required store interfaces for the user module

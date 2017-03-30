@@ -6,9 +6,14 @@ import "github.com/jinzhu/gorm"
 
 import _ "github.com/jinzhu/gorm/dialects/postgres" // Postgres engine required for GORM connection
 
+import (
+	"github.com/ryankurte/authplz/controllers/datastore/oauth2"
+)
+
 // DataStore instance storage
 type DataStore struct {
 	db *gorm.DB
+	*oauthstore.OauthStore
 }
 
 // QueryFilter filter types
@@ -27,7 +32,11 @@ func NewDataStore(dbString string) (*DataStore, error) {
 
 	//db = db.LogMode(true)
 
-	return &DataStore{db}, nil
+	ds := &DataStore{db: db}
+
+	ds.OauthStore = oauthstore.NewOauthStore(db, ds)
+
+	return ds, nil
 }
 
 // Close an open datastore instance
@@ -50,22 +59,8 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.AutoMigrate(&TotpToken{})
 	db = db.AutoMigrate(&AuditEvent{})
 
+	db = dataStore.OauthStore.Sync(true)
+
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")
 }
-
-/*
-func (ds *DataStore) AddAuditEvent(u *User, auditEvent *AuditEvent) (user *User, err error) {
-	u.AuditEvents = append(u.AuditEvents, *auditEvent)
-	u, err = ds.UpdateUser(u)
-	return u, err
-}
-
-func (dataStore *DataStore) GetAuditEvents(u *User) ([]AuditEvent, error) {
-	var auditEvents []AuditEvent
-
-	err := dataStore.db.Model(u).Related(&auditEvents).Error
-
-	return auditEvents, err
-}
-*/

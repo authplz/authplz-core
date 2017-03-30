@@ -1,11 +1,14 @@
 package main
 
-import "github.com/ryankurte/authplz/app"
+import (
+	"github.com/ryankurte/authplz/app"
+	"github.com/ryankurte/authplz/config"
+)
 
 func main() {
 
 	// Load configuration
-	c := app.GetConfig()
+	c := config.GetConfig()
 
 	// Create server instance
 	server := app.NewServer(*c)

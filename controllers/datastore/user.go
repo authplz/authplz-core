@@ -1,18 +1,23 @@
 package datastore
 
-import "time"
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/asaskevich/govalidator"
+	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
 
-import "github.com/satori/go.uuid"
-import "github.com/asaskevich/govalidator"
+	"github.com/ryankurte/authplz/controllers/datastore/oauth2"
+)
 
 // User represents the user for this application
 type User struct {
 	ID              uint      `gorm:"primary_key" description:"External user ID"`
-	CreatedAt       time.Time `description:"User creation time"`
-	UpdatedAt       time.Time
+	CreatedAt       time.Time `description:"Creation time"`
+	UpdatedAt       time.Time `description:"Last update time"`
 	DeletedAt       *time.Time
 	ExtID           string `gorm:"not null;unique"`
 	Email           string `gorm:"not null;unique"`
@@ -25,12 +30,22 @@ type User struct {
 	Admin           bool `gorm:"not null; default:false"`
 	LoginRetries    uint `gorm:"not null; default:0"`
 	LastLogin       time.Time
-	FidoTokens      []FidoToken
-	TotpTokens      []TotpToken
-	AuditEvents     []AuditEvent
+
+	FidoTokens []FidoToken
+	TotpTokens []TotpToken
+
+	AuditEvents []AuditEvent
+
+	OauthClients               []oauthstore.OauthClient
+	OauthAccessTokenSessions   []oauthstore.OauthAccessToken
+	OauthAuthorizeCodeSessions []oauthstore.OauthAuthorizeCode
+	OauthRefreshTokenSessions  []oauthstore.OauthRefreshToken
 }
 
 // Getters and Setters
+
+// GetIntID fetches a users internal ID
+func (u *User) GetIntID() uint { return u.ID }
 
 // GetExtID fetches a users ExtID
 func (u *User) GetExtID() string { return u.ExtID }
@@ -139,10 +154,10 @@ func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 }
 
 // GetUserByExtID Fetch a user account by external id
-func (dataStore *DataStore) GetUserByExtID(extId string) (interface{}, error) {
+func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 
 	var user User
-	err := dataStore.db.Where(&User{ExtID: extId}).First(&user).Error
+	err := dataStore.db.Where(&User{ExtID: extID}).First(&user).Error
 	if (err != nil) && (err != gorm.ErrRecordNotFound) {
 		return nil, err
 	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
