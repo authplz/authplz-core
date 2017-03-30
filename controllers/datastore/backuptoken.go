@@ -9,11 +9,11 @@ import "github.com/jinzhu/gorm"
 // BackupToken 2fa backup code object
 type BackupToken struct {
 	gorm.Model
-	UserID   uint
-	Name     string
-	Secret   string
-	Used     bool
-	LastUsed time.Time
+	UserID uint
+	Name   string
+	Secret string
+	Used   bool
+	UsedAt time.Time
 }
 
 // Getters and setters for external interface compliance
@@ -29,6 +29,10 @@ func (token *BackupToken) IsUsed() bool { return token.Used }
 
 // SetUsed marks a token as used
 func (token *BackupToken) SetUsed() { token.Used = true }
+
+func (token *BackupToken) GetUsedAt() time.Time { return token.UsedAt }
+
+func (token *BackupToken) GetCreatedAt() time.Time { return token.CreatedAt }
 
 // AddBackupToken creates a backupt token token instance to a user in the database
 func (dataStore *DataStore) AddBackupToken(userid, name, secret string) (interface{}, error) {

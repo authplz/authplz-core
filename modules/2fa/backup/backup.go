@@ -2,12 +2,12 @@ package backup
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
-)
+	"time"
 
-import (
 	mnemonics "github.com/NebulousLabs/entropy-mnemonics"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -222,4 +222,34 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	}
 
 	return true, nil
+}
+
+type BackupCode struct {
+	Name      string
+	Used      bool
+	CreatedAt time.Time
+	UsedAt    time.Time
+}
+
+// ListCodes fetches a list of the available backup codes
+func (bc *Controller) ListCodes(userid string) ([]BackupCode, error) {
+	// Fetch codes for a user
+	codes, err := bc.backupStore.GetBackupTokens(userid)
+	if err != nil {
+		log.Printf("BackupController.IsSupported error fetching codes (%s)", err)
+		return nil, errors.New("Backup Code Controller: internal error")
+	}
+
+	safeCodes := make([]BackupCode, len(codes))
+	for i := range codes {
+		code := codes[i].(Code)
+		safeCodes[i] = BackupCode{
+			Name:      code.GetName(),
+			Used:      code.IsUsed(),
+			UsedAt:    code.GetUsedAt(),
+			CreatedAt: code.GetCreatedAt(),
+		}
+	}
+
+	return safeCodes, nil
 }
