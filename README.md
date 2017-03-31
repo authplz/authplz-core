@@ -10,6 +10,8 @@ This provides an alternative to hosted solutions such as [StormPath](https://sto
 For a well supported self hosted alternative for Single Sign On (SSO) you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
 If you already have user management infrastructure, you may be interested in [coreos/dex](https://github.com/coreos/dex) as an OAuth extension.
 
+If you would like to be involved with this project, please first read (and agree to abide by) the [Code of Conduct](https://github.com/ryankurte/authplz/blob/master/CONDUCT.md), then go ahead and join the chat on [Gitter](https://gitter.im/authplz/Lobby) or [open an issue](https://github.com/ryankurte/authplz/issues/new).
+
 ## Goals
 
 - Developers shouldn't have to write any user management / authorization code
@@ -116,4 +118,4 @@ Each module should define the interfaces required, a controller for interaction 
 
 ------
 
-If you have any questions, comments, or suggestions, feel free to open an issue or a pull request.
+If you have any questions, comments, or suggestions, feel free to contact us (uhh, me) on gitter or to open an issue or a pull request.
