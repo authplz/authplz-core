@@ -16,16 +16,14 @@ func NewController(store Storer) *Controller {
 }
 
 // AddEvent adds an event to the audit log
-func (ac *Controller) AddEvent(u interface{}, eventType string, eventTime time.Time, data map[string]string) error {
-	user := u.(User)
-
-	_, err := ac.store.AddAuditEvent(user.GetExtID(), eventType, eventTime, data)
+func (ac *Controller) AddEvent(userExtId, eventType string, eventTime time.Time, data map[string]string) error {
+	_, err := ac.store.AddAuditEvent(userExtId, eventType, eventTime, data)
 	if err != nil {
 		log.Printf("AuditController.AddEvent: error adding audit event (%s)", err)
 		return err
 	}
 
-	log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, user.GetExtID())
+	log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, userExtId)
 
 	return nil
 }
@@ -33,7 +31,7 @@ func (ac *Controller) AddEvent(u interface{}, eventType string, eventTime time.T
 // HandleEvent handles async events for go-async
 func (ac *Controller) HandleEvent(event interface{}) error {
 	auditEvent := event.(Event)
-	ac.AddEvent(auditEvent.GetUser(), auditEvent.GetType(), auditEvent.GetTime(), auditEvent.GetData())
+	ac.AddEvent(auditEvent.GetUserExtID(), auditEvent.GetType(), auditEvent.GetTime(), auditEvent.GetData())
 	return nil
 }
 

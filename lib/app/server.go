@@ -82,13 +82,13 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
 
 	// U2F module
-	u2fModule := u2f.NewController(config.Address, dataStore)
+	u2fModule := u2f.NewController(config.Address, dataStore, server.serviceManager)
 	coreModule.BindSecondFactor("u2f", u2fModule)
 
-	totpModule := totp.NewController(config.Name, dataStore)
+	totpModule := totp.NewController(config.Name, dataStore, server.serviceManager)
 	coreModule.BindSecondFactor("totp", totpModule)
 
-	backupModule := backup.NewController(config.Name, dataStore)
+	backupModule := backup.NewController(config.Name, dataStore, server.serviceManager)
 	coreModule.BindSecondFactor("backup", backupModule)
 
 	// Audit module (async components)

@@ -3,12 +3,12 @@ package totp
 import (
 	"testing"
 	"time"
-)
 
-import (
+	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/test"
+
 	"github.com/pquerna/otp"
 	totp "github.com/pquerna/otp/totp"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
 )
 
 func TestU2FModule(t *testing.T) {
@@ -36,9 +36,10 @@ func TestU2FModule(t *testing.T) {
 	user := u.(*datastore.User)
 
 	var token *otp.Key
+	mockEventEmitter := test.MockEventEmitter{}
 
 	// Instantiate u2f module
-	totpModule := NewController("localhost", dataStore)
+	totpModule := NewController("localhost", dataStore, &mockEventEmitter)
 
 	t.Run("Create token", func(t *testing.T) {
 		to, err := totpModule.CreateToken(user.GetExtID())

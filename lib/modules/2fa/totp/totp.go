@@ -12,25 +12,29 @@ import (
 	"log"
 	"time"
 
+	"github.com/ryankurte/authplz/lib/events"
+
 	"github.com/gocraft/web"
 	"github.com/pquerna/otp"
-	totp "github.com/pquerna/otp/totp"
+	"github.com/pquerna/otp/totp"
 )
 
 // Controller TOTP controller instance
 type Controller struct {
 	issuerName string
 	totpStore  Storer
+	emitter    events.EventEmitter
 }
 
 // NewController creates a new TOTP controller
 // TOTP tokens are issued against the provided issuer name and user email account.
 // A CompletedHandler is required for completion of authorization actions, as welll as a Storer to
 // provide underlying storage to the TOTP module
-func NewController(issuerName string, totpStore Storer) *Controller {
+func NewController(issuerName string, totpStore Storer, emitter events.EventEmitter) *Controller {
 	return &Controller{
 		issuerName: issuerName,
 		totpStore:  totpStore,
+		emitter:    emitter,
 	}
 }
 
@@ -91,6 +95,7 @@ func (totpModule *Controller) CreateToken(userid string) (*otp.Key, error) {
 		log.Printf("TOTPModule CreateToken: error generating totp token (%s)", err)
 		return nil, err
 	}
+
 	return key, err
 }
 
@@ -111,6 +116,9 @@ func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, to
 	}
 
 	log.Printf("TOTPModule.ValidateRegistration: registered token for user %s", userid)
+
+	data := make(map[string]string)
+	totpModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faTotpAdded, data))
 
 	return true, nil
 }

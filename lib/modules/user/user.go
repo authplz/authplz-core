@@ -66,7 +66,7 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 
 	// Emit user creation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountCreated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountCreated, data))
 
 	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtID())
 
@@ -99,7 +99,7 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 
 	// Emit user activation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountActivated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountActivated, data))
 
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtID())
 
@@ -132,7 +132,7 @@ func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Emit user unlock event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user, events.EventAccountUnlocked, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountUnlocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtID())
 
@@ -281,7 +281,7 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 
 	// Emit password update event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user, events.EventPasswordUpdate, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventPasswordUpdate, data))
 
 	// Log update
 	log.Printf("UserModule.handleSetPassword: User %s password updated\r\n", user.GetExtID())

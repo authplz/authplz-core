@@ -6,7 +6,7 @@ import (
 
 // Event Audit event type interface
 type Event interface {
-	GetUser() interface{}
+	GetUserExtID() string
 	GetType() string
 	GetTime() time.Time
 	GetData() map[string]string

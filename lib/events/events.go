@@ -30,10 +30,13 @@ const (
 	// 2FA Events
 
 	Event2faTotpAdded          string = "totp_added"
+	Event2faTotpUsed           string = "totp_used"
 	Event2faTotpRemoved        string = "totp_removed"
 	Event2faU2FAdded           string = "u2f_added"
+	Event2faU2FUsed            string = "u2f_used"
 	Event2faU2FRemoved         string = "u2f_removed"
 	Event2faBackupCodesAdded   string = "backup_code_added"
+	Event2faBackupCodesUsed    string = "backup_code_used"
 	Event2faBackupCodesRemoved string = "backup_code_removed"
 
 	// Login Events
@@ -45,17 +48,17 @@ const (
 
 // AuthPlzEvent event type for asynchronous communication
 type AuthPlzEvent struct {
-	User interface{}
-	Time time.Time
-	Type string
-	Data map[string]string
+	UserExtID string
+	Time      time.Time
+	Type      string
+	Data      map[string]string
 }
 
 // GetType fetches the event type
 func (e *AuthPlzEvent) GetType() string { return e.Type }
 
-// GetUser fetches the associated user instance
-func (e *AuthPlzEvent) GetUser() interface{} { return e.User }
+// GetUserExtID fetches the associated external user id
+func (e *AuthPlzEvent) GetUserExtID() string { return e.UserExtID }
 
 // GetTime fetches the event originator time
 func (e *AuthPlzEvent) GetTime() time.Time { return e.Time }
@@ -64,8 +67,8 @@ func (e *AuthPlzEvent) GetTime() time.Time { return e.Time }
 func (e *AuthPlzEvent) GetData() map[string]string { return e.Data }
 
 // NewEvent Create a new AuthPlz event
-func NewEvent(u interface{}, eventType string, data map[string]string) *AuthPlzEvent {
-	return &AuthPlzEvent{u, time.Now(), eventType, data}
+func NewEvent(userExtID, eventType string, data map[string]string) *AuthPlzEvent {
+	return &AuthPlzEvent{userExtID, time.Now(), eventType, data}
 }
 
 // EventEmitter interface for event producers

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ryankurte/authplz/lib/events"
+
 	"github.com/NebulousLabs/entropy-mnemonics"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,15 +27,17 @@ const (
 type Controller struct {
 	issuerName  string
 	backupStore Storer
+	emitter     events.EventEmitter
 }
 
 // NewController creates a new backup code controller
 // Backup tokens are issued with an associated issuer name to assist with user identification of codes.
 // A Storer provides underlying storage to the backup code module
-func NewController(issuerName string, backupStore Storer) *Controller {
+func NewController(issuerName string, backupStore Storer, emitter events.EventEmitter) *Controller {
 	return &Controller{
 		issuerName:  issuerName,
 		backupStore: backupStore,
+		emitter:     emitter,
 	}
 }
 
@@ -126,6 +130,9 @@ func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
 	}
 
 	resp := CreateResponse{bc.issuerName, keys}
+
+	data := make(map[string]string)
+	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesAdded, data))
 
 	return &resp, nil
 }
@@ -220,6 +227,9 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 		log.Println(err)
 		return false, err
 	}
+
+	data := make(map[string]string)
+	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesUsed, data))
 
 	return true, nil
 }
