@@ -2,7 +2,7 @@
  * OAuth Module Controller
  * This manages OAuth registration/alteration/revocation
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

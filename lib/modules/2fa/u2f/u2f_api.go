@@ -2,7 +2,7 @@
  * U2F / Fido Module API implementation
  * This provides U2F endpoints for device registration, authentication and management
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

@@ -2,7 +2,7 @@
  * Mailer module controller
  * This defines the API methods bound to the TOTP module
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

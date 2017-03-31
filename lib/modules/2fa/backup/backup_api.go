@@ -2,7 +2,7 @@
  * (2fa) Backup Code Module API
  * This defines the API methods bound to the Backup Code module
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

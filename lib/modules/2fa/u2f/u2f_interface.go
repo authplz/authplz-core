@@ -2,7 +2,7 @@
  * U2F / Fido Module API interfaces
  * This defines the interfaces required to use the u2f module
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

@@ -2,7 +2,7 @@
  * TOTP Module Controller
  * This defines the TOTP module controller
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

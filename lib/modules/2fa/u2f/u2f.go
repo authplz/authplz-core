@@ -3,7 +3,7 @@
  * This provides a 2fa interface for binding into the core module as well as helpers to
  * create and bind a router to the server instance.
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 
