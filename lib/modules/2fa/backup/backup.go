@@ -229,6 +229,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	}
 
 	data := make(map[string]string)
+	data["Code Name"] = code.GetName()
 	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesUsed, data))
 
 	return true, nil

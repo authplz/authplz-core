@@ -174,6 +174,7 @@ func (u2fModule *Controller) ValidateSignature(userid string, challenge *u2f.Cha
 	}
 
 	data := make(map[string]string)
+	data["Token Name"] = token.GetName()
 	u2fModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faU2FUsed, data))
 
 	// Indicate successful authentication

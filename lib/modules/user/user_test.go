@@ -4,6 +4,7 @@ import "testing"
 
 import (
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/events"
 	"github.com/ryankurte/authplz/lib/test"
 )
 
@@ -58,6 +59,10 @@ func TestUserController(t *testing.T) {
 		}
 		if u == nil {
 			t.Error("No login result")
+		}
+
+		if mockEventEmitter.Event.Type != events.EventAccountActivated {
+			t.Error("Expected EventAccountActivated")
 		}
 	})
 
@@ -160,6 +165,10 @@ func TestUserController(t *testing.T) {
 		if !u.(User).IsLocked() {
 			t.Errorf("Account not locked")
 		}
+
+		if mockEventEmitter.Event.Type != events.EventAccountLocked {
+			t.Error("Expected EventAccountLocked")
+		}
 	})
 
 	t.Run("PreLogin blocks locked accounts", func(t *testing.T) {
@@ -185,6 +194,10 @@ func TestUserController(t *testing.T) {
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
 		if u.(User).IsLocked() {
 			t.Errorf("Account is still locked")
+		}
+
+		if mockEventEmitter.Event.Type != events.EventAccountUnlocked {
+			t.Error("Expected EventAccountUnlocked")
 		}
 	})
 

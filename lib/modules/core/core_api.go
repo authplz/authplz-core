@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-)
 
-import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
+
 	"github.com/ryankurte/authplz/lib/appcontext"
 )
 

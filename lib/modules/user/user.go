@@ -107,6 +107,39 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 }
 
 // Unlock unlocks the provided user account
+func (userModule *Controller) Lock(email string) (user User, err error) {
+
+	// Fetch user account
+	u, err := userModule.userStore.GetUserByEmail(email)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, errLogin
+	}
+
+	user = u.(User)
+
+	user.SetLocked(true)
+
+	u, err = userModule.userStore.UpdateUser(user)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, errLogin
+	}
+
+	user = u.(User)
+
+	// Emit user unlock event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
+
+	log.Printf("UserModule.Unlock: User %s account locked\r\n", user.GetExtID())
+
+	return user, nil
+}
+
+// Unlock unlocks the provided user account
 func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Fetch user account
@@ -169,6 +202,9 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 			if (retries > 5) && (user.IsLocked() == false) {
 				log.Printf("UserModule.Login: Locking user %s", user.GetExtID())
 				user.SetLocked(true)
+
+				data := make(map[string]string)
+				userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
 			}
 
 			u, err = userModule.userStore.UpdateUser(user)
@@ -396,7 +432,6 @@ func (userModule *Controller) PreLogin(u interface{}) (bool, error) {
 
 // PostLoginSuccess runs success actions for the user module
 func (userModule *Controller) PostLoginSuccess(u interface{}) error {
-
 	user := u.(User)
 
 	// Update user object
@@ -407,11 +442,18 @@ func (userModule *Controller) PostLoginSuccess(u interface{}) error {
 		return err
 	}
 
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginSuccess, data))
+
 	return nil
 }
 
 // PostLoginFailure runs Failure actions for the user module
 func (userModule *Controller) PostLoginFailure(u interface{}) error {
+	user := u.(User)
+
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginFailure, data))
 
 	return nil
 }

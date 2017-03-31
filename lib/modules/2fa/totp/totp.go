@@ -109,7 +109,7 @@ func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, to
 	}
 
 	// Create token instance
-	_, err := totpModule.totpStore.AddTotpToken(userid, tokenName, secret, 0)
+	t, err := totpModule.totpStore.AddTotpToken(userid, tokenName, secret, 0)
 	if err != nil {
 		log.Printf("TOTPModule.ValidateRegistration: error creating token object (%s)", err)
 		return false, err
@@ -118,6 +118,7 @@ func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, to
 	log.Printf("TOTPModule.ValidateRegistration: registered token for user %s", userid)
 
 	data := make(map[string]string)
+	data["Token Name"] = t.(TokenInterface).GetName()
 	totpModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faTotpAdded, data))
 
 	return true, nil
