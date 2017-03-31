@@ -282,6 +282,30 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
+	t.Run("PostLoginSuccess causes login success event", func(t *testing.T) {
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
+		err := uc.PostLoginSuccess(u)
+		if err != nil {
+			t.Error(err)
+		}
+		if mockEventEmitter.Event.Type != events.EventAccountLoginSuccess {
+			t.Error("Expected EventAccountLoginSuccess")
+		}
+	})
+
+	t.Run("PostLoginFailure causes login failure event", func(t *testing.T) {
+		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+
+		err := uc.PostLoginFailure(u)
+		if err != nil {
+			t.Error(err)
+		}
+		if mockEventEmitter.Event.Type != events.EventAccountLoginFailure {
+			t.Error("Expected EventAccountLoginFailure")
+		}
+	})
+
 	// Tear down user controller
 
 }
