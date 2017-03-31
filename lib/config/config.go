@@ -2,7 +2,7 @@
  * AuthPlz Application Configuration
  * Defines configuration arguments and environmental variables
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 

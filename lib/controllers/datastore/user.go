@@ -31,10 +31,10 @@ type User struct {
 	LoginRetries    uint `gorm:"not null; default:0"`
 	LastLogin       time.Time
 
-	FidoTokens []FidoToken
-	TotpTokens []TotpToken
-
-	AuditEvents []AuditEvent
+	FidoTokens   []FidoToken
+	TotpTokens   []TotpToken
+	BackupTokens []BackupToken
+	AuditEvents  []AuditEvent
 
 	OauthClients               []oauthstore.OauthClient
 	OauthAccessTokenSessions   []oauthstore.OauthAccessToken

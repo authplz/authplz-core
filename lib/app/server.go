@@ -18,8 +18,11 @@ import (
 
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/controllers/token"
+
+	"github.com/ryankurte/authplz/lib/modules/2fa/backup"
 	"github.com/ryankurte/authplz/lib/modules/2fa/totp"
 	"github.com/ryankurte/authplz/lib/modules/2fa/u2f"
+
 	"github.com/ryankurte/authplz/lib/modules/audit"
 	"github.com/ryankurte/authplz/lib/modules/core"
 	"github.com/ryankurte/authplz/lib/modules/user"
@@ -85,6 +88,9 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	totpModule := totp.NewController(config.Name, dataStore)
 	coreModule.BindSecondFactor("totp", totpModule)
 
+	backupModule := backup.NewController(config.Name, dataStore)
+	coreModule.BindSecondFactor("backup", backupModule)
+
 	// Audit module (async components)
 	auditModule := audit.NewController(dataStore)
 	auditSvc := async.NewAsyncService(auditModule, bufferSize)
@@ -112,6 +118,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	userModule.BindAPI(server.router)
 	u2fModule.BindAPI(server.router)
 	totpModule.BindAPI(server.router)
+	backupModule.BindAPI(server.router)
 	auditModule.BindAPI(server.router)
 
 	return &server

@@ -1,11 +1,11 @@
 # Design
 
-Design notes and quesions for AuthEngine/AuthPlz.
+Design notes and questions for AuthPlz.
 
 
 ## Overview
 
-- All endpoints will return 400 bad request if required parameters or fields in the request body are not issued
+- All endpoints should return 400 bad request if required parameters or fields in the request body are not issued
 - Authentication endpoints will return 200 success/201 partial or 403 unauthorized
 - Internal errors will result in a 401 internal error with no (or a generic) error message to avoid leaking internal
 - Other endpoints will return JSON formatted API messages
@@ -14,7 +14,7 @@ Design notes and quesions for AuthEngine/AuthPlz.
 
 Modules consist of a set of interfaces, defining the dependencies of the module, a controller that uses these interfaces to implement the functionality of the module, and an api that wraps the controller in HTTP endpoints.
 
-All data structures returned from controllers should be safe for API use (ie. no internal structures may be returned, wrap / translate everything)
+All data structures returned from controllers should be safe for API use (ie. no internal structures may be returned, wrap / translate everything).
 
 
 ## Flows
@@ -103,7 +103,8 @@ This requires that all stages be undertaken from the same session. Backup codes 
 
 
 ### OAuth Clients
-A variety of clients can be enrolled based on user account priviledges
+
+A variety of clients can be enrolled based on user account priviledges. Admins can enrol all OAuth client types, users can enrol Client Credential (for end devices) and Implicit (no secret storage) client types.
 
 #### Authorisation Code (Explicit) Grant
 For trusted services, created by administrators, available to all users.
@@ -114,13 +115,13 @@ For services that do not have secret storage, created by and available to indivi
 #### Client Credentials Grant
 For end devices, created by and available to individual users.
 
-
 #### Introspection
 Explicit grants can be provided with the "introspection" scope, allowing introspection of other tokens using these credentials.
 This allows trusted services to evaluate the validity of credentials for broker-like behaviour.
 
 
 #### Refresh Token Grant
+
 Allows tokens to be refreshed / reissued. Available with both Authorization Code grant types.
 
 ## Questions

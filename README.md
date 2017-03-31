@@ -1,10 +1,24 @@
 # authplz
 
-A simple Authentication and User Management microservice, designed to avoid having to write another authentication and user management service (ever again).
+A simple Authentication and User Management microservice, designed to help build secure user-accessible services, and to avoid having to write another authentication and user management service (ever again).
 
-This is intended to provide common user management features (creation/login/logout/password update & reset/token enrolment & validation/email updates/audit logs/oauth token issue/use/revocation) required for a web application (or web application suite) with the minimum possible complexity.
+This is heavily inspired by the way Github manage user accounts, two factor authentication, authorized devices etc., and is intended to provide common user management features required for a web application (or web application suite) to handle authentication of web, native and mobile applications, as well end devices, with the minimum possible complexity for developers.
 
-This provides an alternative to hosted solutions such as [StormPath](https://stormpath.com/) and [AuthRocket](https://authrocket.com/) for companies that prefer (or require) locally hosted identity providers. For a well supported locally hosted alternative you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
+Systems using this service will use OAuth grants with token introspection to validate user credentials so that users can create third party applications that utilise the same APIs.
+
+This provides an alternative to hosted solutions such as [StormPath](https://stormpath.com/) and [AuthRocket](https://authrocket.com/) for companies that prefer (or require) self hosted identity providers. 
+For a well supported self hosted alternative for Single Sign On (SSO) you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
+If you already have user management infrastructure, you may be interested in [coreos/dex](https://github.com/coreos/dex) as an OAuth extension.
+
+If you would like to be involved with this project, please first read (and agree to abide by) the [Code of Conduct](https://github.com/ryankurte/authplz/blob/master/CONDUCT.md), then go ahead and join the chat on [Gitter](https://gitter.im/authplz/Lobby) or [open an issue](https://github.com/ryankurte/authplz/issues/new).
+
+## Goals
+
+- Developers shouldn't have to write any user management / authorization code
+- Users should be able to manage their accounts & authorizations (and create third party apps using these)
+- Admins should be able to manage user accounts and create integrations
+- Users should be able to make informed security decisions about their account
+
 
 ## Status
 
@@ -25,7 +39,7 @@ Check out [design.md](design.md) for more.
 
 ## Usage
 
-Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project. Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
+Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project (and have been grossly neglected). Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
 
 For development purposes, it may be convenient to add these variables to your environment (`~/.bashrc` or `~/.bash_profile`).
 
@@ -48,6 +62,8 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] Account activation
 - [X] User login
 - [ ] User administration
+  - [ ] Account Unlock / Password Reset
+  - [ ] Account enable / disable
 - [X] Account locking (and token + password based unlocking)
 - [X] User logout
 - [X] User password update
@@ -72,6 +88,9 @@ For development purposes, it may be convenient to add these variables to your en
   - [ ] User token management
 - [X] ACLs (based on fosite heirachicle ie. `public.something.read`)
 - [ ] Account linking (google, facebook, github)
+- [ ] Plugin Support
+- Plugins
+  - [ ] IP based rate limiting
 
 ## Project Layout
 
@@ -99,4 +118,4 @@ Each module should define the interfaces required, a controller for interaction 
 
 ------
 
-If you have any questions, comments, or suggestions, feel free to open an issue or a pull request.
+If you have any questions, comments, or suggestions, feel free to contact us (uhh, me) on gitter or to open an issue or a pull request.

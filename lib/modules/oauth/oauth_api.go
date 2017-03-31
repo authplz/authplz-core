@@ -2,7 +2,7 @@
  * OAuth Module API
  * Provides endpoints for the OAuth module
  *
- * AuthEngine Project (https://github.com/ryankurte/authengine)
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
  */
 
