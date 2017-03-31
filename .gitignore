@@ -31,3 +31,5 @@ static/
 
 vendor/
 .vscode
+cli
+service
