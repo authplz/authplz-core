@@ -73,7 +73,7 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	}
 	username := strings.ToLower(req.FormValue("username"))
 	if !usernameExp.MatchString(username) {
-		log.Printf("Create: email parameter required")
+		log.Printf("Create: username parameter required")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}

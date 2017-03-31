@@ -31,3 +31,5 @@ static/
 
 vendor/
 .vscode
+authplz-ui
+authplz-ui/
