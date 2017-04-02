@@ -88,6 +88,26 @@ func (c *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, 
 }
 
 // Middleware to grab IP & forwarding headers and store in session
+func (c *AuthPlzCtx) FormMidleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+
+	contentType := req.Header.Get("content-type")
+
+	var err error
+	if contentType == "application/x-www-form-urlencoded" {
+		err = req.ParseForm()
+	} else if contentType == "multipart/form-data" {
+		err = req.ParseMultipartForm(4096)
+	}
+
+	if err != nil {
+		log.Printf("Error parsing form type: %s (%s)", contentType, err)
+		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().FormParsingError)
+	} else {
+		next(rw, req)
+	}
+}
+
+// Middleware to grab IP & forwarding headers and store in session
 func (c *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	c.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
 	c.forwardedFor = req.Header.Get("x-forwarded-for")

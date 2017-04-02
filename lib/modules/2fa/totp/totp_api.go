@@ -156,7 +156,7 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch challenge code from post request
 	req.ParseForm()
-	code := req.Form.Get("code")
+	code := req.FormValue("code")
 
 	valid, err := c.totpModule.ValidateRegistration(c.GetUserID(), keyName, token.Secret(), code)
 	if err != nil {
@@ -188,8 +188,7 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 	log.Printf("totp.TOTPAuthenticatePost Authentication request for user %s", userid)
 
 	// Fetch challenge code
-	req.ParseForm()
-	code := req.Form.Get("code")
+	code := req.FormValue("code")
 
 	ok, err := c.totpModule.ValidateToken(userid, code)
 	if err != nil {

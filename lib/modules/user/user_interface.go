@@ -39,6 +39,7 @@ type Storer interface {
 	AddUser(email, username, pass string) (interface{}, error)
 	GetUserByExtID(userid string) (interface{}, error)
 	GetUserByEmail(email string) (interface{}, error)
+	GetUserByUsername(username string) (interface{}, error)
 	UpdateUser(user interface{}) (interface{}, error)
 }
 
