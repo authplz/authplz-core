@@ -88,8 +88,7 @@ func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req
 	log.Printf("backupCode.backupCodeAuthenticatePost Authentication request for user %s", userid)
 
 	// Fetch challenge code
-	req.ParseForm()
-	code := req.Form.Get("code")
+	code := req.FormValue("code")
 
 	ok, err := c.backupCodeModule.ValidateCode(userid, code)
 	if err != nil {
