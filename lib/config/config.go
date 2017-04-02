@@ -31,7 +31,7 @@ type AuthPlzConfig struct {
 	OauthSecret           string `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
 	TLSCert               string `short:"c" long:"tls-cert" description:"TLS Certificate file"`
 	TLSKey                string `short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTLS                 bool   `long:"disable-tls" description:"Disable TLS for testing or reverse proxying"`
+	NoTLS                 bool   `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
 	StaticDir             string `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string `short:"t" long:"template-dir" description:"Directory to load templates from"`
 	MinimumPasswordLength int
@@ -71,7 +71,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	c.TLSCert = "server.pem"
 	c.TLSKey = "server.key"
 	c.NoTLS = false
-	c.StaticDir = "../authplz-ui"
+	c.StaticDir = "./authplz-ui/static"
 	c.TemplateDir = "./templates"
 
 	c.MinimumPasswordLength = 12
@@ -80,11 +80,11 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
 	var err error
 
-	c.CookieSecret, err = GenerateSecret(32)
+	c.CookieSecret, err = GenerateSecret(64)
 	if err != nil {
 		return nil, err
 	}
-	c.TokenSecret, err = GenerateSecret(32)
+	c.TokenSecret, err = GenerateSecret(64)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func GetConfig() *AuthPlzConfig {
 	// Override environment with command line args
 	_, err = flags.Parse(c)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("")
 	}
 
 	// TODO: load config file for routes/templates/languages/etc.

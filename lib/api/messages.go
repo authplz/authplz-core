@@ -40,6 +40,8 @@ type ApiMessageContainer struct {
 	TokenNameRequired        string
 	NoOAuthPending           string
 	NoOAuthTokenFound        string
+	FormParsingError         string
+	DuplicateUserAccount     string
 }
 
 // Create API message structure for English responses
@@ -64,6 +66,8 @@ var ApiMessageEn = ApiMessageContainer{
 	TokenNameRequired:        "U2F token name required",
 	NoOAuthPending:           "No OAuth authorization pending",
 	NoOAuthTokenFound:        "No OAuth Token Found",
+	FormParsingError:         "Error parsing submitted form",
+	DuplicateUserAccount:     "A user account with that username or email address already exists",
 }
 
 // Default locale for external use

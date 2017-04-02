@@ -102,7 +102,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	// Create router
 	server.router = web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&server.ctx)).
-		//Middleware(web.LoggerMiddleware).
+		Middleware(web.LoggerMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
