@@ -4,10 +4,9 @@ import (
 	"testing"
 	//"time"
 	"strings"
-)
 
-import (
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/test"
 )
 
 func TestBackupModule(t *testing.T) {
@@ -34,8 +33,10 @@ func TestBackupModule(t *testing.T) {
 	}
 	user := u.(*datastore.User)
 
+	mockEventEmitter := test.MockEventEmitter{}
+
 	// Create backup controller
-	bc := NewController("Test Service", dataStore)
+	bc := NewController("Test Service", dataStore, &mockEventEmitter)
 
 	t.Run("Create backup token", func(t *testing.T) {
 		code, err := bc.generateCode(recoveryKeyLen)

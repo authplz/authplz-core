@@ -6,6 +6,8 @@ import (
 
 import (
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/test"
+
 	"github.com/ryankurte/go-u2f"
 )
 
@@ -35,9 +37,10 @@ func TestU2FModule(t *testing.T) {
 
 	// Create virtual key for testing
 	vt, _ := u2f.NewVirtualKey()
+	mockEventEmitter := test.MockEventEmitter{}
 
 	// Instantiate u2f module
-	u2fModule := NewController("localhost", dataStore)
+	u2fModule := NewController("localhost", dataStore, &mockEventEmitter)
 
 	t.Run("Create challenges", func(t *testing.T) {
 		c, err := u2fModule.GetChallenge(user.GetExtID())
