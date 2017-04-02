@@ -7,7 +7,7 @@ var (
 	ErrorPasswordTooShort     = errors.New("User Controller: password does not meet complexity requirements")
 	ErrorPasswordHashTooShort = errors.New("User Controller: password hash too short")
 	ErrorFindingUser          = errors.New("User Controller: error checking for user account")
-	ErrorDuplicateAccount     = errors.New("User Controller: user account with email exists")
+	ErrorDuplicateAccount     = errors.New("User Controller: user account with email or username already exists")
 	ErrorCreatingUser         = errors.New("User Controller: error creating user")
 	ErrorUserNotFound         = errors.New("User Controller: user not found")
 	ErrorPasswordMismatch     = errors.New("User Controller: password mismatch")

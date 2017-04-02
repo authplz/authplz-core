@@ -167,6 +167,20 @@ func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 	return &user, nil
 }
 
+// GetUserByUsername Fetches a user account by username
+func (dataStore *DataStore) GetUserByUsername(username string) (interface{}, error) {
+
+	var user User
+	err := dataStore.db.Where(&User{Username: username}).First(&user).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &user, nil
+}
+
 // UpdateUser Update a user object
 func (dataStore *DataStore) UpdateUser(user interface{}) (interface{}, error) {
 	u := user.(*User)

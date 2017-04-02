@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-)
 
-import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
+
+	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/appcontext"
 )
+
+import ()
 
 // Temporary mapping between contexts
 type coreCtx struct {
@@ -82,20 +84,23 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 // Login to a user account
 func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
+	log.Printf("Request: %+v\n", req.Form)
+
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResult(rw, api.ResultError, "Missing or invalid email argument")
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResult(rw, api.ResultError, "Missing password argument")
 		return
 	}
 
 	// Check user is not already logged in
 	if c.GetUserID() != "" {
+		c.WriteApiResult(rw, api.ResultOk, "Already logged in")
 		rw.WriteHeader(http.StatusOK)
 		return
 	}

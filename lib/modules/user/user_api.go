@@ -65,22 +65,24 @@ func (c *apiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 var usernameExp = regexp.MustCompile(`([a-z0-9\.]+)`)
 
 func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
+	log.Printf("Request: %+v\n", req.Form)
+
 	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
-		log.Printf("Create: email parameter required")
-		rw.WriteHeader(http.StatusBadRequest)
+		log.Printf("Create: missing or invalid email (%s)", email)
+		c.WriteApiResult(rw, api.ResultError, "Missing or invalid email address field")
 		return
 	}
 	username := strings.ToLower(req.FormValue("username"))
 	if !usernameExp.MatchString(username) {
-		log.Printf("Create: username parameter required")
-		rw.WriteHeader(http.StatusBadRequest)
+		log.Printf("Create: missing or invalid username (%s)", username)
+		c.WriteApiResult(rw, api.ResultError, "Missing or invalid username field")
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
 		log.Printf("Create: password parameter required")
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResult(rw, api.ResultError, "Missing or invalid password field")
 		return
 	}
 
@@ -89,7 +91,7 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		log.Printf("Create: user creation failed with %s", e)
 
 		if e == ErrorDuplicateAccount {
-			c.WriteApiResult(rw, api.ResultOk, c.GetApiMessageInst().CreateUserSuccess)
+			c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().DuplicateUserAccount)
 			return
 		} else if e == ErrorPasswordTooShort {
 			c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().PasswordComplexityTooLow)

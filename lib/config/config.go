@@ -31,7 +31,7 @@ type AuthPlzConfig struct {
 	OauthSecret           string `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
 	TLSCert               string `short:"c" long:"tls-cert" description:"TLS Certificate file"`
 	TLSKey                string `short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTLS                 bool   `long:"disable-tls" description:"Disable TLS for testing or reverse proxying"`
+	NoTLS                 bool   `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
 	StaticDir             string `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string `short:"t" long:"template-dir" description:"Directory to load templates from"`
 	MinimumPasswordLength int

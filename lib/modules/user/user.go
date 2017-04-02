@@ -53,6 +53,19 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 		return nil, ErrorDuplicateAccount
 	}
 
+	// Check if user exists
+	u, err = userModule.userStore.GetUserByUsername(username)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, ErrorFindingUser
+	}
+
+	if u != nil {
+		// User exists, fail
+		return nil, ErrorDuplicateAccount
+	}
+
 	// Add user to database (disabled)
 	u, err = userModule.userStore.AddUser(email, username, string(hash))
 	if err != nil {
