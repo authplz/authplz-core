@@ -211,6 +211,20 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
+type UserResp struct {
+	ExtId     string
+	Email     string
+	Username  string
+	Activated bool
+	Enabled   bool
+	Locked    bool
+	LastLogin time.Time
+	CreatedAt time.Time
+}
+
+func (ur *UserResp) GetExtID() string { return ur.ExtId }
+func (ur *UserResp) GetEmail() string { return ur.Email }
+
 // GetUser finds a user by userID
 func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	// Attempt to fetch user
@@ -228,17 +242,17 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 	}
 
 	user := u.(User)
-	/*
-		resp := UserResp{
-			Email:     user.GetEmail(),
-			Username:  user.GetUsername(),
-			Activated: user.IsActivated(),
-			Enabled:   user.IsEnabled(),
-			Locked:    user.IsLocked(),
-			LastLogin: user.GetLastLogin(),
-		}
-	*/
-	return user, nil
+	resp := UserResp{
+		ExtId:     user.GetExtID(),
+		Email:     user.GetEmail(),
+		Username:  user.GetUsername(),
+		Activated: user.IsActivated(),
+		Enabled:   user.IsEnabled(),
+		Locked:    user.IsLocked(),
+		LastLogin: user.GetLastLogin(),
+	}
+
+	return &resp, nil
 }
 
 // GetUserByEmail finds a user by userID
@@ -258,17 +272,17 @@ func (userModule *Controller) GetUserByEmail(email string) (interface{}, error) 
 	}
 
 	user := u.(User)
-	/*
-		resp := UserResp{
-			Email:     user.GetEmail(),
-			Username:  user.GetUsername(),
-			Activated: user.IsActivated(),
-			Enabled:   user.IsEnabled(),
-			Locked:    user.IsLocked(),
-			LastLogin: user.GetLastLogin(),
-		}
-	*/
-	return user, nil
+	resp := UserResp{
+		ExtId:     user.GetExtID(),
+		Email:     user.GetEmail(),
+		Username:  user.GetUsername(),
+		Activated: user.IsActivated(),
+		Enabled:   user.IsEnabled(),
+		Locked:    user.IsLocked(),
+		LastLogin: user.GetLastLogin(),
+	}
+
+	return &resp, nil
 }
 
 func (userModule *Controller) handleSetPassword(user User, password string) error {
@@ -357,7 +371,19 @@ func (userModule *Controller) UpdatePassword(userid string, old string, new stri
 
 // HandleToken provides a generic method to handle an action token
 // This executes the specified api.TokenAction on the provided user
-func (userModule *Controller) HandleToken(u interface{}, action api.TokenAction) (err error) {
+func (userModule *Controller) HandleToken(userid string, action api.TokenAction) (err error) {
+
+	u, err := userModule.userStore.GetUserByExtID(userid)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return ErrorUserNotFound
+	}
+
+	if u == nil {
+		log.Println("UpdatePassword error, user not found")
+		return ErrorUserNotFound
+	}
 
 	user := u.(User)
 

@@ -29,7 +29,7 @@ type SecondFactorProvider interface {
 // These modules accept a token action and user id to execute a task
 // For example, the user module accepts 'activate' and 'unlock' actions
 type TokenHandler interface {
-	HandleToken(u interface{}, tokenAction api.TokenAction) error
+	HandleToken(userid string, tokenAction api.TokenAction) error
 }
 
 // Core Event Hook Interfaces

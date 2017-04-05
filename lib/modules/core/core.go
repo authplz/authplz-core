@@ -152,7 +152,7 @@ func (coreModule *Controller) HandleToken(userid string, user interface{}, token
 	}
 
 	// Execute token action
-	err = tokenHandler.HandleToken(user, *action)
+	err = tokenHandler.HandleToken(userid, *action)
 	if err != nil {
 		log.Printf("CoreModule.HandleToken: token action %s handler error %s\n", action, err)
 		return false, err

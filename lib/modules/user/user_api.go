@@ -116,7 +116,7 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 // Fetch a user object
 func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 
 	}
@@ -129,13 +129,12 @@ func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	c.WriteJson(rw, u)
-
 }
 
 // Update user object
 func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 

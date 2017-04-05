@@ -99,6 +99,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Check user is not already logged in
 	if c.GetUserID() != "" {
+		log.Printf("Core.Login: user already authenticated (%s)\n", c.GetUserID())
 		c.WriteApiResult(rw, api.ResultOk, "Already logged in")
 		return
 	}
@@ -118,8 +119,6 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		log.Printf("Core.Login: user controller error %s\n", e)
 		return
 	}
-
-	log.Printf("LoginOK: %+v", loginOk)
 
 	// Reject invalid credentials
 	if !loginOk {
@@ -173,7 +172,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 	if !preLoginOk {
 		log.Printf("Core.Login: PreLogin blocked login\n")
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Login blocked, check you're emails for an unlock link")
 		return
 	}
 

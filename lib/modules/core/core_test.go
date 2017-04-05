@@ -40,7 +40,7 @@ func (mh *MockHandler) IsSupported(userid string) bool {
 }
 
 // token handler interface
-func (mh *MockHandler) HandleToken(u interface{}, tokenAction api.TokenAction) error {
+func (mh *MockHandler) HandleToken(userid string, tokenAction api.TokenAction) error {
 	mh.TokenAction = tokenAction
 	return nil
 }
