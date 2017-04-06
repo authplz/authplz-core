@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"time"
-)
 
-import "github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm"
+)
 
 // FidoToken Fido/U2F token object
 type FidoToken struct {
@@ -81,10 +81,11 @@ func (dataStore *DataStore) GetFidoTokens(userid string) ([]interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
+	if u == nil {
+		return nil, ErrUserNotFound
+	}
 
-	user := u.(*User)
-
-	err = dataStore.db.Model(user).Related(&fidoTokens).Error
+	err = dataStore.db.Model(u).Related(&fidoTokens).Error
 
 	interfaces := make([]interface{}, len(fidoTokens))
 	for i, t := range fidoTokens {

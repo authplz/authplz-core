@@ -450,8 +450,8 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check AppId is set correctly
-		if rr.AppID != c.Address {
-			t.Errorf("U2F challenge AppId mismatch (expected %s received %s)", c.Address, rr.AppID)
+		if rr.AppID != c.ExternalAddress {
+			t.Errorf("U2F challenge AppId mismatch (expected %s received %s)", c.ExternalAddress, rr.AppID)
 			t.FailNow()
 		}
 
@@ -572,8 +572,8 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 		}
 
-		if sr.AppID != c.Address {
-			t.Errorf("U2F challenge AppId mismatch")
+		if sr.AppID != c.ExternalAddress {
+			t.Errorf("U2F register AppId mismatch (expected %s received %s)", c.ExternalAddress, sr.AppID)
 		}
 
 		// Handle via virtual token

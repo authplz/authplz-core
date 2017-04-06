@@ -12,14 +12,14 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
-)
 
-import (
 	"github.com/gocraft/web"
 	"github.com/ory-am/fosite"
+
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/appcontext"
 )
@@ -115,12 +115,12 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 	defer req.Body.Close()
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&clientReq); err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
 	}
 
 	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, err.Error())
+		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
 		return
 	}
 
@@ -278,7 +278,10 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
 
 	// Create session
-	session := NewSession(c.GetUserID(), "")
+	session := Session{}
+
+	// TODO: How on earth do I pull a user ID out of this?
+	// Should be associated with an oauth request type, but I don't have access to it here.
 
 	session.AccessExpiry = time.Now().Add(time.Hour * 1)
 	session.IDExpiry = time.Now().Add(time.Hour * 2)
@@ -286,14 +289,18 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	session.AuthorizeExpiry = time.Now().Add(time.Hour * 4)
 
 	// Create access request
-	ar, err := c.oc.OAuth2.NewAccessRequest(ctx, req.Request, NewSessionWrap(session))
+	ar, err := c.oc.OAuth2.NewAccessRequest(ctx, req.Request, NewSessionWrap(&session))
 	if err != nil {
+		log.Printf("oauth.TokenPost NewAccessRequest error: %s", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
 
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
+
+	log.Printf("AccessRequest: %+v", ar)
+	//log.Printf("Session: %+v", ar.GetSession().GetUsername())
 
 	// Update fields
 	client.SetLastUsed(time.Now())
@@ -310,6 +317,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Build response
 	response, err := c.oc.OAuth2.NewAccessResponse(ctx, req.Request, ar)
 	if err != nil {
+		log.Printf("oauth.TokenPost NewAccessResponse error: %s", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}

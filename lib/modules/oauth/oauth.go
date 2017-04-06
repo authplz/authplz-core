@@ -27,7 +27,8 @@ import ()
 
 const (
 	//OAuthSecretBytes is the length of OAuth secrets
-	OAuthSecretBytes int = 128
+	OAuthSecretBytes       int = 128
+	clientSecretHashRounds int = 12
 )
 
 // ErrInternal indicates an internal error in the OAuth controller
@@ -99,6 +100,8 @@ var UserClientScopes = []string{"public", "private"}
 // This is used to authenticate simple devices and must be pre-created
 func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes []string, public bool) (*ClientResp, error) {
 
+	log.Printf("OAuthController.CreateClient creating client for userID: %s", userID)
+
 	// Fetch the associated user account
 	u, err := oc.store.GetUserByExtID(userID)
 	if err != nil {
@@ -114,7 +117,7 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 		log.Printf("OAuthController.CreateClient error generating client secret: %s", err)
 		return nil, ErrInternal
 	}
-	hashedSecret, err := bcrypt.GenerateFromPassword([]byte(clientSecret), 14)
+	hashedSecret, err := bcrypt.GenerateFromPassword([]byte(clientSecret), clientSecretHashRounds)
 	if err != nil {
 		log.Printf("OAuthController.CreateClient error generating secret hash: %s", err)
 		return nil, ErrInternal
@@ -126,10 +129,12 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	for _, s := range scopes {
 		if user.IsAdmin() {
 			if !fosite.HierarchicScopeStrategy(AdminClientScopes, s) {
+				log.Printf("OAuthController.CreateClient blocked due to invalid admin scopes")
 				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(AdminClientScopes, ", "))
 			}
 		} else {
 			if !fosite.HierarchicScopeStrategy(UserClientScopes, s) {
+				log.Printf("OAuthController.CreateClient blocked due to invalid admin scopes")
 				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(UserClientScopes, ", "))
 			}
 		}
@@ -139,10 +144,12 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	for _, g := range grantTypes {
 		if user.IsAdmin() {
 			if !arrayContains(AdminGrantTypes, g) {
+				log.Printf("OAuthController.CreateClient blocked due to invalid admin grants")
 				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(AdminGrantTypes, ", "))
 			}
 		} else {
 			if !arrayContains(UserGrantTypes, g) {
+				log.Printf("OAuthController.CreateClient blocked due to invalid user grants")
 				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(UserGrantTypes, ", "))
 			}
 		}

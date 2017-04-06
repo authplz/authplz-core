@@ -5,9 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path"
-)
 
-import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
@@ -82,7 +80,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	coreModule.BindActionHandler(api.TokenActionUnlock, userModule)
 
 	// U2F module
-	u2fModule := u2f.NewController(config.Address, dataStore)
+	u2fModule := u2f.NewController(config.ExternalAddress, dataStore)
 	coreModule.BindSecondFactor("u2f", u2fModule)
 
 	totpModule := totp.NewController(config.Name, dataStore)

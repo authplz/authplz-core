@@ -12,10 +12,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
-)
 
-import (
 	"github.com/jessevdk/go-flags"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -23,8 +22,9 @@ import (
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
 	Name                  string `short:"n" long:"name" description:"User friendly service name"`
-	Address               string `short:"a" long:"address" description:"Set server address"`
-	Port                  string `short:"p" long:"port" description:"Set server port"`
+	Address               string `short:"a" long:"address" description:"Set server bind address"`
+	Port                  string `short:"p" long:"port" description:"Set server bind port"`
+	ExternalAddress       string `short:"e" long:"external-address" description:"Set server external address for use with reverse proxies etc."`
 	Database              string `short:"d" long:"database" description:"Database connection string"`
 	CookieSecret          string `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
 	TokenSecret           string `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
@@ -112,6 +112,15 @@ func GetConfig() *AuthPlzConfig {
 	_, err = flags.Parse(c)
 	if err != nil {
 		log.Fatal("")
+	}
+
+	// Load external address if not specified
+	if c.ExternalAddress == "" {
+		prefix := "https"
+		if c.NoTLS {
+			prefix = "http"
+		}
+		c.ExternalAddress = fmt.Sprintf("%s://%s:%s", prefix, c.Address, c.Port)
 	}
 
 	// TODO: load config file for routes/templates/languages/etc.

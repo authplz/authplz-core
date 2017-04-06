@@ -15,7 +15,6 @@ import (
 )
 
 import (
-	"github.com/gocraft/web"
 	u2f "github.com/ryankurte/go-u2f"
 )
 
@@ -26,7 +25,7 @@ type Controller struct {
 }
 
 // NewController creates a new U2F controller
-// TOTP tokens are issued against the provided url, the browser will reject any u2f requess not from this domain.
+// U2F tokens are issued against the provided url, the browser will reject any u2f requests not from this domain.
 // A CompletedHandler is required for completion of authorization actions, as well as a Storer to
 // provide underlying storage to the U2F module
 func NewController(url string, u2fStore Storer) *Controller {
@@ -34,30 +33,6 @@ func NewController(url string, u2fStore Storer) *Controller {
 		url:      url,
 		u2fStore: u2fStore,
 	}
-}
-
-// BindU2FContext Helper middleware to bind module to API context
-func BindU2FContext(u2fModule *Controller) func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	return func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-		ctx.um = u2fModule
-		next(rw, req)
-	}
-}
-
-// BindAPI Binds the API for the u2f module to the provided router
-func (u2fModule *Controller) BindAPI(router *web.Router) {
-	// Create router for user modules
-	u2frouter := router.Subrouter(apiCtx{}, "/api/u2f")
-
-	// Attach module context
-	u2frouter.Middleware(BindU2FContext(u2fModule))
-
-	// Bind endpoints
-	u2frouter.Get("/enrol", (*apiCtx).U2FEnrolGet)
-	u2frouter.Post("/enrol", (*apiCtx).U2FEnrolPost)
-	u2frouter.Get("/authenticate", (*apiCtx).U2FAuthenticateGet)
-	u2frouter.Post("/authenticate", (*apiCtx).U2FAuthenticatePost)
-	u2frouter.Get("/tokens", (*apiCtx).U2FTokensGet)
 }
 
 // IsSupported Checks whether u2f is supported for a given user by userid

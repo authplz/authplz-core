@@ -177,15 +177,15 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Check for available second factors
-	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(c.GetUserID())
+	secondFactorRequired, factorsAvailable := c.cm.CheckSecondFactors(user.GetExtID())
 
 	// Respond with list of available 2fa components if required
 	if loginOk && preLoginOk && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
 		c.Bind2FARequest(rw, req, user.GetExtID(), "login")
 
-		rw.WriteHeader(http.StatusAccepted)
 		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(http.StatusAccepted)
 		js, err := json.Marshal(factorsAvailable)
 		if err != nil {
 			log.Print(err)

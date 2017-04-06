@@ -49,25 +49,50 @@ func init() {
 	gob.Register(&u2f.Challenge{})
 }
 
+// BindU2FContext Helper middleware to bind module to API context
+func BindU2FContext(u2fModule *Controller) func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		ctx.um = u2fModule
+		next(rw, req)
+	}
+}
+
+// BindAPI Binds the API for the u2f module to the provided router
+func (u2fModule *Controller) BindAPI(router *web.Router) {
+	// Create router for user modules
+	u2frouter := router.Subrouter(apiCtx{}, "/api/u2f")
+
+	// Attach module context
+	u2frouter.Middleware(BindU2FContext(u2fModule))
+
+	// Bind endpoints
+	u2frouter.Get("/enrol", (*apiCtx).U2FEnrolGet)
+	u2frouter.Post("/enrol", (*apiCtx).U2FEnrolPost)
+	u2frouter.Get("/authenticate", (*apiCtx).U2FAuthenticateGet)
+	u2frouter.Post("/authenticate", (*apiCtx).U2FAuthenticatePost)
+	u2frouter.Get("/tokens", (*apiCtx).U2FTokensGet)
+}
+
 // U2FEnrolGet First stage token enrolment (get) handler
 // This creates and caches a challenge for a device to be registered
 func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
 	}
 
 	tokenName := req.URL.Query().Get("name")
 	if tokenName == "" {
 		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Missing query name parameter")
 		return
 	}
 
 	// Build U2F challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 	u2fReq := challenge.RegisterRequest()
@@ -149,14 +174,14 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 
 	if userid == "" {
 		log.Printf("u2f.U2FAuthenticateGet No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "No pending 2fa authorizations found")
 		return
 	}
 
 	log.Printf("u2f.U2FAuthenticateGet Authentication request for user %s (action %s)", userid, action)
 
 	// Generate challenge
-	challenge, err := c.um.GetChallenge(c.GetUserID())
+	challenge, err := c.um.GetChallenge(userid)
 	if err != nil {
 		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
 		return
@@ -219,13 +244,13 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Validate signature
-	ok, err := c.um.ValidateSignature(c.GetUserID(), challenge, &u2fSignResp)
+	ok, err := c.um.ValidateSignature(userid, challenge, &u2fSignResp)
 	if err != nil {
 		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
 		return
 	}
 	if !ok {
-		log.Printf("U2FAuthenticatePost: authentication failed for user %s\n", c.GetUserID())
+		log.Printf("U2FAuthenticatePost: authentication failed for user %s\n", userid)
 		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().U2FRegistrationFailed)
 		return
 	}

@@ -1,14 +1,16 @@
 package datastore
 
-import "fmt"
-
-import "github.com/jinzhu/gorm"
-
-import _ "github.com/jinzhu/gorm/dialects/postgres" // Postgres engine required for GORM connection
-
 import (
+	"errors"
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
 	"github.com/ryankurte/authplz/lib/controllers/datastore/oauth2"
 )
+
+var ErrUserNotFound = errors.New("User account not found")
 
 // DataStore instance storage
 type DataStore struct {
@@ -65,4 +67,6 @@ func (dataStore *DataStore) ForceSync() {
 
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
 	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")
+
+	dataStore.db = db
 }

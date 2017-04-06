@@ -15,12 +15,7 @@ const (
 // Bind2FARequest Bind a 2fa request and action for a user
 // TODO: the request should probably time-out eventually
 func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string, action string) {
-	secondFactorSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.Bind2faRequest error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
-		return
-	}
+	secondFactorSession, _ := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 
 	log.Printf("AuthPlzCtx.Bind2faRequest adding authorization flash for user %s\n", userid)
 
@@ -31,12 +26,7 @@ func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, use
 
 // Get2FARequest Fetch a 2fa request and action for a user
 func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
-	u2fSession, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
-	if err != nil {
-		log.Printf("AuthPlzCtx.Get2FARequest Error fetching %s %s", secondFactorRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
-		return "", ""
-	}
+	u2fSession, _ := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
 
 	if u2fSession.Values[secondFactorRequestSessionKey] == nil ||
 		u2fSession.Values[secondFactorActionSessionKey] == nil {

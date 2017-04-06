@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -12,6 +13,8 @@ import (
 
 	"github.com/ryankurte/authplz/lib/controllers/datastore/oauth2"
 )
+
+var ErrInvalidQuery = errors.New("Invalid DB Query argument")
 
 // User represents the user for this application
 type User struct {
@@ -141,6 +144,9 @@ func (dataStore *DataStore) AddUser(email, username, pass string) (interface{}, 
 
 // GetUserByEmail Fetches a user account by email
 func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
+	if email == "" {
+		return nil, ErrInvalidQuery
+	}
 
 	var user User
 	err := dataStore.db.Where(&User{Email: email}).First(&user).Error
@@ -155,6 +161,9 @@ func (dataStore *DataStore) GetUserByEmail(email string) (interface{}, error) {
 
 // GetUserByExtID Fetch a user account by external id
 func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
+	if extID == "" {
+		return nil, ErrInvalidQuery
+	}
 
 	var user User
 	err := dataStore.db.Where(&User{ExtID: extID}).First(&user).Error
@@ -169,6 +178,10 @@ func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 
 // GetUserByUsername Fetches a user account by username
 func (dataStore *DataStore) GetUserByUsername(username string) (interface{}, error) {
+
+	if username == "" {
+		return nil, ErrInvalidQuery
+	}
 
 	var user User
 	err := dataStore.db.Where(&User{Username: username}).First(&user).Error

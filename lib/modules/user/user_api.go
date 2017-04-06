@@ -186,7 +186,7 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Update password
-	_, err := c.um.SetPassword(c.GetUserID(), password)
+	_, err := c.um.SetPassword(userid, password)
 	if err != nil {
 		log.Printf("UserAPI.ResetPost error setting password (%s)", err)
 		rw.WriteHeader(http.StatusInternalServerError)
