@@ -49,12 +49,35 @@ For development purposes, it may be convenient to add these variables to your en
 - Docker (for building/running docker images and the dev environment)
 - Postgres (for user information storage)
 
+### Development
+
+If you have contributor access to the repository, changes should be created in branches and pull requests opened to merge (as is enforced by the repository settings and Travis-CI). If you don't have access, please follow the normal fork/pull-request flow (though be aware that forking GO projects can be a little interesting due GOPATH).
+
+All features must be implemented with tests to demonstrate the correct and incorrect behaviours of the feature.
+
+1. `go get github.com/ryankurte/authplz.git` to fetch the core repo into your GOPATH
+2. `cd $GOPATH/src/github.com/ryankurte/authplz` to switch to the repo
+3. (For out of tree development) `git remote add upstream github.com/ryankurte/authplz.git` to add the root as an upstream
+4. (For out of tree development) `git remote set-url github.com/YOURNAME/authplz.git` to set the master to your fork
+5. Run `./gencert.sh` to generate self signed TLS certificates
+6. Run `make build-env` and `make start-env` to build and run dependent services (eg. the database)
+7. `git checkout -b "feature/my-new-feature"` to create a new branch
+8. Do some work...
+9. `make test` to run repository tests
+10. `make run` to run the application if required
+11. Once tests pass you can `git commit` and `git push` your changes
+
+For frontend development it is useful to run a local AuthPlz instance that is then proxied by the create-react-app development runner.
+This is automatic when calling `npm start` from the authplz-ui project.
+
 ### Running
 
 1. Run `make install` to install dependencies
 2. Run `./gencert.sh` to generate self signed TLS certificates
 3. Run `make build-env` and `make start-env` to build and run dependencies
-4. Run `make run` to launch the app
+4. Run `./authplz` to launch the app
+
+`./authplz --help` will list available configuration options.
 
 ## Features
 
@@ -89,7 +112,6 @@ For development purposes, it may be convenient to add these variables to your en
 - [X] ACLs (based on fosite heirachicle ie. `public.something.read`)
 - [ ] Account linking (google, facebook, github)
 - [ ] Plugin Support
-- Plugins
   - [ ] IP based rate limiting
 
 ## Project Layout
