@@ -131,6 +131,7 @@ func (dataStore *DataStore) AddUser(email, username, pass string) (interface{}, 
 		Activated: false,
 		Locked:    false,
 		Admin:     false,
+		CreatedAt: time.Now(),
 	}
 
 	dataStore.db = dataStore.db.Create(user)

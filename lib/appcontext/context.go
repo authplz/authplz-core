@@ -69,14 +69,7 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 // User session layer
 // Middleware matches user session if it exists and saves userid to the session object
 func (c *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	session, err := c.Global.SessionStore.Get(req.Request, "user-session")
-	if err != nil {
-		log.Printf("Error binding session, %s", err)
-		// Poison invalid session so next request will succeed
-		session.Options.MaxAge = -1
-		session.Save(req.Request, rw)
-		return
-	}
+	session, _ := c.Global.SessionStore.Get(req.Request, "user-session")
 
 	// Save session for further use
 	c.session = session
@@ -160,12 +153,12 @@ func (c *AuthPlzCtx) LoginUser(userid string, rw web.ResponseWriter, req *web.Re
 	c.session.Values["userId"] = userid
 	c.session.Save(req.Request, rw)
 	c.userid = userid
-	log.Printf("Context: logged in user %d", userid)
+	log.Printf("Context: logged in user %s", userid)
 }
 
 // LogoutUser Helper function to logout a user
 func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
-	log.Printf("Context: logging out user %d", c.userid)
+	log.Printf("Context: logging out user %s", c.userid)
 	c.session.Options.MaxAge = -1
 	c.session.Save(req.Request, rw)
 	c.userid = ""

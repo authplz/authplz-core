@@ -162,12 +162,7 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 // a) do this better / without global context
 // b) allow this to be used for authentication and for "sudo" like behaviour.
 func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
-	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
-	if err != nil {
-		log.Printf("Error fetching u2f-sign-session 3  %s", err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
-		return
-	}
+	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
@@ -201,12 +196,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 // U2FAuthenticatePost Post authentication response to complete authentication
 func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
-	u2fSession, err := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
-	if err != nil {
-		log.Printf("Error fetching u2f-sign-session 3  %s", err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
-		return
-	}
+	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 
 	// Fetch request from session vars
 	// TODO: move this to a separate session flash
@@ -236,7 +226,7 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Parse JSON response body
 	var u2fSignResp u2f.SignResponse
-	err = json.NewDecoder(req.Body).Decode(&u2fSignResp)
+	err := json.NewDecoder(req.Body).Decode(&u2fSignResp)
 	if err != nil {
 		log.Printf("U2FAuthenticatePost: error decoding sign response (%s)", err)
 		c.WriteApiResult(rw, api.ResultError, "Invalid U2F registration response")
