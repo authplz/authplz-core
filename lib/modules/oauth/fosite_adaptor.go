@@ -3,7 +3,6 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"golang.org/x/net/context"
 
@@ -55,16 +54,14 @@ func (oa *FositeAdaptor) GetClient(id string) (fosite.Client, error) {
 // Authorize code storage
 
 func (oa *FositeAdaptor) CreateAuthorizeCodeSession(ctx context.Context, code string, request fosite.Requester) (err error) {
-	client := request.GetClient().(*ClientWrapper)
+	client := request.GetClient()
 	session := request.GetSession().(*SessionWrap)
 
 	requestedScopes := []string(request.GetRequestedScopes())
 	grantedScopes := []string(request.GetGrantedScopes())
 
-	authorizeCodeSession, err := oa.Storer.AddAuthorizeCodeSession(session.GetUserID(), client.GetID(), code, request.GetID(), request.GetRequestedAt(),
+	_, err = oa.Storer.AddAuthorizeCodeSession(session.GetUserID(), client.GetID(), code, request.GetID(), request.GetRequestedAt(),
 		session.GetAuthorizeExpiry(), requestedScopes, grantedScopes)
-
-	log.Printf("created authorizeCodeSession: %+v", authorizeCodeSession)
 
 	return err
 }

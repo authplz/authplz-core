@@ -214,7 +214,9 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
 
-	session := NewSession(c.GetUserID(), "")
+	session := Session{
+		UserID: c.GetUserID(),
+	}
 
 	session.AccessExpiry = time.Now().Add(time.Hour * 24)
 	session.IDExpiry = time.Now().Add(time.Hour * 24)
@@ -229,13 +231,14 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Create response
-	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(session))
+	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(&session))
 	if err != nil {
 		c.oc.OAuth2.WriteAuthorizeError(rw, &ar, err)
 		return
 	}
 
-	//log.Printf("Request: %+v Response: %+v", ar, response)
+	log.Printf("Authorize Request: %+v", ar)
+	log.Printf("Authorize Response: %+v", response)
 
 	// Write output
 	c.oc.OAuth2.WriteAuthorizeResponse(rw, &ar, response)
@@ -247,7 +250,7 @@ func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
 	session := Session{}
 
-	response, err := c.oc.OAuth2.NewIntrospectionRequest(ctx, req.Request, NewSessionWrap(session))
+	response, err := c.oc.OAuth2.NewIntrospectionRequest(ctx, req.Request, NewSessionWrap(&session))
 	if err != nil {
 		c.oc.OAuth2.WriteIntrospectionError(rw, err)
 		return
@@ -286,15 +289,15 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
 
 	// Create session
-	session := Session{}
+	session := Session{
+		AccessExpiry:    time.Now().Add(time.Hour * 1),
+		IDExpiry:        time.Now().Add(time.Hour * 2),
+		RefreshExpiry:   time.Now().Add(time.Hour * 3),
+		AuthorizeExpiry: time.Now().Add(time.Hour * 4),
+	}
 
 	// TODO: How on earth do I pull a user ID out of this?
 	// Should be associated with an oauth request type, but I don't have access to it here.
-
-	session.AccessExpiry = time.Now().Add(time.Hour * 1)
-	session.IDExpiry = time.Now().Add(time.Hour * 2)
-	session.RefreshExpiry = time.Now().Add(time.Hour * 3)
-	session.AuthorizeExpiry = time.Now().Add(time.Hour * 4)
 
 	// Create access request
 	ar, err := c.oc.OAuth2.NewAccessRequest(ctx, req.Request, NewSessionWrap(&session))
@@ -307,7 +310,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
 
-	//log.Printf("AccessRequest: %+v client: %+v", ar, client.GetResponseTypes())
+	log.Printf("AccessRequest: %+v type: %+v", ar, client.GetResponseTypes())
 	//log.Printf("Session: %+v", ar.GetSession().GetUsername())
 
 	// Update fields
@@ -331,7 +334,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write response to client
-	//log.Printf("AccessResponse: %+v", response)
+	log.Printf("AccessResponse: %+v", response)
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)
 }
 

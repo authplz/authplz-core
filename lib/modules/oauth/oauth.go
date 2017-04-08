@@ -88,7 +88,7 @@ func NewController(store Storer, config Config) (*Controller, error) {
 	return &c, nil
 }
 
-var AdminGrantTypes = []string{"implicit", "explicit", "code", "client_credentials"}
+var AdminGrantTypes = []string{"implicit", "authorization_code", "explicit", "code", "client_credentials"}
 var UserGrantTypes = []string{"implicit", "client_credentials"}
 
 var AdminClientScopes = []string{"public", "private", "introspect"}
@@ -247,7 +247,7 @@ type AccessTokenInfo struct {
 func (oc *Controller) GetAccessTokenInfo(tokenString string) (*AccessTokenInfo, error) {
 	a, err := oc.store.GetAccessTokenSession(tokenString)
 	if err != nil {
-		log.Printf("OAuthController.GetAccessTokenInfo error fetching toke session: %s", err)
+		log.Printf("OAuthController.GetAccessTokenInfo error fetching token session: %s", err)
 		return nil, ErrInternal
 	}
 	if a == nil {

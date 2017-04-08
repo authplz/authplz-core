@@ -39,10 +39,14 @@ func (c *OauthRequest) GetScopes() []string {
 	return stringToArray(c.Scopes)
 }
 
+func (c *OauthRequest) AppendRequestedScope(scope string) {
+	c.SetScopes(append(c.GetScopes(), scope))
+}
+
 func (c *OauthRequest) SetGrantedScopes(scopes []string) {
-	c.Scopes = arrayToString(scopes)
+	c.GrantedScopes = arrayToString(scopes)
 }
 
 func (c *OauthRequest) SetScopes(scopes []string) {
-	c.GrantedScopes = arrayToString(scopes)
+	c.Scopes = arrayToString(scopes)
 }

@@ -54,7 +54,7 @@ func (oauthStore *OauthStore) AddAuthorizeCodeSession(userID, clientID, code, re
 		OauthSession: session,
 	}
 
-	oauthStore.db = oauthStore.db.Create(authorize)
+	oauthStore.db = oauthStore.db.Create(&authorize)
 	err = oauthStore.db.Error
 	if err != nil {
 		return nil, err

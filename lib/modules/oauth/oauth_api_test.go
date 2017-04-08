@@ -110,8 +110,8 @@ func TestOauthAPI(t *testing.T) {
 
 	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
 	redirects := []string{redirect}
-	grants := []string{"client_credentials", "implicit", "explicit"}
-	responses := []string{"token"}
+	grants := []string{"client_credentials", "implicit", "authorization_code"}
+	responses := []string{"token", "code"}
 
 	t.Run("OAuthAPI enrol client", func(t *testing.T) {
 		cr := ClientReq{
@@ -128,6 +128,11 @@ func TestOauthAPI(t *testing.T) {
 		}
 		if err = test.ParseJson(resp, &oauthClient); err != nil {
 			t.Error(err)
+			t.FailNow()
+		}
+
+		if len(oauthClient.RedirectURIs) != 1 {
+			t.Errorf("Error creating oauth client")
 			t.FailNow()
 		}
 	})
@@ -193,11 +198,22 @@ func TestOauthAPI(t *testing.T) {
 			t.Error(err)
 		}
 
-		log.Printf("TokenValues: %+V", tokenValues)
+		if err := tokenValues.Get(oauthClient.RedirectURIs[0] + "?error"); err != "" {
+			t.Errorf("Error from auth endpoint %s", err)
+			t.FailNow()
+		}
+
+		log.Printf("TokenValues: %+v", tokenValues)
+
+		tokenString := tokenValues.Get(oauthClient.RedirectURIs[0] + "#access_token")
+		if tokenString == "" {
+			t.Errorf("No access token received")
+			t.FailNow()
+		}
 
 		// Test token
 		config := &oauth2.Config{}
-		token := &oauth2.Token{AccessToken: tokenValues.Get("localhost:9000/auth#access_token")}
+		token := &oauth2.Token{AccessToken: tokenString}
 		httpClient := config.Client(oauth2.NoContext, token)
 
 		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
@@ -258,24 +274,37 @@ func TestOauthAPI(t *testing.T) {
 			t.Error(err)
 		}
 
-		log.Printf("TokenValues: %+V", tokenValues)
+		log.Printf("TokenValues: %+v", tokenValues)
 
 		if err := tokenValues.Get(oauthClient.RedirectURIs[0] + "?error"); err != "" {
 			t.Errorf("Error from auth endpoint %s", err)
 			t.FailNow()
 		}
 
-		tokenString := tokenValues.Get("localhost:9000/auth#code")
-		if tokenString == "" {
+		codeString := tokenValues.Get(oauthClient.RedirectURIs[0] + "?code")
+		if codeString == "" {
 			t.Errorf("No authorization code received")
 			t.FailNow()
 		}
 
-		// TODO: Test token
-		log.Printf("Token: %+v", tokenValues)
-		config := &oauth2.Config{}
-		token := &oauth2.Token{AccessToken: tokenString}
-		httpClient := config.Client(oauth2.NoContext, token)
+		// Setup OAuth client
+		config := &oauth2.Config{
+			ClientID:     oauthClient.ClientID,
+			ClientSecret: oauthClient.Secret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "http://" + test.Address + "/api/oauth/uth",
+				TokenURL: "http://" + test.Address + "/api/oauth/token",
+			},
+			RedirectURL: oauthClient.RedirectURIs[0],
+		}
+
+		// Swap access code for token
+		accessToken, err := config.Exchange(oauth2.NoContext, codeString)
+		if err != nil {
+			t.Errorf("Error swapping code for token: %s", err)
+		}
+
+		httpClient := config.Client(oauth2.NoContext, accessToken)
 
 		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
 			t.Errorf("Unexpected error attempting oauth: %s", err)
