@@ -23,8 +23,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-import ()
-
 const (
 	//OAuthSecretBytes is the length of OAuth secrets
 	OAuthSecretBytes       int = 128
@@ -51,9 +49,9 @@ func NewController(store Storer, config Config) (*Controller, error) {
 
 	// Create configuration
 	var oauthConfig = &compose.Config{
-		AccessTokenLifespan:   time.Minute * 30,
-		AuthorizeCodeLifespan: time.Hour * 24 * 365,
-		IDTokenLifespan:       time.Hour * 24 * 28,
+	//AccessTokenLifespan:   time.Hour * 1,
+	//AuthorizeCodeLifespan: time.Hour * 24 * 30,
+	//IDTokenLifespan:       time.Hour * 24 * 30,
 	}
 
 	// Create OAuth2 and OpenID Strategies

@@ -16,15 +16,11 @@ type OauthSession struct {
 	IDExpiry        time.Time
 }
 
-// NewSession creates an OauthSession with default expiry times
+// NewSession creates an OauthSession
 func NewSession(userID, username string) OauthSession {
 	return OauthSession{
-		UserExtID:       userID,
-		Username:        username,
-		AccessExpiry:    time.Time{},
-		RefreshExpiry:   time.Time{},
-		AuthorizeExpiry: time.Time{},
-		IDExpiry:        time.Time{},
+		UserExtID: userID,
+		Username:  username,
 	}
 }
 

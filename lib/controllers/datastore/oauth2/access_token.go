@@ -35,12 +35,16 @@ func (os *OauthStore) AddAccessTokenSession(userID, clientID, signature, request
 	request := OauthRequest{
 		RequestID:   requestID,
 		RequestedAt: requestedAt,
+		ExpiresAt:   expiresAt,
 	}
 	request.SetScopes(scopes)
 	request.SetGrantedScopes(grantedScopes)
 
-	session := NewSession(user.GetExtID(), user.GetUsername())
-	session.AccessExpiry = expiresAt
+	session := OauthSession{
+		UserExtID:    user.GetExtID(),
+		Username:     user.GetUsername(),
+		AccessExpiry: expiresAt,
+	}
 
 	oa := OauthAccessToken{
 		ClientID:     client.ID,

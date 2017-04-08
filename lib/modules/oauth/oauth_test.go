@@ -1,5 +1,7 @@
 package oauth
 
+// +build all controller
+
 import (
 	"testing"
 
@@ -7,7 +9,7 @@ import (
 	"github.com/ryankurte/authplz/lib/test"
 )
 
-func TestOauth(t *testing.T) {
+func NoTestOauth(t *testing.T) {
 
 	ts, err := test.NewTestServer()
 	if err != nil {

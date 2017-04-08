@@ -3,8 +3,11 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ory-am/fosite"
+	"log"
+
 	"golang.org/x/net/context"
+
+	"github.com/ory-am/fosite"
 )
 
 // FositeAdaptor adapts a generic interface for osin compliance
@@ -58,8 +61,10 @@ func (oa *FositeAdaptor) CreateAuthorizeCodeSession(ctx context.Context, code st
 	requestedScopes := []string(request.GetRequestedScopes())
 	grantedScopes := []string(request.GetGrantedScopes())
 
-	_, err = oa.Storer.AddAuthorizeCodeSession(session.GetUserID(), client.GetID(), code, request.GetID(), request.GetRequestedAt(),
+	authorizeCodeSession, err := oa.Storer.AddAuthorizeCodeSession(session.GetUserID(), client.GetID(), code, request.GetID(), request.GetRequestedAt(),
 		session.GetAuthorizeExpiry(), requestedScopes, grantedScopes)
+
+	log.Printf("created authorizeCodeSession: %+v", authorizeCodeSession)
 
 	return err
 }

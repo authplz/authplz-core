@@ -133,6 +133,7 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 	// Process authorization request
 	ar, err := c.oc.OAuth2.NewAuthorizeRequest(c.fositeContext, req.Request)
 	if err != nil {
+		log.Printf("Oauth AuthorizeResponseGet error: %s", err)
 		c.oc.OAuth2.WriteAuthorizeError(rw, ar, err)
 		return
 	}
@@ -215,6 +216,11 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 
 	session := NewSession(c.GetUserID(), "")
 
+	session.AccessExpiry = time.Now().Add(time.Hour * 24)
+	session.IDExpiry = time.Now().Add(time.Hour * 24)
+	session.AuthorizeExpiry = time.Now().Add(time.Hour * 24)
+	session.RefreshExpiry = time.Now().Add(time.Hour * 24)
+
 	// Validate that granted scopes match those available in AuthorizeRequest
 	for _, granted := range ac.GrantedScopes {
 		if fosite.HierarchicScopeStrategy(ar.GetRequestedScopes(), granted) {
@@ -229,6 +235,8 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	//log.Printf("Request: %+v Response: %+v", ar, response)
+
 	// Write output
 	c.oc.OAuth2.WriteAuthorizeResponse(rw, &ar, response)
 }
@@ -237,7 +245,7 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 func (c *APICtx) IntrospectPost(rw web.ResponseWriter, req *web.Request) {
 
 	ctx := fosite.NewContext()
-	session := NewSession(c.GetUserID(), "")
+	session := Session{}
 
 	response, err := c.oc.OAuth2.NewIntrospectionRequest(ctx, req.Request, NewSessionWrap(session))
 	if err != nil {
@@ -299,7 +307,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
 
-	log.Printf("AccessRequest: %+v", ar)
+	//log.Printf("AccessRequest: %+v client: %+v", ar, client.GetResponseTypes())
 	//log.Printf("Session: %+v", ar.GetSession().GetUsername())
 
 	// Update fields
@@ -323,6 +331,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write response to client
+	//log.Printf("AccessResponse: %+v", response)
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)
 }
 
