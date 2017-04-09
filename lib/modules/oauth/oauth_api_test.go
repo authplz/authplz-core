@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"golang.org/x/oauth2"
-	//"golang.org/x/oauth2/clientcredentials"
+	"golang.org/x/oauth2/clientcredentials"
 
 	//"github.com/dghubble/oauth1"
 	"github.com/ory-am/fosite"
@@ -306,105 +306,104 @@ func TestOauthAPI(t *testing.T) {
 		}
 
 	})
+
+	//
+	t.Run("OAuthAPI Client Credentials grant", func(t *testing.T) {
+		v := url.Values{}
+		v.Set("response_type", "token")
+		v.Set("client_id", oauthClient.ClientID)
+		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
+		v.Set("grant_types", "client_credentials")
+		v.Set("scope", "public.read")
+		v.Set("state", "afrjkbhreiulqyaf3q974")
+
+		t.Skipf("Aborted / non-functional, see OauthAPI.TokenPost for TODOs")
+
+		// Get to start authorization (this is the redirect from the client app)
+		resp, err := client.GetWithParams("/oauth/auth", 302, v)
+		if err != nil {
+			t.Error(err)
+		}
+		if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
+			t.Error(err)
+		}
+
+		// Fetch pending authorizations
+		resp, err = client.Get("/oauth/pending", http.StatusOK)
+		if err != nil {
+			t.Error(err)
+		}
+		authReq := fosite.AuthorizeRequest{}
+		if err = test.ParseJson(resp, &authReq); err != nil {
+			t.Error(err)
+		}
+		if authReq.State != v.Get("state") {
+			t.Errorf("Invalid state")
+		}
+
+		// Accept authorization (post confirm object)
+		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
+		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Check redirect matches
+		redirect := resp.Header.Get("Location")
+		if !strings.HasPrefix(redirect, oauthClient.RedirectURIs[0]) {
+			t.Errorf("Redirect invalid")
+		}
+
+		// Parse token args from response
+		tokenValues, err := url.ParseQuery(redirect)
+		if err != nil {
+			t.Error(err)
+		}
+
+		//token := &oauth2.Token{AccessToken: tokenValues.Get("access_token")}
+
+		v = url.Values{}
+		v.Set("localhost:9000/auth#access_token", tokenValues.Get("localhost:9000/auth#access_token"))
+
+		config := &clientcredentials.Config{
+			ClientID:       oauthClient.ClientID,
+			ClientSecret:   oauthClient.Secret,
+			TokenURL:       "http://" + test.Address + "/api/oauth/token",
+			Scopes:         []string{"public.read", "private.read"},
+			EndpointParams: v,
+		}
+
+		httpClient := config.Client(oauth2.NoContext)
+
+		tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
+
+		if _, err := tc.Get("/info", http.StatusOK); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("OAuthAPI lists user sessions", func(t *testing.T) {
+
+		t.SkipNow()
+
+		sessions := UserSessions{}
+		if err := client.GetJSON("/oauth/sessions", http.StatusOK, &sessions); err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		if expected := 2; len(sessions.AccessCodes) != expected {
+			t.Errorf("Invalid AccessCodes (explicit, implicit grant) session count (actual: %d expected: %d)", len(sessions.AccessCodes), expected)
+		}
+		if expected := 0; len(sessions.AuthorizationCodes) != expected {
+			t.Errorf("Invalid AuthorizationCodes session count (actual: %d expected: %d)", len(sessions.AuthorizationCodes), expected)
+		}
+		if expected := 0; len(sessions.RefreshTokens) != expected {
+			t.Errorf("Invalid RefreshTokens session count (actual: %d expected: %d)", len(sessions.RefreshTokens), expected)
+		}
+
+	})
 	/*
-
-		//
-		t.Run("OAuthAPI Client Credentials grant", func(t *testing.T) {
-			v := url.Values{}
-			v.Set("response_type", "token")
-			v.Set("client_id", oauthClient.ClientID)
-			v.Set("redirect_uri", oauthClient.RedirectURIs[0])
-			v.Set("grant_types", "client_credentials")
-			v.Set("scope", "public.read")
-			v.Set("state", "afrjkbhreiulqyaf3q974")
-
-			t.Skipf("Aborted / non-functional, see OauthAPI.TokenPost for TODOs")
-
-			// Get to start authorization (this is the redirect from the client app)
-			resp, err := client.GetWithParams("/oauth/auth", 302, v)
-			if err != nil {
-				t.Error(err)
-			}
-			if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
-				t.Error(err)
-			}
-
-			// Fetch pending authorizations
-			resp, err = client.Get("/oauth/pending", http.StatusOK)
-			if err != nil {
-				t.Error(err)
-			}
-			authReq := fosite.AuthorizeRequest{}
-			if err = test.ParseJson(resp, &authReq); err != nil {
-				t.Error(err)
-			}
-			if authReq.State != v.Get("state") {
-				t.Errorf("Invalid state")
-			}
-
-			// Accept authorization (post confirm object)
-			ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
-			resp, err = client.PostJSON("/oauth/auth", 302, &ac)
-			if err != nil {
-				t.Error(err)
-			}
-
-			// Check redirect matches
-			redirect := resp.Header.Get("Location")
-			if !strings.HasPrefix(redirect, oauthClient.RedirectURIs[0]) {
-				t.Errorf("Redirect invalid")
-			}
-
-			// Parse token args from response
-			tokenValues, err := url.ParseQuery(redirect)
-			if err != nil {
-				t.Error(err)
-			}
-
-			//token := &oauth2.Token{AccessToken: tokenValues.Get("access_token")}
-
-			v = url.Values{}
-			v.Set("localhost:9000/auth#access_token", tokenValues.Get("localhost:9000/auth#access_token"))
-
-			config := &clientcredentials.Config{
-				ClientID:       oauthClient.ClientID,
-				ClientSecret:   oauthClient.Secret,
-				TokenURL:       "http://" + test.Address + "/api/oauth/token",
-				Scopes:         []string{"public.read", "private.read"},
-				EndpointParams: v,
-			}
-
-			httpClient := config.Client(oauth2.NoContext)
-
-			tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
-
-			if _, err := tc.Get("/info", http.StatusOK); err != nil {
-				t.Error(err)
-			}
-		})
-
-		t.Run("OAuthAPI lists user sessions", func(t *testing.T) {
-
-			t.SkipNow()
-
-			sessions := UserSessions{}
-			if err := client.GetJSON("/oauth/sessions", http.StatusOK, &sessions); err != nil {
-				t.Error(err)
-				t.FailNow()
-			}
-
-			if expected := 2; len(sessions.AccessCodes) != expected {
-				t.Errorf("Invalid AccessCodes (explicit, implicit grant) session count (actual: %d expected: %d)", len(sessions.AccessCodes), expected)
-			}
-			if expected := 0; len(sessions.AuthorizationCodes) != expected {
-				t.Errorf("Invalid AuthorizationCodes session count (actual: %d expected: %d)", len(sessions.AuthorizationCodes), expected)
-			}
-			if expected := 0; len(sessions.RefreshTokens) != expected {
-				t.Errorf("Invalid RefreshTokens session count (actual: %d expected: %d)", len(sessions.RefreshTokens), expected)
-			}
-
-		})
-
 		t.Run("OAuthAPI rejects invalid scopes", func(t *testing.T) {
 			config := &clientcredentials.Config{
 				ClientID:     oauthClient.ClientID,
@@ -439,5 +438,4 @@ func TestOauthAPI(t *testing.T) {
 
 		})
 	*/
-
 }
