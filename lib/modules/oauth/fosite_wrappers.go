@@ -90,41 +90,41 @@ func NewAuthorizeCodeWrap(i interface{}) fosite.Requester {
 	return &AuthorizeCodeWrap{i.(AuthorizeCodeSession)}
 }
 
-func (ac *AuthorizeCodeWrap) GetID() string {
-	return ac.GetID()
+func (s *AuthorizeCodeWrap) GetID() string {
+	return s.GetID()
 }
 
-func (ac *AuthorizeCodeWrap) GetClient() fosite.Client {
-	client := ac.AuthorizeCodeSession.GetClient()
+func (s *AuthorizeCodeWrap) GetClient() fosite.Client {
+	client := s.AuthorizeCodeSession.GetClient()
 	return NewClientWrapper(client)
 }
 
-func (ac *AuthorizeCodeWrap) GetGrantedScopes() fosite.Arguments {
-	return fosite.Arguments(ac.AuthorizeCodeSession.GetGrantedScopes())
+func (s *AuthorizeCodeWrap) GetGrantedScopes() fosite.Arguments {
+	return fosite.Arguments(s.AuthorizeCodeSession.GetGrantedScopes())
 }
 
-func (ac *AuthorizeCodeWrap) GetRequestForm() url.Values {
+func (s *AuthorizeCodeWrap) GetRequestForm() url.Values {
 	return url.Values{}
 }
 
-func (ac *AuthorizeCodeWrap) GetRequestedScopes() fosite.Arguments {
-	return fosite.Arguments(ac.AuthorizeCodeSession.GetRequestedScopes())
+func (s *AuthorizeCodeWrap) GetRequestedScopes() fosite.Arguments {
+	return fosite.Arguments(s.AuthorizeCodeSession.GetRequestedScopes())
 }
 
-func (ac *AuthorizeCodeWrap) SetRequestedScopes(scopes fosite.Arguments) {
-	ac.AuthorizeCodeSession.SetRequestedScopes([]string(scopes))
+func (s *AuthorizeCodeWrap) SetRequestedScopes(scopes fosite.Arguments) {
+	s.AuthorizeCodeSession.SetRequestedScopes([]string(scopes))
 }
 
-func (ac *AuthorizeCodeWrap) GetSession() fosite.Session {
-	return NewSessionWrap(ac.AuthorizeCodeSession.GetSession()).(fosite.Session)
+func (s *AuthorizeCodeWrap) GetSession() fosite.Session {
+	return NewSessionWrap(s.AuthorizeCodeSession.GetSession()).(fosite.Session)
 }
 
-func (ac *AuthorizeCodeWrap) SetSession(session fosite.Session) {
-	ac.AuthorizeCodeSession.SetSession(session)
+func (s *AuthorizeCodeWrap) SetSession(session fosite.Session) {
+	s.AuthorizeCodeSession.SetSession(session)
 }
 
-func (ac *AuthorizeCodeWrap) Merge(requester fosite.Requester) {
-	ac.AuthorizeCodeSession.Merge(requester)
+func (s *AuthorizeCodeWrap) Merge(requester fosite.Requester) {
+	s.AuthorizeCodeSession.Merge(requester)
 }
 
 type AccessTokenWrap struct {
@@ -135,9 +135,41 @@ func NewAccessTokenWrap(i interface{}) interface{} {
 	return &AccessTokenWrap{i.(AccessTokenSession)}
 }
 
-func (ac *AccessTokenWrap) GetClient() fosite.Client {
-	client := ac.AccessTokenSession.GetClient()
+func (s *AccessTokenWrap) GetID() string {
+	return s.GetID()
+}
+
+func (s *AccessTokenWrap) GetClient() fosite.Client {
+	client := s.AccessTokenSession.GetClient()
 	return NewClientWrapper(client)
+}
+
+func (s *AccessTokenWrap) GetGrantedScopes() fosite.Arguments {
+	return fosite.Arguments(s.AccessTokenSession.GetGrantedScopes())
+}
+
+func (s *AccessTokenWrap) GetRequestForm() url.Values {
+	return url.Values{}
+}
+
+func (s *AccessTokenWrap) GetRequestedScopes() fosite.Arguments {
+	return fosite.Arguments(s.AccessTokenSession.GetRequestedScopes())
+}
+
+func (s *AccessTokenWrap) SetRequestedScopes(scopes fosite.Arguments) {
+	s.AccessTokenSession.SetRequestedScopes([]string(scopes))
+}
+
+func (s *AccessTokenWrap) GetSession() fosite.Session {
+	return NewSessionWrap(s.AccessTokenSession.GetSession()).(fosite.Session)
+}
+
+func (s *AccessTokenWrap) SetSession(session fosite.Session) {
+	s.AccessTokenSession.SetSession(session)
+}
+
+func (s *AccessTokenWrap) Merge(requester fosite.Requester) {
+	s.AccessTokenSession.Merge(requester)
 }
 
 type RefreshTokenWrap struct {
@@ -148,7 +180,39 @@ func NewRefreshTokenWrap(i interface{}) interface{} {
 	return &RefreshTokenWrap{i.(RefreshTokenSession)}
 }
 
-func (ac *RefreshTokenWrap) GetClient() fosite.Client {
-	client := ac.RefreshTokenSession.GetClient()
+func (s *RefreshTokenWrap) GetID() string {
+	return s.GetID()
+}
+
+func (s *RefreshTokenWrap) GetClient() fosite.Client {
+	client := s.RefreshTokenSession.GetClient()
 	return NewClientWrapper(client)
+}
+
+func (s *RefreshTokenWrap) GetGrantedScopes() fosite.Arguments {
+	return fosite.Arguments(s.RefreshTokenSession.GetGrantedScopes())
+}
+
+func (s *RefreshTokenWrap) GetRequestForm() url.Values {
+	return url.Values{}
+}
+
+func (s *RefreshTokenWrap) GetRequestedScopes() fosite.Arguments {
+	return fosite.Arguments(s.RefreshTokenSession.GetRequestedScopes())
+}
+
+func (s *RefreshTokenWrap) SetRequestedScopes(scopes fosite.Arguments) {
+	s.RefreshTokenSession.SetRequestedScopes([]string(scopes))
+}
+
+func (s *RefreshTokenWrap) GetSession() fosite.Session {
+	return NewSessionWrap(s.RefreshTokenSession.GetSession()).(fosite.Session)
+}
+
+func (s *RefreshTokenWrap) SetSession(session fosite.Session) {
+	s.RefreshTokenSession.SetSession(session)
+}
+
+func (s *RefreshTokenWrap) Merge(requester fosite.Requester) {
+	s.RefreshTokenSession.Merge(requester)
 }
