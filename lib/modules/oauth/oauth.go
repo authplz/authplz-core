@@ -281,7 +281,7 @@ type UserSessions struct {
 func sessionBaseToGrantInfo(s SessionBase) GrantInfo {
 	grant := GrantInfo{
 		ID:          s.GetRequestID(),
-		Scopes:      s.GetScopes(),
+		Scopes:      s.GetRequestedScopes(),
 		RequestedAt: s.GetRequestedAt(),
 		ExpiresAt:   s.GetExpiresAt(),
 	}

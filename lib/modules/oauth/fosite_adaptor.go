@@ -72,7 +72,7 @@ func (oa *FositeAdaptor) GetAuthorizeCodeSession(ctx context.Context, code strin
 		return nil, err
 	}
 
-	return a.(fosite.Requester), nil
+	return NewAuthorizeCodeWrap(a).(fosite.Requester), nil
 }
 
 func (oa *FositeAdaptor) PersistAuthorizeCodeGrantSession(ctx context.Context, authorizeCode, accessSignature, refreshSignature string,
@@ -116,7 +116,7 @@ func (oa *FositeAdaptor) GetAccessTokenSession(ctx context.Context, signature st
 		return nil, err
 	}
 
-	return a.(fosite.Requester), nil
+	return NewAccessTokenWrap(a).(fosite.Requester), nil
 }
 
 func (oa *FositeAdaptor) RevokeAccessToken(ctx context.Context, requestID string) error {
@@ -155,7 +155,7 @@ func (oa *FositeAdaptor) GetRefreshTokenSession(ctx context.Context, signature s
 		return nil, err
 	}
 
-	return a.(fosite.Requester), nil
+	return NewRefreshTokenWrap(a).(fosite.Requester), nil
 }
 
 func (oa *FositeAdaptor) PersistRefreshTokenGrantSession(ctx context.Context, originalRefreshSignature, accessSignature,

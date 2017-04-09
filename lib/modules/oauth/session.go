@@ -8,6 +8,8 @@
 package oauth
 
 import (
+	"bytes"
+	"encoding/gob"
 	"time"
 )
 
@@ -47,3 +49,15 @@ func (s *Session) SetAuthorizeExpiry(t time.Time) { s.AuthorizeExpiry = t }
 func (s *Session) GetAuthorizeExpiry() time.Time  { return s.AuthorizeExpiry }
 func (s *Session) SetIDExpiry(t time.Time)        { s.IDExpiry = t }
 func (s *Session) GetIDExpiry() time.Time         { return s.IDExpiry }
+
+func (s *Session) Clone() interface{} {
+	clone := Session{}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	dec := gob.NewDecoder(&buf)
+	_ = enc.Encode(s)
+	_ = dec.Decode(&clone)
+
+	return &clone
+}

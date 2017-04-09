@@ -1,8 +1,14 @@
 package oauthstore
 
 import (
+	"bytes"
+	"encoding/gob"
 	"time"
 )
+
+func init() {
+	gob.Register(&OauthSession{})
+}
 
 // OauthSession session storage base type
 // Used by grants for session storage
@@ -39,3 +45,15 @@ func (s *OauthSession) SetAuthorizeExpiry(t time.Time) { s.AuthorizeExpiry = t }
 func (s *OauthSession) GetAuthorizeExpiry() time.Time  { return s.AuthorizeExpiry }
 func (s *OauthSession) SetIDExpiry(t time.Time)        { s.IDExpiry = t }
 func (s *OauthSession) GetIDExpiry() time.Time         { return s.IDExpiry }
+
+func (s *OauthSession) Clone() *OauthSession {
+	clone := OauthSession{}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	dec := gob.NewDecoder(&buf)
+	_ = enc.Encode(s)
+	_ = dec.Decode(&clone)
+
+	return &clone
+}

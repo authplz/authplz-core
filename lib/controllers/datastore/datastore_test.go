@@ -156,7 +156,7 @@ func TestDatastore(t *testing.T) {
 
 	})
 
-	t.Skip("Add U2F tokens", func(t *testing.T) {
+	t.Run("Add U2F tokens", func(t *testing.T) {
 		// Create user
 		u, err := ds.GetUserByEmail(fakeEmail)
 		if err != nil {

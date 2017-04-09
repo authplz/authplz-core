@@ -213,11 +213,15 @@ func (dataStore *DataStore) GetTokens(user interface{}) (interface{}, error) {
 
 	u := user.(*User)
 
-	err = dataStore.db.Model(user).Related(u.FidoTokens).Error
+	err = dataStore.db.Model(user).Related(&u.FidoTokens).Error
 	if err != nil {
 		return nil, err
 	}
-	err = dataStore.db.Model(user).Related(u.TotpTokens).Error
+	err = dataStore.db.Model(user).Related(&u.TotpTokens).Error
+	if err != nil {
+		return nil, err
+	}
+	err = dataStore.db.Model(user).Related(&u.BackupTokens).Error
 	if err != nil {
 		return nil, err
 	}

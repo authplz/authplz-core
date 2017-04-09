@@ -1,9 +1,8 @@
 package oauth
 
 import (
-	"bytes"
-	"encoding/gob"
 	"github.com/ory-am/fosite"
+	"net/url"
 	"time"
 )
 
@@ -13,7 +12,7 @@ type ClientWrapper struct {
 }
 
 // NewClientWrapper creates a client wrapper around a Client interface object to support the methods required by Fosite
-func NewClientWrapper(c interface{}) *ClientWrapper {
+func NewClientWrapper(c interface{}) fosite.Client {
 	return &ClientWrapper{c.(Client)}
 }
 
@@ -40,7 +39,7 @@ type SessionWrap struct {
 }
 
 // NewSessionWrap creates a session wrapper around a session object to support the methods required by fosite
-func NewSessionWrap(s interface{}) *SessionWrap {
+func NewSessionWrap(s interface{}) fosite.Session {
 	return &SessionWrap{s.(UserSession)}
 }
 
@@ -80,12 +79,76 @@ func (s *SessionWrap) GetSubject() string {
 }
 
 func (s *SessionWrap) Clone() fosite.Session {
-	var clone SessionWrap
-	var mod bytes.Buffer
-	enc := gob.NewEncoder(&mod)
-	dec := gob.NewDecoder(&mod)
-	_ = enc.Encode(s)
-	_ = dec.Decode(&clone)
+	return s.UserSession.Clone().(fosite.Session)
+}
 
-	return &clone
+type AuthorizeCodeWrap struct {
+	AuthorizeCodeSession
+}
+
+func NewAuthorizeCodeWrap(i interface{}) fosite.Requester {
+	return &AuthorizeCodeWrap{i.(AuthorizeCodeSession)}
+}
+
+func (ac *AuthorizeCodeWrap) GetID() string {
+	return ac.GetID()
+}
+
+func (ac *AuthorizeCodeWrap) GetClient() fosite.Client {
+	client := ac.AuthorizeCodeSession.GetClient()
+	return NewClientWrapper(client)
+}
+
+func (ac *AuthorizeCodeWrap) GetGrantedScopes() fosite.Arguments {
+	return fosite.Arguments(ac.AuthorizeCodeSession.GetGrantedScopes())
+}
+
+func (ac *AuthorizeCodeWrap) GetRequestForm() url.Values {
+	return url.Values{}
+}
+
+func (ac *AuthorizeCodeWrap) GetRequestedScopes() fosite.Arguments {
+	return fosite.Arguments(ac.AuthorizeCodeSession.GetRequestedScopes())
+}
+
+func (ac *AuthorizeCodeWrap) SetRequestedScopes(scopes fosite.Arguments) {
+	ac.AuthorizeCodeSession.SetRequestedScopes([]string(scopes))
+}
+
+func (ac *AuthorizeCodeWrap) GetSession() fosite.Session {
+	return NewSessionWrap(ac.AuthorizeCodeSession.GetSession()).(fosite.Session)
+}
+
+func (ac *AuthorizeCodeWrap) SetSession(session fosite.Session) {
+	ac.AuthorizeCodeSession.SetSession(session)
+}
+
+func (ac *AuthorizeCodeWrap) Merge(requester fosite.Requester) {
+	ac.AuthorizeCodeSession.Merge(requester)
+}
+
+type AccessTokenWrap struct {
+	AccessTokenSession
+}
+
+func NewAccessTokenWrap(i interface{}) interface{} {
+	return &AccessTokenWrap{i.(AccessTokenSession)}
+}
+
+func (ac *AccessTokenWrap) GetClient() fosite.Client {
+	client := ac.AccessTokenSession.GetClient()
+	return NewClientWrapper(client)
+}
+
+type RefreshTokenWrap struct {
+	RefreshTokenSession
+}
+
+func NewRefreshTokenWrap(i interface{}) interface{} {
+	return &RefreshTokenWrap{i.(RefreshTokenSession)}
+}
+
+func (ac *RefreshTokenWrap) GetClient() fosite.Client {
+	client := ac.RefreshTokenSession.GetClient()
+	return NewClientWrapper(client)
 }

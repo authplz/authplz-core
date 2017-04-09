@@ -35,11 +35,24 @@ type Client interface {
 
 // SessionBase defines the common interface across all OAuth sessions
 type SessionBase interface {
+	GetClient() interface{}
+	GetSession() interface{}
+	SetSession(session interface{})
+
 	GetRequestID() string
 	GetUserID() string
-	GetScopes() []string
+
 	GetRequestedAt() time.Time
 	GetExpiresAt() time.Time
+
+	GetRequestedScopes() []string
+	SetRequestedScopes(scopes []string)
+	AppendRequestedScope(scope string)
+
+	GetGrantedScopes() []string
+	GrantScope(scope string)
+
+	Merge(interface{})
 }
 
 // AuthorizeCodeSession is an OAuth Authorization Code Grant Session
@@ -75,6 +88,8 @@ type UserSession interface {
 	GetAuthorizeExpiry() time.Time
 	SetIDExpiry(time.Time)
 	GetIDExpiry() time.Time
+
+	Clone() interface{}
 }
 
 // Storer OAuth storage interface

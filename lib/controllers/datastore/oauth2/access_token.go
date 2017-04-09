@@ -17,8 +17,14 @@ type OauthAccessToken struct {
 
 func (oa *OauthAccessToken) GetSignature() string { return oa.Signature }
 
+func (oa *OauthAccessToken) GetSession() interface{} { return &oa.OauthSession }
+
+func (oa *OauthAccessToken) SetSession(session interface{}) {
+	// I don't even know what to do here
+}
+
 func (os *OauthStore) AddAccessTokenSession(userID, clientID, signature, requestID string,
-	requestedAt, expiresAt time.Time, scopes, grantedScopes []string) (interface{}, error) {
+	requestedAt, expiresAt time.Time, requestedScopes, grantedScopes []string) (interface{}, error) {
 
 	u, err := os.base.GetUserByExtID(userID)
 	if err != nil {
@@ -37,7 +43,7 @@ func (os *OauthStore) AddAccessTokenSession(userID, clientID, signature, request
 		RequestedAt: requestedAt,
 		ExpiresAt:   expiresAt,
 	}
-	request.SetScopes(scopes)
+	request.SetRequestedScopes(requestedScopes)
 	request.SetGrantedScopes(grantedScopes)
 
 	session := OauthSession{
@@ -59,30 +65,40 @@ func (os *OauthStore) AddAccessTokenSession(userID, clientID, signature, request
 	if err != nil {
 		return nil, err
 	}
+
+	oa.Client = *client
+
 	return &oa, nil
 }
 
-// Fetch a client from an access token
+func (os *OauthStore) fetchAccessTokenSession(match *OauthAccessToken) (interface{}, error) {
+	var accessToken OauthAccessToken
+	err := os.db.Where(match).First(&accessToken).Error
+	if (err != nil) && (err != gorm.ErrRecordNotFound) {
+		return nil, err
+	} else if (err != nil) && (err == gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	err = os.db.Where(&OauthClient{ID: accessToken.ClientID}).First(&accessToken.Client).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &accessToken, nil
+}
+
+// GetAccessTokenSession Fetch a client from an access token
 func (os *OauthStore) GetAccessTokenSession(signature string) (interface{}, error) {
-	var oa OauthAccessToken
-	err := os.db.Where(&OauthAccessToken{Signature: signature}).First(&oa).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &oa, err
+	return os.fetchAccessTokenSession(&OauthAccessToken{Signature: signature})
 }
 
+// GetAccessTokenSessionByRequestID fetch an access token by refresh id
 func (os *OauthStore) GetAccessTokenSessionByRequestID(requestID string) (interface{}, error) {
-	var oa OauthAccessToken
-	err := os.db.Where(&OauthAccessToken{OauthRequest: OauthRequest{RequestID: requestID}}).First(&oa).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &oa, err
+	return os.fetchAccessTokenSession(&OauthAccessToken{OauthRequest: OauthRequest{RequestID: requestID}})
 }
 
+// GetAccessTokenSessionsByUserID by a user id
 func (os *OauthStore) GetAccessTokenSessionsByUserID(userID string) ([]interface{}, error) {
 	var oa []OauthAccessToken
 	err := os.db.Where(&OauthAccessToken{OauthSession: OauthSession{UserExtID: userID}}).Find(&oa).Error
@@ -98,7 +114,7 @@ func (os *OauthStore) GetAccessTokenSessionsByUserID(userID string) ([]interface
 	return interfaces, err
 }
 
-// Fetch a client from an access token
+// GetClientByAccessTokenSession Fetch a client from an access token
 func (os *OauthStore) GetClientByAccessTokenSession(signature string) (interface{}, error) {
 	var oa OauthAccessToken
 	err := os.db.Where(&OauthAccessToken{Signature: signature}).First(&oa).Error
@@ -115,6 +131,7 @@ func (os *OauthStore) GetClientByAccessTokenSession(signature string) (interface
 	return &oc, nil
 }
 
+// RemoveAccessTokenSession Remove an access token by session key
 func (os *OauthStore) RemoveAccessTokenSession(signature string) error {
 	err := os.db.Delete(&OauthAccessToken{Signature: signature}).Error
 	return err
