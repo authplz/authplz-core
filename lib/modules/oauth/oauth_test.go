@@ -9,7 +9,7 @@ import (
 	"github.com/ryankurte/authplz/lib/test"
 )
 
-func NoTestOauth(t *testing.T) {
+func TestOauth(t *testing.T) {
 
 	ts, err := test.NewTestServer()
 	if err != nil {

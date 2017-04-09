@@ -11,7 +11,6 @@
 package oauth
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -203,8 +202,6 @@ func TestOauthAPI(t *testing.T) {
 			t.FailNow()
 		}
 
-		log.Printf("TokenValues: %+v", tokenValues)
-
 		tokenString := tokenValues.Get(oauthClient.RedirectURIs[0] + "#access_token")
 		if tokenString == "" {
 			t.Errorf("No access token received")
@@ -273,8 +270,6 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-
-		log.Printf("TokenValues: %+v", tokenValues)
 
 		if err := tokenValues.Get(oauthClient.RedirectURIs[0] + "?error"); err != "" {
 			t.Errorf("Error from auth endpoint %s", err)

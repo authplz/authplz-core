@@ -46,7 +46,7 @@ func (s *OauthSession) GetAuthorizeExpiry() time.Time  { return s.AuthorizeExpir
 func (s *OauthSession) SetIDExpiry(t time.Time)        { s.IDExpiry = t }
 func (s *OauthSession) GetIDExpiry() time.Time         { return s.IDExpiry }
 
-func (s *OauthSession) Clone() *OauthSession {
+func (s *OauthSession) Clone() interface{} {
 	clone := OauthSession{}
 
 	var buf bytes.Buffer

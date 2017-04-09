@@ -237,9 +237,6 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("Authorize Request: %+v", ar)
-	log.Printf("Authorize Response: %+v", response)
-
 	// Write output
 	c.oc.OAuth2.WriteAuthorizeResponse(rw, &ar, response)
 }
@@ -309,9 +306,6 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
-
-	log.Printf("AccessRequest: %+v type: %+v", ar, client.GetResponseTypes())
-	//log.Printf("Session: %+v", ar.GetSession().GetUsername())
 
 	// Update fields
 	client.SetLastUsed(time.Now())
