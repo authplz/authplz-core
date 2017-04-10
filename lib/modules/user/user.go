@@ -8,6 +8,7 @@ import (
 
 import (
 	"github.com/ryankurte/authplz/lib/api"
+	"github.com/ryankurte/authplz/lib/events"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,12 +19,12 @@ const hashRounds = 8
 // Controller User controller instance storage
 type Controller struct {
 	userStore  Storer
-	emitter    api.EventEmitter
+	emitter    events.EventEmitter
 	hashRounds int
 }
 
 // NewController Create a new user controller
-func NewController(userStore Storer, emitter api.EventEmitter) *Controller {
+func NewController(userStore Storer, emitter events.EventEmitter) *Controller {
 	return &Controller{userStore, emitter, hashRounds}
 }
 
@@ -78,7 +79,7 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 
 	// Emit user creation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountCreated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountCreated, data))
 
 	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtID())
 
@@ -111,9 +112,42 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 
 	// Emit user activation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountActivated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountActivated, data))
 
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtID())
+
+	return user, nil
+}
+
+// Unlock unlocks the provided user account
+func (userModule *Controller) Lock(email string) (user User, err error) {
+
+	// Fetch user account
+	u, err := userModule.userStore.GetUserByEmail(email)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, errLogin
+	}
+
+	user = u.(User)
+
+	user.SetLocked(true)
+
+	u, err = userModule.userStore.UpdateUser(user)
+	if err != nil {
+		// Userstore error, wrap
+		log.Println(err)
+		return nil, errLogin
+	}
+
+	user = u.(User)
+
+	// Emit user unlock event
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
+
+	log.Printf("UserModule.Unlock: User %s account locked\r\n", user.GetExtID())
 
 	return user, nil
 }
@@ -144,7 +178,7 @@ func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Emit user unlock event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventAccountUnlocked, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountUnlocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtID())
 
@@ -181,6 +215,9 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 			if (retries > 5) && (user.IsLocked() == false) {
 				log.Printf("UserModule.Login: Locking user %s", user.GetExtID())
 				user.SetLocked(true)
+
+				data := make(map[string]string)
+				userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
 			}
 
 			u, err = userModule.userStore.UpdateUser(user)
@@ -307,7 +344,7 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 
 	// Emit password update event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(api.NewEvent(user, api.EventPasswordUpdate, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventPasswordUpdate, data))
 
 	// Log update
 	log.Printf("UserModule.handleSetPassword: User %s password updated\r\n", user.GetExtID())
@@ -334,8 +371,11 @@ func (userModule *Controller) SetPassword(userid, password string) (User, error)
 
 	// Call password setting method
 	err = userModule.handleSetPassword(user, password)
+	if err != nil {
+		return user, err
+	}
 
-	return user, err
+	return user, nil
 }
 
 // UpdatePassword updates a user password
@@ -431,7 +471,6 @@ func (userModule *Controller) PreLogin(u interface{}) (bool, error) {
 
 // PostLoginSuccess runs success actions for the user module
 func (userModule *Controller) PostLoginSuccess(u interface{}) error {
-
 	user := u.(User)
 
 	// Update user object
@@ -442,11 +481,18 @@ func (userModule *Controller) PostLoginSuccess(u interface{}) error {
 		return err
 	}
 
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginSuccess, data))
+
 	return nil
 }
 
 // PostLoginFailure runs Failure actions for the user module
 func (userModule *Controller) PostLoginFailure(u interface{}) error {
+	user := u.(User)
+
+	data := make(map[string]string)
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginFailure, data))
 
 	return nil
 }

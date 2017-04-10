@@ -54,6 +54,7 @@ func TestCoreModule(t *testing.T) {
 	tokenControl := token.NewTokenController("localhost", "ABCD")
 
 	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false, nil}
+
 	coreControl := NewController(tokenControl, &mockHandler)
 
 	t.Run("Bind and call token action handlers", func(t *testing.T) {
