@@ -129,7 +129,8 @@ Checkout [DESIGN.md](DESIGN.md) for design notes and API interaction flows.
   - [lib/core](lib/modules/core) contains the core login/logout/action endpoints that further modules are bound into. Checkout this module for information on what components / bindings are available.
   - [lib/user](lib/modules/user) contains the user account management module and API
   - [lib/2fa](lib/modules/2fa) contains 2fa implementations
-  - [lib/user](lib/modules/audir) contains the account action / auditing API
+  - [lib/user](lib/modules/audit) contains the account action / auditing API
+  - [lib/user](lib/modules/oauth) contains oauth and OpenID functionality
 - [lib/templates](lib/templates) contains default template files used by components (ie. mailer)
 - [lib/test](lib/test) contains test helpers (and maybe one day integration tests)
 
