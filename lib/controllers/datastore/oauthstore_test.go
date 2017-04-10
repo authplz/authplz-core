@@ -105,7 +105,7 @@ func TestOauthstore(t *testing.T) {
 		c := authorizeCodeSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for authorize code session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 
@@ -119,7 +119,7 @@ func TestOauthstore(t *testing.T) {
 		c := authorizeCodeSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for authorize code session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 
@@ -148,7 +148,7 @@ func TestOauthstore(t *testing.T) {
 		c := accessTokenSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for access token session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 
@@ -162,7 +162,7 @@ func TestOauthstore(t *testing.T) {
 		c := accessTokenSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for access token session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 
@@ -191,7 +191,7 @@ func TestOauthstore(t *testing.T) {
 		c := refreshTokenSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for refresh token session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 
@@ -205,7 +205,7 @@ func TestOauthstore(t *testing.T) {
 		c := refreshTokenSession.GetClient()
 		assert.NotNil(t, c, "Could not fetch client for refresh token session")
 
-		client := c.(oauthstore.OauthClient)
+		client := c.(*oauthstore.OauthClient)
 		assert.EqualValues(t, clientId, client.GetID())
 	})
 }
