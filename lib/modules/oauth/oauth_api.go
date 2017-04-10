@@ -150,13 +150,13 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
 		// Bind redirect back and redirect to login page if not
-		c.BindRedirect("/oauth/pending", rw, req)
+		c.BindRedirect(c.oc.config.AuthorizeRedirect, rw, req)
 		c.DoRedirect("/login", rw, req)
 		return
 	}
 
 	// Redirect to pending auth page if logged in
-	c.DoRedirect("/oauth/pending", rw, req)
+	c.DoRedirect(c.oc.config.AuthorizeRedirect, rw, req)
 
 }
 

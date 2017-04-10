@@ -104,7 +104,7 @@ This is automatic when calling `npm start` from the authplz-ui project.
 - [ ] 2FA token management
   - [ ] TOTP
   - [ ] FIDO
-- [ ] OAuth2
+- [-] OAuth2
   - [X] Authorization Code grant type
   - [X] Implicit grant type
   - [ ] User client management

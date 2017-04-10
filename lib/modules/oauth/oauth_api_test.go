@@ -107,7 +107,7 @@ func TestOauthAPI(t *testing.T) {
 	userModule.BindAPI(ts.Router)
 
 	// Create and bind oauth server instance
-	oauthModule, _ := NewController(ts.DataStore, config)
+	oauthModule := NewController(ts.DataStore, config)
 	oauthModule.BindAPI(ts.Router)
 
 	ts.Run()
@@ -215,7 +215,7 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
+		if err := test.CheckRedirect(config.AuthorizeRedirect, resp); err != nil {
 			t.Error(err)
 		}
 
@@ -288,7 +288,7 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
+		if err := test.CheckRedirect(config.AuthorizeRedirect, resp); err != nil {
 			t.Error(err)
 		}
 

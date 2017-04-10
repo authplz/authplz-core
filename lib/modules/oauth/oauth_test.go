@@ -19,7 +19,7 @@ func TestOauth(t *testing.T) {
 
 	config := DefaultConfig()
 
-	oauthModule, err := NewController(ts.DataStore, config)
+	oauthModule := NewController(ts.DataStore, config)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

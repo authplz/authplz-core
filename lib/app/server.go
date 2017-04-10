@@ -23,6 +23,7 @@ import (
 
 	"github.com/ryankurte/authplz/lib/modules/audit"
 	"github.com/ryankurte/authplz/lib/modules/core"
+	"github.com/ryankurte/authplz/lib/modules/oauth"
 	"github.com/ryankurte/authplz/lib/modules/user"
 
 	"github.com/ryankurte/go-async"
@@ -94,6 +95,8 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	auditSvc := async.NewAsyncService(auditModule, bufferSize)
 	server.serviceManager.BindService(&auditSvc)
 
+	oauthModule := oauth.NewController(dataStore, oauth.DefaultConfig())
+
 	// Create a global context object
 	server.ctx = appcontext.NewGlobalCtx(sessionStore)
 
@@ -118,6 +121,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	totpModule.BindAPI(server.router)
 	backupModule.BindAPI(server.router)
 	auditModule.BindAPI(server.router)
+	oauthModule.BindAPI(server.router)
 
 	return &server
 }

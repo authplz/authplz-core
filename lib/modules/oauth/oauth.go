@@ -40,6 +40,8 @@ type configSplit struct {
 
 // Config OAuth controller coniguration structure
 type Config struct {
+	// Redirect to client app for oauth authorization
+	AuthorizeRedirect string
 	// Secret for OAuth token attestation
 	TokenSecret string
 	// AllowedScopes defines the scopes a client can grant for admins and users
@@ -52,7 +54,8 @@ type Config struct {
 func DefaultConfig() Config {
 	secret, _ := generateSecret(64)
 	return Config{
-		TokenSecret: secret,
+		AuthorizeRedirect: "/#/oauth-authorize",
+		TokenSecret:       secret,
 		AllowedScopes: configSplit{
 			Admin: []string{"public", "private", "introspect", "offline"},
 			User:  []string{"public", "private", "offline"},
@@ -72,7 +75,7 @@ type Controller struct {
 }
 
 // NewController Creates a new OAuth2 controller instance
-func NewController(store Storer, config Config) (*Controller, error) {
+func NewController(store Storer, config Config) *Controller {
 
 	// Create configuration
 	var oauthConfig = &compose.Config{
@@ -114,7 +117,7 @@ func NewController(store Storer, config Config) (*Controller, error) {
 		config: config,
 	}
 
-	return &c, nil
+	return &c
 }
 
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
