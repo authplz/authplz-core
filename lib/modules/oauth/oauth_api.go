@@ -14,12 +14,15 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
 	"github.com/ory-am/fosite"
 
+	"fmt"
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/appcontext"
 )
@@ -59,6 +62,7 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
 	// Bind paths to endpoint
 	router.Get("/clients", (*APICtx).ClientsGet)
+	router.Get("/options", (*APICtx).OptionsGet)
 	router.Post("/clients", (*APICtx).ClientsPost)
 
 	router.Get("/auth", (*APICtx).AuthorizeRequestGet)
@@ -94,13 +98,30 @@ func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJson(rw, clients)
 }
 
+// OptionsGet fetch OAuth client options
+func (c *APICtx) OptionsGet(rw web.ResponseWriter, req *web.Request) {
+	// Check user is logged in
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// TODO: isAdmin filter here
+	options := c.oc.GetOptions(c.GetUserID(), true)
+
+	c.WriteJson(rw, options)
+}
+
 // ClientReq is a client request object used to create an OAuth client
 type ClientReq struct {
-	Scopes    []string
-	Redirects []string
-	Grants    []string
-	Responses []string
+	Name      string   `json:"name"`
+	Scopes    []string `json:"scopes"`
+	Redirects []string `json:"redirects"`
+	Grants    []string `json:"grants"`
+	Responses []string `json:"responses"`
 }
+
+var clientNameExp = regexp.MustCompile(`([a-z0-9\.]+)`)
 
 // ClientsPost creates a new OAuth client
 func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
@@ -118,6 +139,21 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
 	}
 
+	// Validate name
+	if !clientNameExp.MatchString(clientReq.Name) {
+		message := fmt.Sprintf("Invalid client name %s", clientReq.Name)
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, message)
+	}
+
+	// Validate request URLs
+	for _, url := range clientReq.Redirects {
+		if !govalidator.IsURL(url) {
+			message := fmt.Sprintf("Invalid redirect URL: %s", url)
+			c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, message)
+		}
+	}
+
+	// Create client instance
 	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
 	if err != nil {
 		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())

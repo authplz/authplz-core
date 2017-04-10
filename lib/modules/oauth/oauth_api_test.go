@@ -168,6 +168,7 @@ func TestOauthAPI(t *testing.T) {
 
 	t.Run("OAuthAPI enrol client", func(t *testing.T) {
 		cr := ClientReq{
+			Name:      "test-client",
 			Scopes:    scopes,
 			Redirects: redirects,
 			Grants:    grants,

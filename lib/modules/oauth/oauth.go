@@ -57,8 +57,8 @@ func DefaultConfig() Config {
 		AuthorizeRedirect: "/#/oauth-authorize",
 		TokenSecret:       secret,
 		AllowedScopes: configSplit{
-			Admin: []string{"public", "private", "introspect", "offline"},
-			User:  []string{"public", "private", "offline"},
+			Admin: []string{"public.read", "public.write", "private.read", "private.write", "introspect", "offline"},
+			User:  []string{"public.read", "public.write", "private.read", "private.write", "offline"},
 		},
 		AllowedGrants: configSplit{
 			Admin: []string{"implicit", "authorization_code", "explicit", "code", "client_credentials"},
@@ -123,8 +123,6 @@ func NewController(store Storer, config Config) *Controller {
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
 // This is used to authenticate simple devices and must be pre-created
 func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes []string, public bool) (*ClientResp, error) {
-
-	log.Printf("OAuthController.CreateClient creating client for userID: %s", userID)
 
 	// Fetch the associated user account
 	u, err := oc.store.GetUserByExtID(userID)
@@ -200,7 +198,21 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 		Secret:       clientSecret,
 	}
 
+	log.Printf("OAuthController.CreateClient created client %s for userID: %s", client.GetID(), userID)
+
 	return &resp, nil
+}
+
+type OptionResp struct {
+	Scopes     []string `json:"scopes"`
+	GrantTypes []string `json:"grants"`
+}
+
+func (oc *Controller) GetOptions(userID string, isAdmin bool) OptionResp {
+	if isAdmin {
+		return OptionResp{oc.config.AllowedScopes.Admin, oc.config.AllowedGrants.Admin}
+	}
+	return OptionResp{oc.config.AllowedScopes.User, oc.config.AllowedGrants.User}
 }
 
 // ClientResp is the API safe object returned by client requests
