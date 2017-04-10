@@ -33,15 +33,42 @@ const (
 // This is a safe error return for the OAuth API to wrap underlying errors
 var ErrInternal = errors.New("OAuth internal error")
 
+type configSplit struct {
+	Admin []string
+	User  []string
+}
+
 // Config OAuth controller coniguration structure
 type Config struct {
-	TokenSecret string // Private key for OAuth token attestation
+	// Secret for OAuth token attestation
+	TokenSecret string
+	// AllowedScopes defines the scopes a client can grant for admins and users
+	AllowedScopes configSplit
+	// AllowedGrants defines the grant types a client can support for admins and users
+	AllowedGrants configSplit
+}
+
+// DefaultConfig generates a default configuration for the OAuth module
+func DefaultConfig() Config {
+	secret, _ := generateSecret(64)
+	return Config{
+		TokenSecret: secret,
+		AllowedScopes: configSplit{
+			Admin: []string{"public", "private", "introspect", "offline"},
+			User:  []string{"public", "private", "offline"},
+		},
+		AllowedGrants: configSplit{
+			Admin: []string{"implicit", "authorization_code", "explicit", "code", "client_credentials"},
+			User:  []string{"implicit", "explicit"},
+		},
+	}
 }
 
 // Controller OAuth module controller
 type Controller struct {
 	OAuth2 fosite.OAuth2Provider
 	store  Storer
+	config Config
 }
 
 // NewController Creates a new OAuth2 controller instance
@@ -49,9 +76,10 @@ func NewController(store Storer, config Config) (*Controller, error) {
 
 	// Create configuration
 	var oauthConfig = &compose.Config{
-	//AccessTokenLifespan:   time.Hour * 1,
-	//AuthorizeCodeLifespan: time.Hour * 24 * 30,
-	//IDTokenLifespan:       time.Hour * 24 * 30,
+		AccessTokenLifespan:   time.Hour * 1,
+		AuthorizeCodeLifespan: time.Hour * 1,
+		IDTokenLifespan:       time.Hour * 1,
+		HashCost:              clientSecretHashRounds,
 	}
 
 	// Create OAuth2 and OpenID Strategies
@@ -83,16 +111,11 @@ func NewController(store Storer, config Config) (*Controller, error) {
 	c := Controller{
 		OAuth2: oauth2,
 		store:  store,
+		config: config,
 	}
 
 	return &c, nil
 }
-
-var AdminGrantTypes = []string{"implicit", "authorization_code", "explicit", "code", "client_credentials"}
-var UserGrantTypes = []string{"implicit", "client_credentials"}
-
-var AdminClientScopes = []string{"public", "private", "introspect"}
-var UserClientScopes = []string{"public", "private"}
 
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
 // This is used to authenticate simple devices and must be pre-created
@@ -126,14 +149,14 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	// Check scopes are valid
 	for _, s := range scopes {
 		if user.IsAdmin() {
-			if !fosite.HierarchicScopeStrategy(AdminClientScopes, s) {
+			if !fosite.HierarchicScopeStrategy(oc.config.AllowedScopes.Admin, s) {
 				log.Printf("OAuthController.CreateClient blocked due to invalid admin scopes")
-				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(AdminClientScopes, ", "))
+				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(oc.config.AllowedScopes.Admin, ", "))
 			}
 		} else {
-			if !fosite.HierarchicScopeStrategy(UserClientScopes, s) {
+			if !fosite.HierarchicScopeStrategy(oc.config.AllowedScopes.User, s) {
 				log.Printf("OAuthController.CreateClient blocked due to invalid admin scopes")
-				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(UserClientScopes, ", "))
+				return nil, fmt.Errorf("Invalid client scope: %s (allowed: %s)", s, strings.Join(oc.config.AllowedScopes.User, ", "))
 			}
 		}
 	}
@@ -141,14 +164,14 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	// Check grant / response types are valid
 	for _, g := range grantTypes {
 		if user.IsAdmin() {
-			if !arrayContains(AdminGrantTypes, g) {
+			if !arrayContains(oc.config.AllowedGrants.Admin, g) {
 				log.Printf("OAuthController.CreateClient blocked due to invalid admin grants")
-				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(AdminGrantTypes, ", "))
+				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(oc.config.AllowedGrants.Admin, ", "))
 			}
 		} else {
-			if !arrayContains(UserGrantTypes, g) {
+			if !arrayContains(oc.config.AllowedGrants.User, g) {
 				log.Printf("OAuthController.CreateClient blocked due to invalid user grants")
-				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(UserGrantTypes, ", "))
+				return nil, fmt.Errorf("Invalid grant type: %s (allowed: %s)", g, strings.Join(oc.config.AllowedGrants.User, ", "))
 			}
 		}
 	}

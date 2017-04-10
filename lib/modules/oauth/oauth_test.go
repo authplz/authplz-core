@@ -17,9 +17,7 @@ func TestOauth(t *testing.T) {
 		t.FailNow()
 	}
 
-	config := Config{
-		TokenSecret: "reasonable-test-secret-here-plz",
-	}
+	config := DefaultConfig()
 
 	oauthModule, err := NewController(ts.DataStore, config)
 	if err != nil {
@@ -40,12 +38,12 @@ func TestOauth(t *testing.T) {
 	grants := []string{"client_credential"}
 
 	t.Run("Users can create specified grant types", func(t *testing.T) {
-		for _, g := range AdminGrantTypes {
+		for _, g := range config.AllowedGrants.Admin {
 			_, err := oauthModule.CreateClient(user.GetExtID(), scopes, redirects, []string{g}, responses, true)
-			if arrayContains(UserGrantTypes, g) && err != nil {
+			if arrayContains(config.AllowedGrants.User, g) && err != nil {
 				t.Error(err)
 			}
-			if !arrayContains(UserGrantTypes, g) && err == nil {
+			if !arrayContains(config.AllowedGrants.User, g) && err == nil {
 				t.Errorf("Unexpected allowed grant type: %s", g)
 			}
 		}
@@ -55,7 +53,7 @@ func TestOauth(t *testing.T) {
 		user.SetAdmin(true)
 		ts.DataStore.UpdateUser(user)
 
-		for _, g := range AdminGrantTypes {
+		for _, g := range config.AllowedGrants.Admin {
 			c, err := oauthModule.CreateClient(user.GetExtID(), scopes, redirects, []string{g}, responses, true)
 			if err != nil {
 				t.Error(err)

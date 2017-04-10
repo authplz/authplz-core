@@ -11,6 +11,7 @@
 package oauth
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,6 +34,61 @@ type OauthError struct {
 	ErrorDescription string
 }
 
+func GrantOauth(client *test.TestClient, responseType, clientID, redirect string, requestedScopes, grantedScopes []string) (*url.Values, error) {
+	// Build request object
+	v := url.Values{}
+	v.Set("response_type", responseType)
+	v.Set("client_id", clientID)
+	v.Set("redirect_uri", redirect)
+	v.Set("scope", strings.Join(requestedScopes, " "))
+
+	state, _ := generateSecret(32)
+	v.Set("state", state)
+
+	// Get to start authorization (this is the redirect from the client app)
+	resp, err := client.GetWithParams("/oauth/auth", 302, v)
+	if err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+	if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+
+	// Fetch pending authorizations
+	resp, err = client.Get("/oauth/pending", http.StatusOK)
+	if err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+	authReq := fosite.AuthorizeRequest{}
+	if err = test.ParseJson(resp, &authReq); err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+	if authReq.State != v.Get("state") {
+		return nil, fmt.Errorf("GrantOauth error: %s", "Invalid state")
+	}
+
+	// Accept authorization (post confirm object)
+	ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
+	resp, err = client.PostJSON("/oauth/auth", 302, &ac)
+	if err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+
+	// Check redirect matches
+	redirectResp := resp.Header.Get("Location")
+	if !strings.HasPrefix(redirectResp, redirect) {
+		return nil, fmt.Errorf("GrantOauth error: Redirect invalid")
+	}
+
+	// Parse token args from response
+	tokenValues, err := url.ParseQuery(redirect)
+	if err != nil {
+		return nil, fmt.Errorf("GrantOauth error: %s", err)
+	}
+
+	return &tokenValues, nil
+}
+
 func TestOauthAPI(t *testing.T) {
 
 	ts, err := test.NewTestServer()
@@ -41,9 +97,7 @@ func TestOauthAPI(t *testing.T) {
 		t.FailNow()
 	}
 
-	config := Config{
-		TokenSecret: "reasonable-test-secret-here-plz",
-	}
+	config := DefaultConfig()
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
 
@@ -107,7 +161,7 @@ func TestOauthAPI(t *testing.T) {
 		}
 	})
 
-	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
+	scopes := []string{"public.read", "public.write", "private.read", "private.write", "offline", "introspect"}
 	redirects := []string{redirect}
 	grants := []string{"client_credentials", "implicit", "authorization_code"}
 	responses := []string{"token", "code"}
@@ -226,7 +280,7 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("response_type", "code")
 		v.Set("client_id", oauthClient.ClientID)
 		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
-		v.Set("scope", "public.read")
+		v.Set("scope", "public.read offline")
 		v.Set("state", "asf3rjengkrasfdasbtjrb")
 
 		// Get to start authorization (this is the redirect from the client app)
@@ -314,10 +368,10 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("client_id", oauthClient.ClientID)
 		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
 		v.Set("grant_types", "client_credentials")
-		v.Set("scope", "public.read")
+		v.Set("scope", "introspect")
 		v.Set("state", "afrjkbhreiulqyaf3q974")
 
-		t.Skipf("Aborted / non-functional, see OauthAPI.TokenPost for TODOs")
+		t.Skipf("Not currently supported")
 
 		// Get to start authorization (this is the redirect from the client app)
 		resp, err := client.GetWithParams("/oauth/auth", 302, v)
@@ -359,8 +413,6 @@ func TestOauthAPI(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-
-		//token := &oauth2.Token{AccessToken: tokenValues.Get("access_token")}
 
 		v = url.Values{}
 		v.Set("localhost:9000/auth#access_token", tokenValues.Get("localhost:9000/auth#access_token"))

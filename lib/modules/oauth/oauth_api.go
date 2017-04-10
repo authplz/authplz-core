@@ -328,7 +328,6 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write response to client
-	log.Printf("AccessResponse: %+v", response)
 	c.oc.OAuth2.WriteAccessResponse(rw, ar, response)
 }
 
