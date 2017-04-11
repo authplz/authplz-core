@@ -71,7 +71,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	c.TLSCert = "server.pem"
 	c.TLSKey = "server.key"
 	c.NoTLS = false
-	c.StaticDir = "./authplz-ui/static"
+	c.StaticDir = "./authplz-ui/build"
 	c.TemplateDir = "./templates"
 
 	c.MinimumPasswordLength = 12

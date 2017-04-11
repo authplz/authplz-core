@@ -61,8 +61,8 @@ func DefaultConfig() Config {
 			User:  []string{"public.read", "public.write", "private.read", "private.write", "offline"},
 		},
 		AllowedGrants: configSplit{
-			Admin: []string{"implicit", "authorization_code", "explicit", "code", "client_credentials"},
-			User:  []string{"implicit", "explicit"},
+			Admin: []string{"implicit", "authorization_code", "client_credentials"},
+			User:  []string{"implicit", "authorization_code"},
 		},
 	}
 }
