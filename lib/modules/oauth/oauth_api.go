@@ -89,6 +89,8 @@ func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	// TODO: should admins be able to view all clients?
+
 	clients, err := c.oc.GetClients(c.GetUserID())
 	if err != nil {
 		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth clients")
@@ -107,7 +109,11 @@ func (c *APICtx) OptionsGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// TODO: isAdmin filter here
-	options := c.oc.GetOptions(c.GetUserID(), true)
+	options, err := c.oc.GetOptions(c.GetUserID())
+	if err != nil {
+		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth options")
+		return
+	}
 
 	c.WriteJson(rw, options)
 }
@@ -121,7 +127,7 @@ type ClientReq struct {
 	Responses []string `json:"responses"`
 }
 
-var clientNameExp = regexp.MustCompile(`([a-z0-9\.]+)`)
+var clientNameExp = regexp.MustCompile(`([a-zA-Z0-9\. ]+)`)
 
 // ClientsPost creates a new OAuth client
 func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
@@ -154,7 +160,7 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Create client instance
-	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
+	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Name, clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
 	if err != nil {
 		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
 		return

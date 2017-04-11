@@ -3,6 +3,7 @@ package oauth
 // +build all controller
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
@@ -38,8 +39,8 @@ func TestOauth(t *testing.T) {
 	grants := []string{"client_credential"}
 
 	t.Run("Users can create specified grant types", func(t *testing.T) {
-		for _, g := range config.AllowedGrants.Admin {
-			_, err := oauthModule.CreateClient(user.GetExtID(), scopes, redirects, []string{g}, responses, true)
+		for i, g := range config.AllowedGrants.Admin {
+			_, err := oauthModule.CreateClient(user.GetExtID(), fmt.Sprintf("client-test-1.%d", i), scopes, redirects, []string{g}, responses, true)
 			if arrayContains(config.AllowedGrants.User, g) && err != nil {
 				t.Error(err)
 			}
@@ -53,8 +54,8 @@ func TestOauth(t *testing.T) {
 		user.SetAdmin(true)
 		ts.DataStore.UpdateUser(user)
 
-		for _, g := range config.AllowedGrants.Admin {
-			c, err := oauthModule.CreateClient(user.GetExtID(), scopes, redirects, []string{g}, responses, true)
+		for i, g := range config.AllowedGrants.Admin {
+			c, err := oauthModule.CreateClient(user.GetExtID(), fmt.Sprintf("client-test-2.%d", i), scopes, redirects, []string{g}, responses, true)
 			if err != nil {
 				t.Error(err)
 			} else if c == nil {
@@ -68,9 +69,20 @@ func TestOauth(t *testing.T) {
 
 	t.Run("Users can only create valid scopes", func(t *testing.T) {
 		scopes := []string{"FakeScope"}
-		_, err := oauthModule.CreateClient(user.GetExtID(), scopes, redirects, grants, responses, true)
+		_, err := oauthModule.CreateClient(user.GetExtID(), fmt.Sprintf("client-test-3"), scopes, redirects, grants, responses, true)
 		if err == nil {
 			t.Errorf("Unexpected allowed scope: %s", scopes)
+		}
+	})
+
+	t.Run("Client names must be unique", func(t *testing.T) {
+		_, err := oauthModule.CreateClient(user.GetExtID(), fmt.Sprintf("client-test-4"), scopes, redirects, []string{"implicit"}, responses, true)
+		if err != nil {
+			t.Errorf("Unexpected error %s", err)
+		}
+		_, err = oauthModule.CreateClient(user.GetExtID(), fmt.Sprintf("client-test-4"), scopes, redirects, []string{"implicit"}, responses, true)
+		if err == nil {
+			t.Errorf("Expected duplicate client error")
 		}
 	})
 

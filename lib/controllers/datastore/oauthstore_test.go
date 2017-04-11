@@ -53,6 +53,7 @@ func TestOauthstore(t *testing.T) {
 	})
 
 	clientId := "oauth-fake-client-id"
+	clientName := "oauth-fake-client-name"
 	clientSecret := "oauth-fake-secret"
 
 	scopes := []string{"public.read", "public.write", "private.read", "private.write"}
@@ -64,7 +65,7 @@ func TestOauthstore(t *testing.T) {
 
 	t.Run("Add client", func(t *testing.T) {
 
-		c, err := ds.OauthStore.AddClient(user.ExtID, clientId, clientSecret, scopes, redirects, grants, responses, true)
+		c, err := ds.OauthStore.AddClient(user.ExtID, clientId, clientName, clientSecret, scopes, redirects, grants, responses, true)
 		assert.Nil(t, err, "Client creation error")
 		assert.NotNil(t, c, "No client instance returned")
 

@@ -25,7 +25,7 @@ import (
 
 const (
 	//OAuthSecretBytes is the length of OAuth secrets
-	OAuthSecretBytes       int = 128
+	OAuthSecretBytes       int = 32
 	clientSecretHashRounds int = 12
 )
 
@@ -122,7 +122,7 @@ func NewController(store Storer, config Config) *Controller {
 
 // CreateClient Creates an OAuth Client Credential grant based client for a given user
 // This is used to authenticate simple devices and must be pre-created
-func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes, responseTypes []string, public bool) (*ClientResp, error) {
+func (oc *Controller) CreateClient(userID, clientName string, scopes, redirects, grantTypes, responseTypes []string, public bool) (*ClientResp, error) {
 
 	// Fetch the associated user account
 	u, err := oc.store.GetUserByExtID(userID)
@@ -178,7 +178,7 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	}
 
 	// Add client to store
-	c, err := oc.store.AddClient(userID, clientID, string(hashedSecret), scopes, redirects, grantTypes, responseTypes, public)
+	c, err := oc.store.AddClient(userID, clientID, clientName, string(hashedSecret), scopes, redirects, grantTypes, responseTypes, public)
 	if err != nil {
 		log.Printf("OAuthController.CreateClient error saving client %s", err)
 		return nil, ErrInternal
@@ -190,6 +190,7 @@ func (oc *Controller) CreateClient(userID string, scopes, redirects, grantTypes,
 	// Note that this is the only time the client secret is available
 	resp := ClientResp{
 		ClientID:     client.GetID(),
+		Name:         client.GetName(),
 		CreatedAt:    client.GetCreatedAt(),
 		LastUsed:     client.GetLastUsed(),
 		Scopes:       client.GetScopes(),
@@ -208,22 +209,31 @@ type OptionResp struct {
 	GrantTypes []string `json:"grants"`
 }
 
-func (oc *Controller) GetOptions(userID string, isAdmin bool) OptionResp {
-	if isAdmin {
-		return OptionResp{oc.config.AllowedScopes.Admin, oc.config.AllowedGrants.Admin}
+func (oc *Controller) GetOptions(userID string) (*OptionResp, error) {
+	// Fetch the associated user account
+	u, err := oc.store.GetUserByExtID(userID)
+	if err != nil {
+		log.Printf("OAuthController.CreateClient error fetching user: %s", err)
+		return nil, ErrInternal
 	}
-	return OptionResp{oc.config.AllowedScopes.User, oc.config.AllowedGrants.User}
+	user := u.(User)
+
+	if user.IsAdmin() {
+		return &OptionResp{oc.config.AllowedScopes.Admin, oc.config.AllowedGrants.Admin}, nil
+	}
+	return &OptionResp{oc.config.AllowedScopes.User, oc.config.AllowedGrants.User}, nil
 }
 
 // ClientResp is the API safe object returned by client requests
 type ClientResp struct {
-	ClientID     string
-	CreatedAt    time.Time
-	LastUsed     time.Time
-	Scopes       []string
-	GrantTypes   []string
-	RedirectURIs []string
-	Secret       string
+	ClientID     string    `json:"id"`
+	Name         string    `json:"name"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastUsed     time.Time `json:"last_used"`
+	Scopes       []string  `json:"scopes"`
+	GrantTypes   []string  `json:"grants"`
+	RedirectURIs []string  `json:"redirects"`
+	Secret       string    `json:"secret"`
 }
 
 // GetClients Fetch clients owned by a given user
@@ -241,6 +251,7 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 
 		clean := ClientResp{
 			ClientID:     client.GetID(),
+			Name:         client.GetName(),
 			CreatedAt:    client.GetCreatedAt(),
 			LastUsed:     client.GetLastUsed(),
 			Scopes:       client.GetScopes(),
@@ -303,17 +314,17 @@ func (oc *Controller) GetAccessTokenInfo(tokenString string) (*AccessTokenInfo, 
 }
 
 type GrantInfo struct {
-	ID          string
-	Type        string
-	Scopes      []string
-	RequestedAt time.Time
-	ExpiresAt   time.Time
+	ID          string    `json:"id"`
+	Type        string    `json:"type"`
+	Scopes      []string  `json:"scopes"`
+	RequestedAt time.Time `json:"requested_at"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 type UserSessions struct {
-	AuthorizationCodes []GrantInfo
-	RefreshTokens      []GrantInfo
-	AccessCodes        []GrantInfo
+	AuthorizationCodes []GrantInfo `json:"authorization_codes"`
+	RefreshTokens      []GrantInfo `json:"refresh_tokens"`
+	AccessCodes        []GrantInfo `json:"access_codes"`
 }
 
 func sessionBaseToGrantInfo(s SessionBase) GrantInfo {

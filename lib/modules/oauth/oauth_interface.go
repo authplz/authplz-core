@@ -21,6 +21,7 @@ type User interface {
 // Client OAuth client application interface
 type Client interface {
 	GetID() string
+	GetName() string
 	GetSecret() string
 	GetRedirectURIs() []string
 	GetUserData() interface{}
@@ -99,7 +100,7 @@ type Storer interface {
 	GetUserByExtID(userid string) (interface{}, error)
 
 	// Client (application) storage
-	AddClient(userID, clientID, secret string, scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error)
+	AddClient(userID, clientID, clientName, secret string, scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error)
 	GetClientByID(clientID string) (interface{}, error)
 	GetClientsByUserID(userID string) ([]interface{}, error)
 	UpdateClient(client interface{}) (interface{}, error)

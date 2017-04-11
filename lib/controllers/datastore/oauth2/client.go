@@ -12,7 +12,8 @@ type OauthClient struct {
 	CreatedAt time.Time `description:"Creation time"`
 	UpdatedAt time.Time `description:"Last update time"`
 	UserID    uint
-	ClientID  string
+	ClientID  string `gorm:"unique"`
+	Name      string `gorm:"unique"`
 	LastUsed  time.Time
 	Secret    string
 
@@ -26,6 +27,7 @@ type OauthClient struct {
 }
 
 func (c *OauthClient) GetID() string     { return c.ClientID }
+func (c *OauthClient) GetName() string   { return c.Name }
 func (c *OauthClient) GetSecret() string { return c.Secret }
 
 func (c *OauthClient) GetUserData() interface{} { return c.UserData }
@@ -66,7 +68,7 @@ func (c *OauthClient) SetScopes(scopes []string) {
 }
 
 // AddClient adds an OAuth2 client application to the database
-func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
+func (oauthStore *OauthStore) AddClient(userID, clientID, clientName, secret string,
 	scopes, redirects, grantTypes, responseTypes []string, public bool) (interface{}, error) {
 	// Fetch user
 	u, err := oauthStore.base.GetUserByExtID(userID)
@@ -82,6 +84,7 @@ func (oauthStore *OauthStore) AddClient(userID, clientID, secret string,
 	client := OauthClient{
 		UserID:    user.GetIntID(),
 		ClientID:  clientID,
+		Name:      clientName,
 		CreatedAt: time.Now(),
 		LastUsed:  time.Now(),
 		Secret:    secret,
