@@ -21,6 +21,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
 	"github.com/ory-am/fosite"
+	"github.com/pkg/errors"
 
 	"fmt"
 	"github.com/ryankurte/authplz/lib/api"
@@ -123,11 +124,12 @@ type ClientReq struct {
 	Name      string   `json:"name"`
 	Scopes    []string `json:"scopes"`
 	Redirects []string `json:"redirects"`
-	Grants    []string `json:"grants"`
-	Responses []string `json:"responses"`
+	Grants    []string `json:"grant_types"`
+	Responses []string `json:"response_types"`
 }
 
 var clientNameExp = regexp.MustCompile(`([a-zA-Z0-9\. ]+)`)
+var validResponses = []string{"code", "token"}
 
 // ClientsPost creates a new OAuth client
 func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
@@ -158,6 +160,8 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 			c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, message)
 		}
 	}
+
+	// TODO: Validate response types
 
 	// Create client instance
 	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Name, clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
@@ -202,6 +206,13 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
 }
 
+type AuthorizationRequest struct {
+	State       string   `json:"state"`
+	Name        string   `json:"name"`
+	RedirectURI string   `json:"redirect_uri"`
+	Scopes      []string `json:"scopes"`
+}
+
 // AuthorizePendingGet Fetch pending authorizations for a user
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
@@ -220,15 +231,23 @@ func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	// Client is an interface so cannot be parsed to or from json
 	ar.Client = nil
 
+	// Map to safe API struct
+	resp := AuthorizationRequest{
+		State: ar.State,
+		//Name:        ar.GetClient().(Client).GetName(),
+		RedirectURI: ar.RedirectURI.String(),
+		Scopes:      []string(ar.GetRequestedScopes()),
+	}
+
 	// Write back to user
-	c.WriteJson(rw, &ar)
+	c.WriteJson(rw, &resp)
 }
 
 // AuthorizeConfirm authorization confirmation object
 type AuthorizeConfirm struct {
-	Accept        bool
-	State         string
-	GrantedScopes []string
+	Accept        bool     `json:"accept"`
+	State         string   `json:"state"`
+	GrantedScopes []string `json:"granted_scopes"`
 }
 
 // AuthorizeConfirmPost Confirm authorization of a token
@@ -243,44 +262,65 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch authorization request from session
 	if c.GetSession().Values["oauth"] == nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, api.ApiMessageEn.NoOAuthPending)
 		return
 	}
 
-	ac := AuthorizeConfirm{}
+	authorizeConfirm := AuthorizeConfirm{}
 	defer req.Body.Close()
 	decoder := json.NewDecoder(req.Body)
-	if err := decoder.Decode(&ac); err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
+	if err := decoder.Decode(&authorizeConfirm); err != nil {
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Error decoding AuthorizeConfirm object")
+		return
 	}
 
-	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
+	if len(authorizeConfirm.GrantedScopes) == 0 {
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "No granted scopes provided")
+		return
+	}
 
-	session := Session{
+	authorizeRequest := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
+
+	if !authorizeConfirm.Accept {
+		session := c.GetSession()
+		session.Values["oauth"] = nil
+		session.Save(req.Request, rw)
+		return
+	}
+
+	oauthSession := Session{
 		UserID: c.GetUserID(),
 	}
 
-	session.AccessExpiry = time.Now().Add(time.Hour * 24)
-	session.IDExpiry = time.Now().Add(time.Hour * 24)
-	session.AuthorizeExpiry = time.Now().Add(time.Hour * 24)
-	session.RefreshExpiry = time.Now().Add(time.Hour * 24)
+	oauthSession.AccessExpiry = time.Now().Add(time.Hour * 1)
+	oauthSession.IDExpiry = time.Now().Add(time.Hour * 1)
+	oauthSession.AuthorizeExpiry = time.Now().Add(time.Hour * 1)
+	oauthSession.RefreshExpiry = time.Now().Add(time.Hour * 24)
+
+	log.Printf("AuthConfirm: %+v", authorizeConfirm)
 
 	// Validate that granted scopes match those available in AuthorizeRequest
-	for _, granted := range ac.GrantedScopes {
-		if fosite.HierarchicScopeStrategy(ar.GetRequestedScopes(), granted) {
-			ar.GrantedScopes = append(ar.GrantedScopes, granted)
+	for _, granted := range authorizeConfirm.GrantedScopes {
+		if fosite.HierarchicScopeStrategy(authorizeRequest.GetRequestedScopes(), granted) {
+			authorizeRequest.GrantedScopes = append(authorizeRequest.GrantedScopes, granted)
 		}
 	}
 
+	authorizeRequest.HandledResponseTypes = validResponses
+	log.Printf("AuthRequest: %+v", authorizeRequest)
+
 	// Create response
-	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &ar, NewSessionWrap(&session))
+	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &authorizeRequest, NewSessionWrap(&oauthSession))
 	if err != nil {
-		c.oc.OAuth2.WriteAuthorizeError(rw, &ar, err)
+		log.Printf("OauthAPI.AuthorizeConfirmPost error: %s", errors.Cause(err))
+		c.oc.OAuth2.WriteAuthorizeError(rw, &authorizeRequest, err)
 		return
 	}
 
+	log.Printf("AuthResponse: %+v", response)
+
 	// Write output
-	c.oc.OAuth2.WriteAuthorizeResponse(rw, &ar, response)
+	c.oc.OAuth2.WriteAuthorizeResponse(rw, &authorizeRequest, response)
 }
 
 // IntrospectPost Token Introspection endpoint
@@ -357,6 +397,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Grant requested scopes
 	// TODO: limit by client..?
+	// I think client_credentials should be limited to introspection only (no app level permissions)
 	for _, scope := range ar.GetRequestedScopes() {
 		ar.GrantScope(scope)
 	}

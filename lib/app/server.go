@@ -58,6 +58,8 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
+	//sessionStore.Options.Secure = true
+	//sessionStore.Options.HttpOnly = true
 
 	// Create token controller
 	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret))
@@ -103,7 +105,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	// Create router
 	server.router = web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&server.ctx)).
-		Middleware(web.LoggerMiddleware).
+		//Middleware(web.LoggerMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)

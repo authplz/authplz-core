@@ -163,7 +163,7 @@ func TestOauthAPI(t *testing.T) {
 
 	scopes := []string{"public.read", "public.write", "private.read", "private.write", "offline", "introspect"}
 	redirects := []string{redirect}
-	grants := []string{"client_credentials", "implicit", "authorization_code"}
+	grants := []string{"authorization_code", "implicit", "client_credentials", "refresh_token"}
 	responses := []string{"token", "code"}
 
 	t.Run("OAuthAPI enrol client", func(t *testing.T) {
@@ -206,6 +206,7 @@ func TestOauthAPI(t *testing.T) {
 	t.Run("OAuthAPI implicit grant", func(t *testing.T) {
 		v := url.Values{}
 		v.Set("response_type", "token")
+		v.Set("grant_type", "implicit")
 		v.Set("client_id", oauthClient.ClientID)
 		v.Set("redirect_uri", oauthClient.RedirectURIs[0])
 		v.Set("scope", "public.read")

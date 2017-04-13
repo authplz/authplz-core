@@ -48,6 +48,8 @@ type Config struct {
 	AllowedScopes configSplit
 	// AllowedGrants defines the grant types a client can support for admins and users
 	AllowedGrants configSplit
+	// AllowedResponses defines response types a client can support
+	AllowedResponses []string
 }
 
 // DefaultConfig generates a default configuration for the OAuth module
@@ -61,9 +63,10 @@ func DefaultConfig() Config {
 			User:  []string{"public.read", "public.write", "private.read", "private.write", "offline"},
 		},
 		AllowedGrants: configSplit{
-			Admin: []string{"implicit", "authorization_code", "client_credentials"},
-			User:  []string{"implicit", "authorization_code"},
+			Admin: []string{"authorization_code", "implicit", "refresh_token", "client_credentials"},
+			User:  []string{"authorization_code", "implicit", "refresh_token"},
 		},
+		AllowedResponses: []string{"code", "token", "id_token"},
 	}
 }
 
@@ -205,8 +208,9 @@ func (oc *Controller) CreateClient(userID, clientName string, scopes, redirects,
 }
 
 type OptionResp struct {
-	Scopes     []string `json:"scopes"`
-	GrantTypes []string `json:"grants"`
+	Scopes        []string `json:"scopes"`
+	GrantTypes    []string `json:"grant_types"`
+	ResponseTypes []string `json:"response_types"`
 }
 
 func (oc *Controller) GetOptions(userID string) (*OptionResp, error) {
@@ -219,9 +223,9 @@ func (oc *Controller) GetOptions(userID string) (*OptionResp, error) {
 	user := u.(User)
 
 	if user.IsAdmin() {
-		return &OptionResp{oc.config.AllowedScopes.Admin, oc.config.AllowedGrants.Admin}, nil
+		return &OptionResp{oc.config.AllowedScopes.Admin, oc.config.AllowedGrants.Admin, oc.config.AllowedResponses}, nil
 	}
-	return &OptionResp{oc.config.AllowedScopes.User, oc.config.AllowedGrants.User}, nil
+	return &OptionResp{oc.config.AllowedScopes.User, oc.config.AllowedGrants.User, oc.config.AllowedResponses}, nil
 }
 
 // ClientResp is the API safe object returned by client requests
