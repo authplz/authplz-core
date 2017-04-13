@@ -230,14 +230,15 @@ func (oc *Controller) GetOptions(userID string) (*OptionResp, error) {
 
 // ClientResp is the API safe object returned by client requests
 type ClientResp struct {
-	ClientID     string    `json:"id"`
-	Name         string    `json:"name"`
-	CreatedAt    time.Time `json:"created_at"`
-	LastUsed     time.Time `json:"last_used"`
-	Scopes       []string  `json:"scopes"`
-	GrantTypes   []string  `json:"grants"`
-	RedirectURIs []string  `json:"redirects"`
-	Secret       string    `json:"secret"`
+	ClientID      string    `json:"id"`
+	Name          string    `json:"name"`
+	CreatedAt     time.Time `json:"created_at"`
+	LastUsed      time.Time `json:"last_used"`
+	Scopes        []string  `json:"allowed_scopes"`
+	GrantTypes    []string  `json:"grant_types"`
+	ResponseTypes []string  `json:"response_types"`
+	RedirectURIs  []string  `json:"redirect_uris"`
+	Secret        string    `json:"secret"`
 }
 
 // GetClients Fetch clients owned by a given user
