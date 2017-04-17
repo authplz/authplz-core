@@ -63,7 +63,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	var c AuthPlzConfig
 
 	c.Name = "AuthPlz"
-	c.Address = "localhost"
+	c.Address = ""
 	c.Port = "9000"
 	c.Database = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
