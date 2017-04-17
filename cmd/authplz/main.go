@@ -1,4 +1,4 @@
-package authplz
+package main
 
 import (
 	"github.com/ryankurte/authplz/lib/app"

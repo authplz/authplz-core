@@ -1,0 +1,112 @@
+hash: 0055ed3cde8c8105403f55f7fbf972081ff3095c28fda7eac7376eb1807b9cac
+updated: 2017-04-18T11:07:25.264504769+12:00
+imports:
+- name: github.com/asaskevich/govalidator
+  version: 7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877
+- name: github.com/boombuler/barcode
+  version: 059b33dac2e9f716cf906bc5071ebb42e607228f
+  subpackages:
+  - qr
+  - utils
+- name: github.com/dgrijalva/jwt-go
+  version: d2709f9f1f31ebcda9651b03077758c1f3a0018c
+- name: github.com/gocraft/web
+  version: 0973dfd3866277297f7caed311af67cc4ca1126e
+- name: github.com/gorilla/context
+  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
+- name: github.com/gorilla/securecookie
+  version: e59506cc896acb7f7bf732d4fdf5e25f7ccd8983
+- name: github.com/gorilla/sessions
+  version: ca9ada44574153444b00d3fd9c8559e4cc95f896
+- name: github.com/jessevdk/go-flags
+  version: 48cf8722c3375517aba351d1f7577c40663a4407
+- name: github.com/jinzhu/gorm
+  version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
+  subpackages:
+  - dialects/postgres
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
+- name: github.com/kelseyhightower/envconfig
+  version: f611eb38b3875cc3bd991ca91c51d06446afa14c
+- name: github.com/lib/pq
+  version: 2704adc878c21e1329f46f6e56a1c387d788ff94
+  subpackages:
+  - hstore
+  - oid
+- name: github.com/NebulousLabs/entropy-mnemonics
+  version: 7b01a644a63680b90de22bacfb11d832e944eaab
+- name: github.com/ory-am/fosite
+  version: ad395bf323137e30ce12d40646a9229a42695863
+  subpackages:
+  - compose
+  - handler/oauth2
+  - handler/openid
+  - token/hmac
+  - token/jwt
+- name: github.com/pborman/uuid
+  version: a97ce2ca70fa5a848076093f05e639a89ca34d06
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/pquerna/otp
+  version: 9e1935374bc73ffe011187dafed51a412b90fe43
+  subpackages:
+  - hotp
+  - totp
+- name: github.com/ryankurte/go-async
+  version: 68217616a03b5fc9615755facf86022f31a3a867
+- name: github.com/ryankurte/go-u2f
+  version: 3c596e93a5a117d20ca7004bcece76ae379a405a
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+- name: github.com/square/go-jose
+  version: aa2e30fdd1fe9dd3394119af66451ae790d50e0d
+  subpackages:
+  - json
+- name: golang.org/x/crypto
+  version: e0d166c33c321d0ff863f459a5882096e334f508
+  subpackages:
+  - bcrypt
+  - blowfish
+- name: golang.org/x/net
+  version: 075e191f18186a8ff2becaf64478e30f4545cdad
+  subpackages:
+  - context
+- name: golang.org/x/text
+  version: f4b4367115ec2de254587813edaa901bc1c723a8
+  subpackages:
+  - transform
+  - unicode/norm
+- name: gopkg.in/mailgun/mailgun-go.v1
+  version: a4002e2df2e8ca2da6a6fbb4a72871b504e49f50
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/golang/protobuf
+  version: c3cefd437628a0b7d31b34fe44b3a7a540e98527
+  subpackages:
+  - proto
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+- name: golang.org/x/oauth2
+  version: 04e1573abc896e70388bd387a69753c378d46466
+  subpackages:
+  - clientcredentials
+  - internal
+- name: google.golang.org/appengine
+  version: b4728023490a62e70ba739ff62aa65ffcca84210
+  subpackages:
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
