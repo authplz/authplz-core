@@ -1,0 +1,186 @@
+{
+	"ImportPath": "github.com/ryankurte/authplz",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./cmd/authplz/"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/NebulousLabs/entropy-mnemonics",
+			"Rev": "7b01a644a63680b90de22bacfb11d832e944eaab"
+		},
+		{
+			"ImportPath": "github.com/asaskevich/govalidator",
+			"Comment": "v5-31-g872bb01",
+			"Rev": "872bb01704d183fe276bce6fa429408a87661998"
+		},
+		{
+			"ImportPath": "github.com/boombuler/barcode",
+			"Rev": "c07adc95a07cb6213cf4c104caab763bce2d49c0"
+		},
+		{
+			"ImportPath": "github.com/boombuler/barcode/qr",
+			"Rev": "c07adc95a07cb6213cf4c104caab763bce2d49c0"
+		},
+		{
+			"ImportPath": "github.com/boombuler/barcode/utils",
+			"Rev": "c07adc95a07cb6213cf4c104caab763bce2d49c0"
+		},
+		{
+			"ImportPath": "github.com/dgrijalva/jwt-go",
+			"Comment": "v3.0.0-17-g2268707",
+			"Rev": "2268707a8f0843315e2004ee4f1d021dc08baedf"
+		},
+		{
+			"ImportPath": "github.com/gocraft/web",
+			"Comment": "v1.1-29-gc8ca29b",
+			"Rev": "c8ca29bc8a1cec97abe95c662e29dd8d31aff6e3"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Comment": "v1.1-7-g08b5f42",
+			"Rev": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+		},
+		{
+			"ImportPath": "github.com/gorilla/securecookie",
+			"Comment": "v1.1-6-ge59506c",
+			"Rev": "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
+		},
+		{
+			"ImportPath": "github.com/gorilla/sessions",
+			"Comment": "v1.1-5-gba78acc",
+			"Rev": "ba78acc856fe7c79891d516131b3d903cc8d9367"
+		},
+		{
+			"ImportPath": "github.com/jessevdk/go-flags",
+			"Comment": "v1.2.0-1-g460c7bb",
+			"Rev": "460c7bb0abd6e927f2767cadc91aa6ef776a98b4"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Comment": "v1.0-138-g45ccb13",
+			"Rev": "45ccb134373e7d9fa76d5987a6fed6cd5a5adfd4"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm/dialects/postgres",
+			"Comment": "v1.0-138-g45ccb13",
+			"Rev": "45ccb134373e7d9fa76d5987a6fed6cd5a5adfd4"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/inflection",
+			"Rev": "1c35d901db3da928c72a72d8458480cc9ade058f"
+		},
+		{
+			"ImportPath": "github.com/kelseyhightower/envconfig",
+			"Comment": "v1.3.0-3-g8bf4bbf",
+			"Rev": "8bf4bbfc795e2c7c8a5ea47b707453ed019e2ad4"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-166-g2704adc",
+			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/hstore",
+			"Comment": "go1.0-cutoff-166-g2704adc",
+			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-166-g2704adc",
+			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite/compose",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite/handler/oauth2",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite/handler/openid",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite/token/hmac",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/ory-am/fosite/token/jwt",
+			"Comment": "v0.6.18",
+			"Rev": "ad395bf323137e30ce12d40646a9229a42695863"
+		},
+		{
+			"ImportPath": "github.com/pborman/uuid",
+			"Comment": "v1.0-21-g1b00554",
+			"Rev": "1b00554d822231195d1babd97ff4a781231955c9"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.0-4-gff09b13",
+			"Rev": "ff09b135c25aae272398c51a07235b90a75aa4f0"
+		},
+		{
+			"ImportPath": "github.com/pquerna/otp",
+			"Rev": "9e1935374bc73ffe011187dafed51a412b90fe43"
+		},
+		{
+			"ImportPath": "github.com/pquerna/otp/hotp",
+			"Rev": "9e1935374bc73ffe011187dafed51a412b90fe43"
+		},
+		{
+			"ImportPath": "github.com/pquerna/otp/totp",
+			"Rev": "9e1935374bc73ffe011187dafed51a412b90fe43"
+		},
+		{
+			"ImportPath": "github.com/ryankurte/go-async",
+			"Comment": "v1.0.0",
+			"Rev": "68217616a03b5fc9615755facf86022f31a3a867"
+		},
+		{
+			"ImportPath": "github.com/ryankurte/go-u2f",
+			"Comment": "untagged-670cfd258f18d4ac9b53",
+			"Rev": "8faf24c0d2de3513550043535c03d2cae433168e"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.1.0-8-g5bf94b6",
+			"Rev": "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
+		},
+		{
+			"ImportPath": "github.com/square/go-jose/json",
+			"Rev": "50df5ca198e569d06795909c091ac0cea62e925a"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/bcrypt",
+			"Rev": "459e26527287adbc2adcc5d0d49abff9a5f315a7"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "459e26527287adbc2adcc5d0d49abff9a5f315a7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "6c23252515492caf9b228a9d5cabcdbde29f7f82"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "fc7fa097411d30e6708badff276c4c164425590c"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "fc7fa097411d30e6708badff276c4c164425590c"
+		}
+	]
+}
