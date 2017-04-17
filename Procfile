@@ -1,1 +1,1 @@
-web: ./authplz
+web: authplz --address="" --port=$PORT --database=$DATABASE_URL --cookie-secret=$COOKIE_SECRET --token-secret=$TOKEN_SECRET --no-tls

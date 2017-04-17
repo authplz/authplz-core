@@ -114,7 +114,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	_, _ = os.Getwd()
 	staticPath := path.Clean(config.StaticDir)
 	log.Printf("Loading static content from: %s\n", staticPath)
-	server.router.Middleware(web.StaticMiddleware(staticPath, web.StaticOption{IndexFile: "index.html"}))
+	server.router.Middleware(web.StaticMiddleware(staticPath))
 
 	// Bind modules to router
 	coreModule.BindAPI(server.router)
