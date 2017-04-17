@@ -11,9 +11,9 @@ type OauthClient struct {
 	ID        uint      `gorm:"primary_key" description:"Internal Database ID"`
 	CreatedAt time.Time `description:"Creation time"`
 	UpdatedAt time.Time `description:"Last update time"`
+	ClientID  string    `gorm:"unique"`
+	Name      string    `gorm:"unique"`
 	UserID    uint
-	ClientID  string `gorm:"unique"`
-	Name      string `gorm:"unique"`
 	LastUsed  time.Time
 	Secret    string
 

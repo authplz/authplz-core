@@ -255,13 +255,14 @@ func (oc *Controller) GetClients(userID string) ([]ClientResp, error) {
 		client := c.(Client)
 
 		clean := ClientResp{
-			ClientID:     client.GetID(),
-			Name:         client.GetName(),
-			CreatedAt:    client.GetCreatedAt(),
-			LastUsed:     client.GetLastUsed(),
-			Scopes:       client.GetScopes(),
-			GrantTypes:   client.GetGrantTypes(),
-			RedirectURIs: client.GetRedirectURIs(),
+			ClientID:      client.GetID(),
+			Name:          client.GetName(),
+			CreatedAt:     client.GetCreatedAt(),
+			LastUsed:      client.GetLastUsed(),
+			Scopes:        client.GetScopes(),
+			GrantTypes:    client.GetGrantTypes(),
+			ResponseTypes: client.GetResponseTypes(),
+			RedirectURIs:  client.GetRedirectURIs(),
 		}
 
 		clientResps = append(clientResps, clean)

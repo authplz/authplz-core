@@ -44,6 +44,13 @@ const (
 	EventAccountLoginSuccess   string = "login_success"
 	EventAccountLoginFailure   string = "login_failure"
 	EventAccountLoginNewDevice string = "login_new_device"
+
+	// OAuth Events
+
+	EventClientCreated      string = "oauth_client_created"
+	EventClientRemoved      string = "oauth_client_removed"
+	EventClientAuthorized   string = "oauth_client_authorized"
+	EventClientDeauthorized string = "oauth_client_deauthorized"
 )
 
 // AuthPlzEvent event type for asynchronous communication
