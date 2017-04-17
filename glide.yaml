@@ -1,0 +1,37 @@
+package: github.com/ryankurte/authplz
+import:
+- package: github.com/NebulousLabs/entropy-mnemonics
+- package: github.com/asaskevich/govalidator
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/gocraft/web
+- package: github.com/gorilla/context
+- package: github.com/gorilla/sessions
+- package: github.com/jessevdk/go-flags
+- package: github.com/jinzhu/gorm
+  subpackages:
+  - dialects/postgres
+- package: github.com/kelseyhightower/envconfig
+- package: github.com/ory-am/fosite
+  subpackages:
+  - compose
+- package: github.com/pkg/errors
+- package: github.com/pquerna/otp
+  subpackages:
+  - totp
+- package: github.com/ryankurte/go-async
+- package: github.com/ryankurte/go-u2f
+- package: github.com/satori/go.uuid
+- package: golang.org/x/crypto
+  subpackages:
+  - bcrypt
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: gopkg.in/mailgun/mailgun-go.v1
+testImport:
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
+- package: golang.org/x/oauth2
+  subpackages:
+  - clientcredentials
