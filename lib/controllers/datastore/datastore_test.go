@@ -1,15 +1,18 @@
 package datastore
 
-import "fmt"
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/ryankurte/authplz/lib/config"
+)
 
 func TestDatastore(t *testing.T) {
-	// Setup user controller for testing
-	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
-	//var dbString = "postgres://postgres:postgres@localhost/postgres"
+
+	c, _ := config.DefaultConfig()
 
 	// Attempt database connection
-	ds, err := NewDataStore(dbString)
+	ds, err := NewDataStore(c.Database)
 	if err != nil {
 		t.Errorf("%s", err)
 		t.FailNow()

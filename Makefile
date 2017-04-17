@@ -58,8 +58,15 @@ docker:
 	docker build -t ryankurte/authplz .
 
 # Build containerized development environment
-build-env:
+build-env: clean-env
 	docker create --name ap-pg -p 5432:5432 postgres
+	docker start ap-pg
+	sleep 3
+	docker run -it --rm --link ap-pg:ap-pg postgres createuser -h ap-pg -U postgres test -drsi
+	docker run -it --rm --link ap-pg:ap-pg postgres createdb -h ap-pg -U postgres -O test test
+	docker run -it --rm --link ap-pg:ap-pg postgres psql -h ap-pg -U postgres -c "GRANT ALL ON DATABASE test TO test;"
+	docker run -it --rm --link ap-pg:ap-pg postgres psql -h ap-pg -U postgres -c "ALTER USER test WITH PASSWORD 'test';"
+
 
 # Start development environment
 start-env:
@@ -71,7 +78,6 @@ stop-env:
 
 # Clean up development environment
 clean-env: stop-env
-
 	docker rm ap-pg
 
 # Lanch interactive PSQL connected to development db

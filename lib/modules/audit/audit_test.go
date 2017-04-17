@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/events"
 	"github.com/ryankurte/go-async"
@@ -16,12 +17,13 @@ func TestAuditController(t *testing.T) {
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@"
 	var fakeName = "user.sdfsfdF"
-	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+
+	c, _ := config.DefaultConfig()
 
 	serviceManager := async.NewServiceManager(64)
 
 	// Attempt database connection
-	ds, err := datastore.NewDataStore(dbString)
+	ds, err := datastore.NewDataStore(c.Database)
 	if err != nil {
 		t.Error("Error opening database")
 		t.FailNow()

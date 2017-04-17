@@ -7,7 +7,9 @@ import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
+
 	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/controllers/token"
 )
@@ -17,7 +19,6 @@ const (
 	FakeEmail = "test@abc.com"
 	FakePass  = "abcDEF123@9c"
 	FakeName  = "user.sdfsfdF"
-	DBString  = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 )
 
 type TestServer struct {
@@ -28,7 +29,9 @@ type TestServer struct {
 }
 
 func NewTestServer() (*TestServer, error) {
-	ds, err := datastore.NewDataStore(DBString)
+	c, _ := config.DefaultConfig()
+
+	ds, err := datastore.NewDataStore(c.Database)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package user
 import "testing"
 
 import (
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/events"
 	"github.com/ryankurte/authplz/lib/test"
@@ -13,10 +14,11 @@ func TestUserController(t *testing.T) {
 	var fakeEmail = "test@abc.com"
 	var fakeName = "test.user"
 	var fakePass = "abcDEF123@abcDEF123@"
-	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+
+	c, _ := config.DefaultConfig()
 
 	// Attempt database connection
-	dataStore, err := datastore.NewDataStore(dbString)
+	dataStore, err := datastore.NewDataStore(c.Database)
 	if err != nil {
 		t.Error("Error opening database")
 		t.FailNow()

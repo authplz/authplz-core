@@ -13,19 +13,19 @@ import (
 
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/test"
 )
 
 func TestUserApi(t *testing.T) {
 	// Setup user controller for testing
-	//var fakeEmail = "test@abc.com"
-	//var fakePass = "abcDEF123@abcDEF123@"
-	var dbString = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 	var address = "localhost:8811"
 
+	c, _ := config.DefaultConfig()
+
 	// Attempt database connection
-	dataStore, err := datastore.NewDataStore(dbString)
+	dataStore, err := datastore.NewDataStore(c.Database)
 	if err != nil {
 		t.Error("Error opening database")
 		t.FailNow()
