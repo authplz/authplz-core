@@ -34,7 +34,7 @@ lint:
 	golint ./lib/...
 
 format:
-	gofmt -w -s ./
+	gofmt -w -s ./lib/...
 
 validate:
 	swagger validate swagger.yml
