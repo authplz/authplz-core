@@ -22,7 +22,7 @@ import (
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
 	Name                  string `short:"n" long:"name" description:"User friendly service name"`
-	Address               string `short:"a" long:"address" description:"Set server bind address"`
+	Address               string `short:"a" long:"address" description:"Set server bind address (set to none for all interfaces)"`
 	Port                  string `short:"p" long:"port" description:"Set server bind port"`
 	ExternalAddress       string `short:"e" long:"external-address" description:"Set server external address for use with reverse proxies etc."`
 	Database              string `short:"d" long:"database" description:"Database connection string"`
@@ -63,7 +63,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	var c AuthPlzConfig
 
 	c.Name = "AuthPlz"
-	c.Address = ""
+	c.Address = "localhost"
 	c.Port = "9000"
 	c.Database = "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 

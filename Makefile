@@ -5,6 +5,9 @@
 
 default: build
 
+dir:
+	@mkdir -p build
+
 # Install dependencies
 install:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
@@ -25,6 +28,11 @@ run: build
 test:
 	@go test -p=1 ./lib/...
 
+cross: dir
+	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-amd64-linux ./cmd/authplz
+	GOOS=linux   GOARCH=arm   go build  -o build/authplz-armhf-linux ./cmd/authplz
+	GOOS=darwin  GOARCH=amd64 go build  -o build/authplz-armhf-linux ./cmd/authplz
+	GOOS=windows GOARCH=amd64 go build  -o build/authplz-amd64-windows ./cmd/authplz
 
 # Frontend components now in authplz-ui package
 
@@ -71,4 +79,4 @@ psql:
 	docker run -it --rm --link ap-pg:ap-pg postgres psql -h ap-pg -U postgres	
 
 
-.PHONY: start-env stop-env clean-env frontend test
+.PHONY: start-env stop-env clean-env frontend test dir
