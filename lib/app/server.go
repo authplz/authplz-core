@@ -62,7 +62,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	//sessionStore.Options.HttpOnly = true
 
 	// Create token controller
-	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret))
+	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret), dataStore)
 	server.tokenControl = tokenControl
 
 	// TODO: Create CSRF middleware

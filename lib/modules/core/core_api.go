@@ -58,7 +58,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		tokenString = req.URL.Query().Get("token")
 	}
 	if tokenString == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Action endpoint requires token in query string")
 		return
 	}
 
@@ -78,7 +78,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 	} else {
 		//TODO: handle any active-user tokens here
-		rw.WriteHeader(http.StatusNotImplemented)
+		c.WriteApiResultWithCode(rw, http.StatusNotImplemented, api.ResultError, "Action endpoint not yet implemented for logged in users")
 	}
 }
 

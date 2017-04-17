@@ -34,6 +34,7 @@ type User struct {
 	LoginRetries    uint `gorm:"not null; default:0"`
 	LastLogin       time.Time
 
+	ActionTokens []ActionToken
 	FidoTokens   []FidoToken
 	TotpTokens   []TotpToken
 	BackupTokens []BackupToken

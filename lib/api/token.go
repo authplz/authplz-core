@@ -19,4 +19,7 @@ const TokenActionInvalid TokenAction = "invalid"
 const TokenActionExpired TokenAction = "expired"
 
 var TokenError = errors.New("internal server error")
-var TokenErrorInvalidUser = errors.New("invalid user")
+var TokenErrorInvalidUser = errors.New("action token invalid user")
+var TokenErrorInvalidAction = errors.New("action token invalid action")
+var TokenErrorAlreadyUsed = errors.New("action token already used")
+var TokenErrorNotFound = errors.New("action token not found")

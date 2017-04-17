@@ -1,13 +1,12 @@
 package core
 
 import (
+	"fmt"
 	"testing"
-
 	"time"
-)
 
-import (
 	"github.com/ryankurte/authplz/lib/api"
+	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/controllers/token"
 )
 
@@ -49,9 +48,49 @@ func (mh *MockHandler) PreLogin(u interface{}) (bool, error) {
 	return mh.LoginAllowed, nil
 }
 
+type FakeActionTokenStore struct {
+	tokens map[string]datastore.ActionToken
+}
+
+func NewFakeActionTokenStore() *FakeActionTokenStore {
+	return &FakeActionTokenStore{
+		tokens: make(map[string]datastore.ActionToken),
+	}
+}
+
+func (f *FakeActionTokenStore) CreateActionToken(userID, tokenID, action string, expiry time.Time) (interface{}, error) {
+	t := datastore.ActionToken{
+		TokenID:   tokenID,
+		UserExtID: userID,
+		Action:    action,
+		ExpiresAt: expiry,
+		Used:      false,
+	}
+
+	f.tokens[tokenID] = t
+
+	return &t, nil
+}
+
+func (f *FakeActionTokenStore) GetActionToken(tokenID string) (interface{}, error) {
+	t, ok := f.tokens[tokenID]
+	if !ok {
+		return nil, fmt.Errorf("No matching token found")
+	}
+	return &t, nil
+}
+
+func (f *FakeActionTokenStore) UpdateActionToken(t interface{}) (interface{}, error) {
+	token := t.(*datastore.ActionToken)
+
+	f.tokens[token.TokenID] = *token
+
+	return token, nil
+}
+
 func TestCoreModule(t *testing.T) {
 
-	tokenControl := token.NewTokenController("localhost", "ABCD")
+	tokenControl := token.NewTokenController("localhost", "ABCD", NewFakeActionTokenStore())
 
 	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false, nil}
 

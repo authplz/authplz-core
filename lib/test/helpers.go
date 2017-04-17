@@ -42,7 +42,7 @@ func NewTestServer() (*TestServer, error) {
 		SessionStore: sessionStore,
 	}
 
-	tokenControl := token.NewTokenController("localhost", "abcDEF123")
+	tokenControl := token.NewTokenController("localhost", "abcDEF123", ds)
 
 	mockEventEmitter := MockEventEmitter{}
 

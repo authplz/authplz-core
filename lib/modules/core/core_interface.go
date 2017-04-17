@@ -11,7 +11,7 @@ type LoginProvider interface {
 	GetUserByEmail(email string) (interface{}, error)
 }
 
-// TokenValidator Interface for token (creation and?) validation
+// TokenValidator Interface for token validation
 type TokenValidator interface {
 	ValidateToken(userid string, tokenString string) (*api.TokenAction, error)
 }

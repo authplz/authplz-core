@@ -96,11 +96,11 @@ func TestMain(t *testing.T) {
 		}
 	})
 
-	t.Run("Account activation requires valid activation token subject", func(t *testing.T) {
+	t.Run("Account activation requires valid activation token", func(t *testing.T) {
 
 		// Create activation token
-		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken("blah", api.TokenActionActivate, d)
+		d, _ := time.ParseDuration("-10m")
+		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionActivate, d)
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)
@@ -218,14 +218,14 @@ func TestMain(t *testing.T) {
 		}
 	})
 
-	t.Run("Account unlock requires valid unlock token subject", func(t *testing.T) {
+	t.Run("Account unlock requires valid unlock token", func(t *testing.T) {
 
 		// Use a separate test client instance
 		client2 := test.NewTestClient(apiPath)
 
 		// Create activation token
-		d, _ := time.ParseDuration("10m")
-		at, _ := server.tokenControl.BuildToken("bad user id", api.TokenActionUnlock, d)
+		d, _ := time.ParseDuration("-10m")
+		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionUnlock, d)
 
 		// Post activation token
 		v := url.Values{}

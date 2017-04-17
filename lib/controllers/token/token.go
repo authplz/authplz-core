@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"log"
 	"time"
-)
 
-import (
 	"github.com/dgrijalva/jwt-go"
-	"github.com/ryankurte/authplz/lib/api"
 	"github.com/satori/go.uuid"
+
+	"github.com/ryankurte/authplz/lib/api"
 )
 
 // Custom claims object
@@ -26,6 +25,7 @@ type TokenClaims struct {
 type TokenController struct {
 	address    string
 	hmacSecret []byte
+	storer     Storer
 }
 
 // Default signing method
@@ -36,20 +36,20 @@ func init() {
 }
 
 //TokenController constructor
-func NewTokenController(address string, hmacSecret string) *TokenController {
-	return &TokenController{address: address, hmacSecret: []byte(hmacSecret)}
+func NewTokenController(address string, hmacSecret string, storer Storer) *TokenController {
+	return &TokenController{address: address, hmacSecret: []byte(hmacSecret), storer: storer}
 }
 
 // Generate an action token
-func (tc *TokenController) BuildToken(userid string, action api.TokenAction, duration time.Duration) (string, error) {
+func (tc *TokenController) buildSignedToken(userID, tokenID string, action api.TokenAction, duration time.Duration) (string, error) {
 
 	claims := TokenClaims{
 		Action: action,
 		StandardClaims: jwt.StandardClaims{
-			Id:        uuid.NewV4().String(),
+			Id:        tokenID,
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(duration).Unix(),
-			Subject:   userid,
+			Subject:   userID,
 			Issuer:    tc.address,
 		},
 	}
@@ -62,8 +62,25 @@ func (tc *TokenController) BuildToken(userid string, action api.TokenAction, dur
 	return tokenString, err
 }
 
+func (tc *TokenController) BuildToken(userID string, action api.TokenAction, duration time.Duration) (string, error) {
+
+	tokenID := uuid.NewV4().String()
+
+	_, err := tc.storer.CreateActionToken(userID, tokenID, string(action), time.Now().Add(duration))
+	if err != nil {
+		return "", err
+	}
+
+	signedToken, err := tc.buildSignedToken(userID, tokenID, action, duration)
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
+}
+
 // Parse and validate an action token
-func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) {
+func (tc *TokenController) parseToken(tokenString string) (*TokenClaims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate algorithm is correct
@@ -83,20 +100,66 @@ func (tc *TokenController) ParseToken(tokenString string) (*TokenClaims, error) 
 	}
 }
 
-func (tc *TokenController) ValidateToken(userId, tokenString string) (*api.TokenAction, error) {
+// ValidateToken validates a token using the provided key and backing store
+func (tc *TokenController) ValidateToken(userID, tokenString string) (*api.TokenAction, error) {
 	// Parse token
-	claims, err := tc.ParseToken(tokenString)
+	claims, err := tc.parseToken(tokenString)
 	if err != nil {
 		log.Println("TokenController.ValidateToken: Invalid or expired token (%s)", err)
 		return nil, err
 	}
 
 	// Check subject matches
-	if claims.Subject != userId {
+	if claims.Subject != userID {
 		log.Println("TokenController.ValidateToken: Subject ID mismatch")
 		return nil, api.TokenErrorInvalidUser
 	}
 
+	// Fetch from backing db
+	t, err := tc.storer.GetActionToken(claims.Id)
+	if err != nil {
+		log.Println("TokenController.ValidateToken: No matching token found in datastore")
+		return nil, api.TokenErrorNotFound
+	}
+	token := t.(Token)
+
+	// Check components match
+	if token.GetUserExtID() != claims.Subject {
+		log.Println("TokenController.ValidateToken: Token subject mismatch")
+		return nil, api.TokenErrorInvalidUser
+	}
+	if token.GetAction() != string(claims.Action) {
+		log.Println("TokenController.ValidateToken: Token action mismatch")
+		return nil, api.TokenErrorInvalidAction
+	}
+	if token.IsUsed() {
+		log.Println("TokenController.ValidateToken: Token already used")
+		return nil, api.TokenErrorAlreadyUsed
+	}
+
 	// Return claim
 	return &claims.Action, nil
+}
+
+// SetUsed marks a token as used in the backing datastore
+func (tc *TokenController) SetUsed(tokenString string) error {
+	// Parse and validate
+	claims, err := tc.parseToken(tokenString)
+	if err != nil {
+		log.Println("TokenController.ValidateToken: Invalid or expired token (%s)", err)
+		return err
+	}
+
+	// Fetch from backing db
+	t, err := tc.storer.GetActionToken(claims.Id)
+	if err != nil {
+		return err
+	}
+	token := t.(Token)
+
+	token.SetUsed(time.Now())
+
+	_, err = tc.storer.UpdateActionToken(token)
+
+	return err
 }

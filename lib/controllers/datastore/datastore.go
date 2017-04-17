@@ -54,12 +54,14 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.Exec("DROP TABLE IF EXISTS fido_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS totp_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS backup_tokens CASCADE;")
+	db = db.Exec("DROP TABLE IF EXISTS action_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS users CASCADE;")
 
 	db = db.AutoMigrate(&User{})
 	db = db.AutoMigrate(&FidoToken{})
 	db = db.AutoMigrate(&TotpToken{})
+	db = db.AutoMigrate(&ActionToken{})
 	db = db.AutoMigrate(&BackupToken{})
 	db = db.AutoMigrate(&AuditEvent{})
 
