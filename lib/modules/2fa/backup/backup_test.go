@@ -3,11 +3,15 @@ package backup
 import (
 	"testing"
 	//"time"
+	"log"
 	"strings"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/test"
+	"time"
 )
 
 func TestBackupModule(t *testing.T) {
@@ -42,26 +46,16 @@ func TestBackupModule(t *testing.T) {
 
 	t.Run("Create backup token", func(t *testing.T) {
 		code, err := bc.generateCode(recoveryKeyLen)
-		if err != nil {
-			t.Error(err)
-		}
-		if code == nil {
-			t.Errorf("Code is nil")
-		}
-
-		//log.Printf("Code: %+v", code)
+		assert.Nil(t, err)
+		assert.NotNil(t, code)
 	})
 
 	var tokens *CreateResponse
 
 	t.Run("Create backup tokens for user", func(t *testing.T) {
 		codes, err := bc.CreateCodes(user.GetExtID())
-		if err != nil {
-			t.Error(err)
-		}
-		if codes == nil {
-			t.Errorf("Code is nil")
-		}
+		assert.Nil(t, err)
+		assert.NotNil(t, codes)
 
 		tokens = codes
 	})
@@ -69,12 +63,13 @@ func TestBackupModule(t *testing.T) {
 	t.Run("Validate backup tokens for user", func(t *testing.T) {
 		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
 
+		// TODO: resolve intermittent failure (I think due to database sync time)
+
 		ok, err := bc.ValidateCode(user.GetExtID(), code)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
+
 		if !ok {
-			t.Errorf("Backup code validation failed")
+			t.Errorf("Backup code validation failed (expected success)")
 		}
 	})
 
@@ -82,9 +77,7 @@ func TestBackupModule(t *testing.T) {
 		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
 
 		ok, err := bc.ValidateCode(user.GetExtID(), code)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 		if ok {
 			t.Errorf("Backup code validation succeeded (expected failure)")
 		}

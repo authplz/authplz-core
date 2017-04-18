@@ -409,11 +409,10 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("localhost:9000/auth#access_token", tokenValues.Get("localhost:9000/auth#access_token"))
 
 		config := &clientcredentials.Config{
-			ClientID:       oauthClient.ClientID,
-			ClientSecret:   oauthClient.Secret,
-			TokenURL:       "http://" + test.Address + "/api/oauth/token",
-			Scopes:         []string{"public.read", "private.read"},
-			EndpointParams: v,
+			ClientID:     oauthClient.ClientID,
+			ClientSecret: oauthClient.Secret,
+			TokenURL:     "http://" + test.Address + "/api/oauth/token",
+			Scopes:       []string{"public.read", "private.read"},
 		}
 
 		httpClient := config.Client(oauth2.NoContext)

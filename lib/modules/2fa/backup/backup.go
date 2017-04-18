@@ -199,22 +199,25 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	// Fetch associated codes with for the provided user
 	c, err := bc.backupStore.GetBackupTokenByName(userid, name)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Backup.ValidateCode datastore error: %s", err)
 		return false, err
 	}
 	if c == nil {
+		log.Printf("Backup.ValidateCode No matching backup token found")
 		return false, nil
 	}
 	code := c.(Code)
 
 	// Check code matches
 	if (code.GetName() != name) || code.IsUsed() {
+		log.Printf("Backup.ValidateCode code already used")
 		return false, nil
 	}
 
 	// Check provided code against stored hash
 	err = bcrypt.CompareHashAndPassword([]byte(code.GetHashedSecret()), key)
 	if err != nil {
+		log.Printf("Backup.ValidateCode mismatching secrets")
 		return false, nil
 	}
 
@@ -224,7 +227,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	// Update code in database
 	_, err = bc.backupStore.UpdateBackupToken(code)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Backup.ValidateCode datastore error: %s", err)
 		return false, err
 	}
 
