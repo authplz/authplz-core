@@ -1,14 +1,21 @@
 package appcontext
 
 import (
+	"encoding/gob"
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
 	"github.com/ryankurte/authplz/lib/api"
 )
+
+func init() {
+	gob.Register(SudoSession{})
+	gob.Register(SecondFactorRequest{})
+}
 
 // AuthPlzGlobalCtx Application global / static context
 type AuthPlzGlobalCtx struct {
@@ -37,23 +44,6 @@ type User interface {
 	IsAdmin() string
 }
 
-func (c *AuthPlzCtx) GetSession() *sessions.Session {
-	return c.session
-}
-
-func (c *AuthPlzCtx) GetLocale() string {
-	if c.locale != "" {
-		return c.locale
-	} else {
-		return api.DefaultLocale
-	}
-}
-
-// Wrapper for API localisation
-func (c *AuthPlzCtx) GetApiLocale() *api.ApiMessageContainer {
-	return api.GetApiLocale(c.locale)
-}
-
 // Convenience type to describe middleware functions
 type MiddlewareFunc func(c *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
@@ -64,6 +54,12 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 		ctx.Global = globalCtx
 		next(rw, req)
 	}
+}
+
+// GetSession fetches the base user session instance
+// Modules can use this base session or their own session instances
+func (c *AuthPlzCtx) GetSession() *sessions.Session {
+	return c.session
 }
 
 // User session layer
@@ -80,58 +76,12 @@ func (c *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, 
 	next(rw, req)
 }
 
-// Middleware to grab IP & forwarding headers and store in session
-func (c *AuthPlzCtx) FormMidleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-
-	contentType := req.Header.Get("content-type")
-
-	var err error
-	if contentType == "application/x-www-form-urlencoded" {
-		err = req.ParseForm()
-	} else if contentType == "multipart/form-data" {
-		err = req.ParseMultipartForm(4096)
-	}
-
-	if err != nil {
-		log.Printf("Error parsing form type: %s (%s)", contentType, err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().FormParsingError)
-	} else {
-		next(rw, req)
-	}
-}
-
-// Middleware to grab IP & forwarding headers and store in session
+// GetIPMiddleware Middleware to grab IP & forwarding headers and store in session
 func (c *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	c.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
 	c.forwardedFor = req.Header.Get("x-forwarded-for")
 
 	next(rw, req)
-}
-
-// Middleware to grab locale query string or cookies for use in API responses
-func (c *AuthPlzCtx) GetLocaleMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	queryLocale := req.URL.Query().Get("locale")
-	if queryLocale != "" {
-		// Update session locale
-		c.locale = queryLocale
-		c.session.Values["locale"] = queryLocale
-		c.session.Save(req.Request, rw)
-	} else {
-		// Fetch and save locale to context
-		sessionLocale := c.session.Values["locale"]
-		if sessionLocale != nil {
-			c.locale = sessionLocale.(string)
-		} else {
-			c.locale = api.DefaultLocale
-		}
-	}
-
-	next(rw, req)
-}
-
-// Fetch the APIMessageContainer for a given language to provide locale specific response messages
-func (c *AuthPlzCtx) GetApiMessageInst() *api.ApiMessageContainer {
-	return api.GetApiLocale(c.locale)
 }
 
 // Middleware to ensure only logged in access to an endpoint
@@ -177,6 +127,7 @@ func (c *AuthPlzCtx) GetUserID() string {
 
 // UserAction executes a user action, such as `login`
 // This is provided to allow modules to execute global actions as a given user across the API boundaries
+// For example, this allows 2fa to be used to validate a user action
 // TODO: a more elegant solution to this could be nice.
 func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, req *web.Request) {
 	switch action {
@@ -184,6 +135,9 @@ func (c *AuthPlzCtx) UserAction(userid, action string, rw web.ResponseWriter, re
 		c.LoginUser(userid, rw, req)
 	case "recover":
 		c.BindRecoveryRequest(userid, rw, req)
+	case "sudo":
+		// TODO: how to propagate duration through to here?
+		c.SetSudo(userid, time.Minute*5, rw, req)
 	default:
 		log.Printf("AuthPlzCtx.UserAction error: unrecognised user action (%s)", action)
 	}

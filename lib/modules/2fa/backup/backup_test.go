@@ -1,3 +1,11 @@
+/*
+ * (2fa) Backup Code Module tests
+ * This defines the tests for the 2fa Backup Code module
+ *
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package backup
 
 import (

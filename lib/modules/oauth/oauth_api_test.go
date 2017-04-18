@@ -289,7 +289,8 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("scope", "public.read offline")
 		v.Set("state", "asf3rjengkrasfdasbtjrb")
 
-		t.Skipf("Intermittent errors :-/")
+		// TODO: solve intermittent database errors
+		//t.Skipf("Intermittent errors :-/")
 
 		// Get to start authorization (this is the redirect from the client app)
 		resp, err := client.GetWithParams("/oauth/auth", 302, v)

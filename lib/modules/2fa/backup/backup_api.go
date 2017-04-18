@@ -1,6 +1,6 @@
 /*
  * (2fa) Backup Code Module API
- * This defines the API methods bound to the Backup Code module
+ * This defines the API methods bound to the 2fa Backup Code module
  *
  * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
  * Copyright 2017 Ryan Kurte
@@ -81,7 +81,7 @@ func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req
 	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
 		log.Printf("backupCode.backupCodeAuthenticatePost No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 

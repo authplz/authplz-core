@@ -78,7 +78,7 @@ func (u2fModule *Controller) BindAPI(router *web.Router) {
 func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 	}
 
@@ -92,7 +92,7 @@ func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Build U2F challenge
 	challenge, err := c.um.GetChallenge(c.GetUserID())
 	if err != nil {
-		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 	u2fReq := challenge.RegisterRequest()
@@ -114,7 +114,7 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 	}
 
@@ -142,17 +142,17 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	// Validate registration
 	ok, err := c.um.ValidateRegistration(c.GetUserID(), keyName, challenge, &registerResp)
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 	if !ok {
 		log.Printf("U2F enrolment failed for user %s\n", c.GetUserID())
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().U2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().U2FRegistrationFailed)
 		return
 	}
 
 	log.Printf("Enrolled U2F token for account %s\n", c.GetUserID())
-	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().U2FRegistrationComplete)
+	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().U2FRegistrationComplete)
 	return
 }
 
@@ -178,7 +178,7 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	// Generate challenge
 	challenge, err := c.um.GetChallenge(userid)
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 	}
 	u2fSignReq := challenge.SignRequest()
@@ -236,18 +236,18 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	// Validate signature
 	ok, err := c.um.ValidateSignature(userid, challenge, &u2fSignResp)
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 	if !ok {
 		log.Printf("U2FAuthenticatePost: authentication failed for user %s\n", userid)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().U2FRegistrationFailed)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().U2FRegistrationFailed)
 		return
 	}
 
 	log.Printf("U2FAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
-	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().LoginSuccessful)
+	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().LoginSuccessful)
 }
 
 // U2FTokensGet Lists u2f tokens for the logged in user user
@@ -255,7 +255,7 @@ func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 	}
 
@@ -263,7 +263,7 @@ func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 	tokens, err := c.um.ListTokens(c.GetUserID())
 	if err != nil {
 		log.Printf("Error fetching U2F tokens %s", err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 

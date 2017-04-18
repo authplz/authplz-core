@@ -3,8 +3,9 @@ package config
 // Routes object defines the paths to static pages for given actions
 // For example, Routes.Login is the path to the static login page
 type Routes struct {
-	Login  string // Login is the user login page
-	Logout string // Logout is the user logout page
+	UserLogin  string // Login is the user login page
+	UserLogout string // Logout is the user logout page
+	UserCreate string // Create is the account creation page
 
 	AccountManage string
 
@@ -16,27 +17,36 @@ type Routes struct {
 	TOTPManage    string
 	TOTPAuthorize string
 
+	BackupManage    string
+	BackupAuthorize string
+
 	OAuthManage    string
+	OAuthCreate    string
 	OauthAuthorize string // OauthAuthorize page allows users to accept or deny OAuth grants
 }
 
 // DefaultRoutes creates the default route configuration object
 func DefaultRoutes() Routes {
 	return Routes{
-		Login:  "/login",
-		Logout: "/logout",
+		UserLogin:  "/#/login",
+		UserLogout: "/#/logout",
+		UserCreate: "/#/create",
 
-		AccountManage: "/account",
+		AccountManage: "/#/account",
 
-		U2FRegister:  "/u2f/register",
-		U2FManage:    "/u2f/manage",
-		U2FAuthorize: "/u2f/authorize",
+		U2FManage:    "/#/2fa-u2f-manage",
+		U2FRegister:  "/#/2fa-u2f-register",
+		U2FAuthorize: "/#/2fa-u2f-authorize",
 
-		TOTPRegister:  "/totp/register",
-		TOTPManage:    "/totp/manage",
-		TOTPAuthorize: "/totp/authorize",
+		TOTPManage:    "/2fa-totp-manage",
+		TOTPRegister:  "/2fa-totp-register",
+		TOTPAuthorize: "/2fa-totp-authorize",
 
-		OAuthManage:    "/oauth/manage",
-		OauthAuthorize: "/oauth/authorize",
+		BackupManage:    "/2fa-backup-manage",
+		BackupAuthorize: "/2fa-backup-authorize",
+
+		OAuthManage:    "/#/oauth-manage",
+		OAuthCreate:    "/#/oauth-create",
+		OauthAuthorize: "/#/oauth-authorize",
 	}
 }

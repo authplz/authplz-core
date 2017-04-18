@@ -56,9 +56,9 @@ func (c *apiCtx) Test(rw web.ResponseWriter, req *web.Request) {
 // Get user login status
 func (c *apiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().Unauthorized)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
 	} else {
-		c.WriteApiResult(rw, api.ResultOk, c.GetApiMessageInst().LoginSuccessful)
+		c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().LoginSuccessful)
 	}
 }
 
@@ -90,32 +90,32 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		log.Printf("Create: user creation failed with %s", e)
 
 		if e == ErrorDuplicateAccount {
-			c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().DuplicateUserAccount)
+			c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().DuplicateUserAccount)
 			return
 		} else if e == ErrorPasswordTooShort {
-			c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().PasswordComplexityTooLow)
+			c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().PasswordComplexityTooLow)
 			return
 		}
 
-		c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 
 	if u == nil {
 		log.Printf("Create: user creation failed")
-		c.WriteApiResult(rw, api.ResultError, c.GetApiMessageInst().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 
 	log.Println("Create: Create OK")
 
-	c.WriteApiResult(rw, api.ResultOk, c.GetApiMessageInst().CreateUserSuccess)
+	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().CreateUserSuccess)
 }
 
 // Fetch a user object
 func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 
 	}
@@ -123,7 +123,7 @@ func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	u, err := c.um.GetUser(c.GetUserID())
 	if err != nil {
 		log.Print(err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 // Update user object
 func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetApiLocale().Unauthorized)
+		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetAPILocale().Unauthorized)
 		return
 	}
 
@@ -153,11 +153,11 @@ func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	_, err := c.um.UpdatePassword(c.GetUserID(), oldPass, newPass)
 	if err != nil {
 		log.Print(err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 
-	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().PasswordUpdated)
+	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().PasswordUpdated)
 }
 
 // ResetPost handles password reset posts
@@ -193,5 +193,5 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write OK response
-	c.WriteApiResult(rw, api.ResultOk, c.GetApiLocale().PasswordUpdated)
+	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().PasswordUpdated)
 }

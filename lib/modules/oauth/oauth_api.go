@@ -356,7 +356,7 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	if token == nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().NoOAuthTokenFound)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().NoOAuthTokenFound)
 		return
 	}
 

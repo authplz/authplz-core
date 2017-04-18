@@ -34,9 +34,9 @@ type AuthPlzConfig struct {
 	NoTLS                 bool   `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
 	StaticDir             string `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string `short:"t" long:"template-dir" description:"Directory to load templates from"`
-	MinimumPasswordLength int
-
-	routes Routes
+	MinimumPasswordLength int    `long:"password-len" description:"Minimum password length"`
+	Routes                string `short:"r" long:"routes-file" description:"YAML encoded static routes for use when redirecting"`
+	routes                Routes
 }
 
 // GetRoutes fetches routes from the configuration object

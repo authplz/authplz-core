@@ -18,7 +18,7 @@ func (c *AuthPlzCtx) BindRecoveryRequest(userid string, rw web.ResponseWriter, r
 	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.BindRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return
 	}
 
@@ -32,7 +32,7 @@ func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request)
 	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.GetRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteApiResult(rw, api.ResultError, c.GetApiLocale().InternalError)
+		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
 		return ""
 	}
 

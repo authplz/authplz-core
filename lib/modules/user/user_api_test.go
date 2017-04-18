@@ -65,7 +65,7 @@ func TestUserApi(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})

@@ -74,7 +74,7 @@ var ApiMessageEn = ApiMessageContainer{
 var DefaultLocale string = "en"
 
 // Fetch the APIMessageContainer for a given language to provide locale specific response messages
-func GetApiLocale(lang string) *ApiMessageContainer {
+func GetAPILocale(lang string) *ApiMessageContainer {
 	switch lang {
 	case "en":
 		return &ApiMessageEn
@@ -86,11 +86,11 @@ func GetApiLocale(lang string) *ApiMessageContainer {
 
 // API Response instances
 // TODO: deprecate these
-var ApiResponseLoginSuccess = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).LoginSuccessful}
-var ApiResponseLogoutSuccess = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).LogoutSuccessful}
-var ApiResponseActivationSuccessful = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).ActivationSuccessful}
-var ApiResponseUnlockSuccessful = ApiResponse{ResultOk, GetApiLocale(DefaultLocale).UnlockSuccessful}
+var ApiResponseLoginSuccess = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).LoginSuccessful}
+var ApiResponseLogoutSuccess = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).LogoutSuccessful}
+var ApiResponseActivationSuccessful = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).ActivationSuccessful}
+var ApiResponseUnlockSuccessful = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).UnlockSuccessful}
 
-var ApiResponseUnauthorized = ApiResponse{ResultError, GetApiLocale(DefaultLocale).Unauthorized}
-var ApiResponseInvalidToken = ApiResponse{ResultError, GetApiLocale(DefaultLocale).InvalidToken}
-var ApiResponseInternalError = ApiResponse{ResultError, GetApiLocale(DefaultLocale).InternalError}
+var ApiResponseUnauthorized = ApiResponse{ResultError, GetAPILocale(DefaultLocale).Unauthorized}
+var ApiResponseInvalidToken = ApiResponse{ResultError, GetAPILocale(DefaultLocale).InvalidToken}
+var ApiResponseInternalError = ApiResponse{ResultError, GetAPILocale(DefaultLocale).InternalError}

@@ -56,7 +56,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -125,7 +125,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -159,7 +159,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -179,7 +179,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -204,7 +204,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 
@@ -247,7 +247,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -281,7 +281,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -320,7 +320,7 @@ func TestMain(t *testing.T) {
 			t.FailNow()
 		}
 
-		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).PasswordUpdated)
+		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).PasswordUpdated)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -468,7 +468,7 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 			t.FailNow()
 		}
-		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).U2FRegistrationComplete)
+		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).U2FRegistrationComplete)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -549,7 +549,7 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -588,11 +588,11 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 
@@ -624,7 +624,7 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetApiLocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 
@@ -685,7 +685,7 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetApiLocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})

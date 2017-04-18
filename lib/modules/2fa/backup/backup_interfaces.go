@@ -1,3 +1,11 @@
+/*
+ * (2fa) Backup Code Module API
+ * This defines the interfaces required by the 2fa Backup Code module
+ *
+ * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package backup
 
 import (

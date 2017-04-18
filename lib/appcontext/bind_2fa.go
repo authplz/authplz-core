@@ -7,34 +7,46 @@ import (
 	"github.com/ryankurte/authplz/lib/api"
 )
 
+// SecondFactorRequest is a request for 2fa
+// This is used to register a request that can be fetched by 2fa implementations
+type SecondFactorRequest struct {
+	UserID string
+	Action string
+}
+
 const (
-	secondFactorRequestSessionKey = "2fa-request"
-	secondFactorActionSessionKey  = "2fa-action"
+	secondFactorRequestSessionKey = "2fa-request-session"
 )
 
 // Bind2FARequest Bind a 2fa request and action for a user
 // TODO: the request should probably time-out eventually
-func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userid string, action string) {
-	secondFactorSession, _ := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userID string, action string) {
+	log.Printf("AuthPlzCtx.Bind2faRequest adding 2fa request session for user %s\n", userID)
 
-	log.Printf("AuthPlzCtx.Bind2faRequest adding authorization flash for user %s\n", userid)
+	secondFactorRequest := SecondFactorRequest{
+		UserID: userID,
+		Action: action,
+	}
 
-	secondFactorSession.Values[secondFactorRequestSessionKey] = userid
-	secondFactorSession.Values[secondFactorActionSessionKey] = action
-	secondFactorSession.Save(req.Request, rw)
+	c.session.Values[secondFactorRequestSessionKey] = secondFactorRequest
+	c.session.Save(req.Request, rw)
 }
 
 // Get2FARequest Fetch a 2fa request and action for a user
 func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
-	u2fSession, _ := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+	request := c.session.Values[secondFactorRequestSessionKey]
 
-	if u2fSession.Values[secondFactorRequestSessionKey] == nil ||
-		u2fSession.Values[secondFactorActionSessionKey] == nil {
-		c.WriteApiResult(rw, api.ResultError, "No userid found")
-		log.Printf("AuthPlzCtx.Get2FARequest No userid found in session flash")
+	if request == nil {
+		c.WriteApiResult(rw, api.ResultError, "No 2fa request session")
+		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
 		return "", ""
 	}
-	userid := u2fSession.Values[secondFactorRequestSessionKey].(string)
-	action := u2fSession.Values[secondFactorActionSessionKey].(string)
-	return userid, action
+
+	secondFactorRequest, ok := c.session.Values[secondFactorRequestSessionKey].(SecondFactorRequest)
+	if !ok {
+		c.WriteApiResult(rw, api.ResultError, "Invalid 2fa request session")
+		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
+	}
+
+	return secondFactorRequest.UserID, secondFactorRequest.Action
 }
