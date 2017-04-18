@@ -41,7 +41,7 @@ Check out [design.md](design.md) for more.
 
 Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project (and have been grossly neglected). Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
 
-For development purposes, it may be convenient to add these variables to your environment (`~/.bashrc` or `~/.bash_profile`).
+For development purposes, it may be convenient to add these variables to your environment (prefix with `AUTHPLZ_` then export in `~/.bashrc` or `~/.bash_profile`).
 
 ### Dependencies
 
@@ -104,6 +104,7 @@ This is automatic when calling `npm start` from the authplz-ui project.
 - [ ] 2FA token management
   - [ ] TOTP
   - [ ] FIDO
+  - [ ] BACKUP
 - [-] OAuth2
   - [X] Authorization Code grant type
   - [X] Implicit grant type
@@ -113,6 +114,11 @@ This is automatic when calling `npm start` from the authplz-ui project.
 - [ ] Account linking (google, facebook, github)
 - [ ] Plugin Support
   - [ ] IP based rate limiting
+  - [ ] Webhooks
+  - [ ] Distributed Synchronisation
+- [ ] Test Server
+  - [X] Deployment to https://authplz.herokuapp.com
+  - [ ] Deployment of frontend assets (not sure how to do)
 
 ## Project Layout
 

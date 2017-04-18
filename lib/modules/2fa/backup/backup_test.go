@@ -1,17 +1,14 @@
 package backup
 
 import (
-	"testing"
-	//"time"
-	"log"
 	"strings"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/test"
-	"time"
 )
 
 func TestBackupModule(t *testing.T) {
