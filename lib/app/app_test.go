@@ -1,15 +1,15 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
-)
 
-import (
 	_totp "github.com/pquerna/otp/totp"
 	"github.com/ryankurte/go-u2f"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/config"
@@ -21,10 +21,7 @@ import (
 func TestMain(t *testing.T) {
 
 	// Fetch default configuration
-	c, err := config.DefaultConfig()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	c := config.GetConfig()
 
 	// Set test constants
 	var fakeEmail = "test@abc.com"
@@ -34,6 +31,9 @@ func TestMain(t *testing.T) {
 
 	// Attempt database connection
 	c.NoTLS = true
+	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
+	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
+
 	server := NewServer(*c)
 
 	// Force database synchronization
@@ -59,6 +59,43 @@ func TestMain(t *testing.T) {
 		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
 			t.Error(err)
 		}
+	})
+
+	t.Run("Check default CORS header", func(t *testing.T) {
+		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		assert.Nil(t, err)
+
+		resp, err := client.Do(req)
+		assert.Nil(t, err)
+
+		assert.EqualValues(t, "http://"+c.Address+":"+c.Port, c.AllowedOrigins[0])
+
+		assert.NotNil(t, resp)
+		assert.EqualValues(t, c.ExternalAddress, resp.Header.Get("access-control-allow-origin"))
+	})
+
+	t.Run("Check additional CORS header", func(t *testing.T) {
+		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		assert.Nil(t, err)
+		req.Header.Set("origin", c.AllowedOrigins[1])
+
+		resp, err := client.Do(req)
+		assert.Nil(t, err)
+
+		assert.NotNil(t, resp)
+		assert.EqualValues(t, c.AllowedOrigins[1], resp.Header.Get("access-control-allow-origin"))
+	})
+
+	t.Run("Check CORS header mismatch", func(t *testing.T) {
+		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		assert.Nil(t, err)
+		req.Header.Set("origin", "https://yolo-swag.com")
+
+		resp, err := client.Do(req)
+		assert.Nil(t, err)
+
+		assert.NotNil(t, resp)
+		assert.EqualValues(t, c.AllowedOrigins[0], resp.Header.Get("access-control-allow-origin"))
 	})
 
 	t.Run("Create User", func(t *testing.T) {

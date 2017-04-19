@@ -26,7 +26,7 @@ run: build
 
 # Test application
 test:
-	@go test -p=1 -v ./lib/...
+	@go test -p=1 ./lib/...
 
 cross: dir
 	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-amd64-linux ./cmd/authplz

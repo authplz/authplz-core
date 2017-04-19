@@ -103,27 +103,31 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.ctx = appcontext.NewGlobalCtx(sessionStore)
 
 	// Create router
-	server.router = web.New(appcontext.AuthPlzCtx{}).
+	router := web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&server.ctx)).
 		//Middleware(web.LoggerMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
 
+	router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
+
 	// Enable static file hosting
 	_, _ = os.Getwd()
 	staticPath := path.Clean(config.StaticDir)
 	log.Printf("Loading static content from: %s\n", staticPath)
-	server.router.Middleware(web.StaticMiddleware(staticPath))
+	router.Middleware(web.StaticMiddleware(staticPath))
 
 	// Bind modules to router
-	coreModule.BindAPI(server.router)
-	userModule.BindAPI(server.router)
-	u2fModule.BindAPI(server.router)
-	totpModule.BindAPI(server.router)
-	backupModule.BindAPI(server.router)
-	auditModule.BindAPI(server.router)
-	oauthModule.BindAPI(server.router)
+	coreModule.BindAPI(router)
+	userModule.BindAPI(router)
+	u2fModule.BindAPI(router)
+	totpModule.BindAPI(router)
+	backupModule.BindAPI(router)
+	auditModule.BindAPI(router)
+	oauthModule.BindAPI(router)
+
+	server.router = router
 
 	return &server
 }
@@ -135,8 +139,8 @@ func (server *AuthPlzServer) Start() {
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
 
-	// Create GoCraft handler
-	handler := context.ClearHandler(server.router)
+	// Create handlers
+	contextHandler := context.ClearHandler(server.router)
 
 	// Start async services
 	server.serviceManager.Run()
@@ -148,10 +152,10 @@ func (server *AuthPlzServer) Start() {
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
 		log.Printf("Listening at: http://%s", address)
-		err = http.ListenAndServe(address, handler)
+		err = http.ListenAndServe(address, contextHandler)
 	} else {
 		log.Printf("Listening at: https://%s", address)
-		err = http.ListenAndServeTLS(address, server.config.TLSCert, server.config.TLSKey, handler)
+		err = http.ListenAndServeTLS(address, server.config.TLSCert, server.config.TLSKey, contextHandler)
 	}
 
 	// Stop async services
