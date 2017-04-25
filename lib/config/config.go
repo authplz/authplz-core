@@ -21,14 +21,14 @@ import (
 
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
-	Name                  string   `short:"n" long:"name" description:"User friendly service name"`
-	Address               string   `short:"a" long:"address" description:"Set server bind address (set to none for all interfaces)"`
-	Port                  string   `short:"p" long:"port" description:"Set server bind port"`
+	Name                  string   `short:"n" long:"name" description:"User friendly service name" default:"AuthPlz"`
+	Address               string   `short:"a" long:"address" description:"Set server bind address (set to none for all interfaces)" default:"localhost"`
+	Port                  string   `short:"p" long:"port" description:"Set server bind port" default:"9001"`
 	ExternalAddress       string   `short:"e" long:"external-address" description:"Set server external address for use with reverse proxies etc."`
 	Database              string   `short:"d" long:"database" description:"Database connection string"`
 	TLSCert               string   `short:"c" long:"tls-cert" description:"TLS Certificate file"`
 	TLSKey                string   `short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTLS                 bool     `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
+	NoTLS                 bool     `long:"no-tls" description:"Disable TLS for testing or reverse proxying" default:"false"`
 	StaticDir             string   `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string   `short:"t" long:"template-dir" description:"Directory to load templates from"`
 	Routes                string   `short:"r" long:"routes-file" description:"YAML encoded static routes for use when redirecting"`
@@ -37,8 +37,11 @@ type AuthPlzConfig struct {
 	CookieSecret          string   `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
 	TokenSecret           string   `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
 	OauthSecret           string   `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
-
-	routes Routes
+	MailDriver            string   `long:"mail-driver" description:"Mail driver for email sending" default:"mailgun"`
+	MailDomain            string   `long:"mail-domain" description:"Mail driver domain"`
+	MailApiKey            string   `long:"mail-key" description:"Mail driver username or key"`
+	MailApiSecret         string   `long:"mail-secret" description:"Mail driver secret or password default-mask:"-""`
+	routes                Routes
 }
 
 // GetRoutes fetches routes from the configuration object

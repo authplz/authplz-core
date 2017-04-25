@@ -12,22 +12,22 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
+
+	"github.com/ryankurte/authplz/lib/controllers/mailer/drivers"
 )
 
-import (
-	"gopkg.in/mailgun/mailgun-go.v1"
-)
-
-//import "github.com/asaskevich/govalidator"
+// MailDriver defines the interface that must be implemented by a mailer driver
+type MailDriver interface {
+	Send(to, subject, body string) error
+	SetTestMode(m bool)
+}
 
 // Mail controller object
 type MailController struct {
 	domain      string
 	templateDir string
 	templates   map[string]template.Template
-	mg          mailgun.Mailgun
-	testMode    bool
+	driver      MailDriver
 }
 
 // Fields required for a signup email
@@ -42,8 +42,17 @@ type MailFields struct {
 var templateNames = [...]string{"signup", "passwordreset", "loginnotice"}
 
 // Instantiate a mail controller
-func NewMailController(domain string, mgApiKey string, mgPriKey string, templateDir string) (*MailController, error) {
+func NewMailController(driver, domain, key, secret, templateDir string) (*MailController, error) {
 	var templates map[string]template.Template = make(map[string]template.Template)
+
+	var d MailDriver
+	// Load driver
+	switch driver {
+	case drivers.MailgunDriverID:
+		d = drivers.NewMailgunDriver(domain, key, secret)
+	default:
+		return nil, fmt.Errorf("NewMailController error: unrecognised driver %s", driver)
+	}
 
 	// Load templates from specified directory
 	for _, name := range templateNames {
@@ -54,38 +63,17 @@ func NewMailController(domain string, mgApiKey string, mgPriKey string, template
 		templates[name] = *tpl
 	}
 
-	// Attempt connection to mailgun
-	mg := mailgun.NewMailgun(domain, mgApiKey, mgPriKey)
-
-	return &MailController{domain: domain, templateDir: templateDir, templates: templates, mg: mg, testMode: false}, nil
+	return &MailController{domain: domain, templateDir: templateDir, templates: templates, driver: d}, nil
 }
 
 // Enable test mode (blocks mail sending)
 func (mc *MailController) SetTestMode() {
-	mc.testMode = true
+	mc.driver.SetTestMode(true)
 }
 
 // Send an item of mail
 func (mc *MailController) SendMail(email string, subject string, body string) error {
-
-	// Build message
-	m := mc.mg.NewMessage("noreply@"+mc.domain, subject, "", email)
-	m.SetTracking(true)
-	m.SetHtml(body)
-
-	if mc.testMode == true {
-		m.EnableTestMode()
-	}
-
-	// Attempt sending
-	_, id, err := mc.mg.Send(m)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-	log.Printf("Sent message id=%s", id)
-
-	return nil
+	return mc.driver.Send(email, subject, body)
 }
 
 // Send a signup (activation) email to the provided address
