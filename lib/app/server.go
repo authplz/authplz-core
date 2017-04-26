@@ -99,7 +99,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager.BindService(&auditSvc)
 
 	// Mailer module
-	mailController, err := mailer.NewMailController(config.Name, config.ExternalAddress, config.MailDriver, config.MailOptions, dataStore, tokenControl, config.TemplateDir)
+	mailController, err := mailer.NewMailController(config.ExternalAddress, config.ExternalAddress, config.MailDriver, config.MailOptions, dataStore, tokenControl, config.TemplateDir)
 	if err != nil {
 		log.Fatalf("Error loading mail controller: %s", err)
 		return nil
