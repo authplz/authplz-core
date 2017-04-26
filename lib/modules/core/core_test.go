@@ -8,6 +8,8 @@ import (
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/controllers/token"
+
+	"github.com/ryankurte/authplz/lib/test"
 )
 
 const (
@@ -94,7 +96,7 @@ func TestCoreModule(t *testing.T) {
 
 	mockHandler := MockHandler{false, false, api.TokenActionInvalid, false, nil}
 
-	coreControl := NewController(tokenControl, &mockHandler)
+	coreControl := NewController(tokenControl, &mockHandler, &test.MockEventEmitter{})
 
 	t.Run("Bind and call token action handlers", func(t *testing.T) {
 		var u interface{}

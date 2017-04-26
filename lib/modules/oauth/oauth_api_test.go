@@ -103,7 +103,7 @@ func TestOauthAPI(t *testing.T) {
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
 
-	coreModule := core.NewController(ts.TokenControl, userModule)
+	coreModule := core.NewController(ts.TokenControl, userModule, &test.MockEventEmitter{})
 	coreModule.BindModule("user", userModule)
 	coreModule.BindAPI(ts.Router)
 	userModule.BindAPI(ts.Router)

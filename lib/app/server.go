@@ -76,7 +76,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	userModule := user.NewController(dataStore, server.serviceManager)
 
 	// Core module
-	coreModule := core.NewController(tokenControl, userModule)
+	coreModule := core.NewController(tokenControl, userModule, server.serviceManager)
 
 	coreModule.BindModule("user", userModule)
 	coreModule.BindActionHandler(api.TokenActionActivate, userModule)

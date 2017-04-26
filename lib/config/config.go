@@ -28,7 +28,7 @@ type AuthPlzConfig struct {
 	Database              string   `short:"d" long:"database" description:"Database connection string"`
 	TLSCert               string   `short:"c" long:"tls-cert" description:"TLS Certificate file"`
 	TLSKey                string   `short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTLS                 bool     `long:"no-tls" description:"Disable TLS for testing or reverse proxying" default:"false"`
+	NoTLS                 bool     `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
 	StaticDir             string   `short:"s" long:"static-dir" description:"Directory to load static assets from"`
 	TemplateDir           string   `short:"t" long:"template-dir" description:"Directory to load templates from"`
 	Routes                string   `short:"r" long:"routes-file" description:"YAML encoded static routes for use when redirecting"`
@@ -38,9 +38,7 @@ type AuthPlzConfig struct {
 	TokenSecret           string   `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
 	OauthSecret           string   `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
 	MailDriver            string   `long:"mail-driver" description:"Mail driver for email sending" default:"mailgun"`
-	MailDomain            string   `long:"mail-domain" description:"Mail driver domain"`
-	MailApiKey            string   `long:"mail-key" description:"Mail driver username or key"`
-	MailApiSecret         string   `long:"mail-secret" description:"Mail driver secret or password default-mask:"-""`
+	MailOptions map[string]string `long:"mail-options" description:"Mail driver options as a colon separated map"`
 	routes                Routes
 }
 
@@ -101,23 +99,23 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 // GetConfig fetches the server configuration
 // This parses environmental variables, command line flags, and in future
 // will handle file based loading of configurations.
-func GetConfig() *AuthPlzConfig {
+func GetConfig() (*AuthPlzConfig, error) {
 	// Fetch default configuration
 	c, err := DefaultConfig()
 	if err != nil {
-		log.Fatal(err.Error())
+		return nil, err
 	}
 
 	// Parse config structure through environment
 	err = envconfig.Process("authplz", c)
 	if err != nil {
-		log.Fatal(err.Error())
+		return nil, err
 	}
 
 	// Override environment with command line args
 	_, err = flags.Parse(c)
 	if err != nil {
-		log.Fatal("")
+		return nil, err
 	}
 
 	// Load external address if not specified
@@ -159,5 +157,5 @@ func GetConfig() *AuthPlzConfig {
 	c.CookieSecret = string(cookieSecret)
 	c.OauthSecret = string(oauthSecret)
 
-	return c
+	return c, nil
 }

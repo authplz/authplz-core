@@ -1,15 +1,12 @@
 <html>
-
 <head></head>
-
 <body>
-
 <p>
 Hi {{.UserName}},
 <br>
-Thanks for signing up to {{.ServiceName}}! To activate your account, please click <a href={{.ActionUrl}}>here</a> or copy the following link:
+Thanks for signing up to {{.ServiceName}}! To activate your account, please click <a href="{{.ActionURL}}">here</a> or copy the following link:
 <br>
-{{.ActionUrl}}
+{{.ActionURL}}
 <br>
 If you did no sign up for {{.ServiceName}}, no need to worry, just ignore this email.
 <br>
@@ -17,7 +14,5 @@ Thanks,
 <br>
 The team at {{.ServiceName}}
 </p>
-    
 </body>
-
 </html>

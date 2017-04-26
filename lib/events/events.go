@@ -26,6 +26,7 @@ const (
 	EventAccountDisabled  string = "account_disabled"
 	EventAccountDeleted   string = "account_deleted"
 	EventPasswordUpdate   string = "password_update"
+	EventPasswordResetReq string = "password_reset_request"
 
 	// 2FA Events
 

@@ -21,7 +21,11 @@ import (
 func TestMain(t *testing.T) {
 
 	// Fetch default configuration
-	c := config.GetConfig()
+	c, err := config.GetConfig()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	// Set test constants
 	var fakeEmail = "test@abc.com"

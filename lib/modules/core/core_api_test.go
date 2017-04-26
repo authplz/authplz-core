@@ -20,7 +20,7 @@ func TestCore(t *testing.T) {
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
 
-	coreModule := NewController(ts.TokenControl, userModule)
+	coreModule := NewController(ts.TokenControl, userModule, ts.EventEmitter)
 	coreModule.BindModule("user", userModule)
 	coreModule.BindAPI(ts.Router)
 	userModule.BindAPI(ts.Router)
