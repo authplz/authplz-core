@@ -38,6 +38,8 @@ func NewDataStore(dbString string) (*DataStore, error) {
 
 	ds.OauthStore = oauthstore.NewOauthStore(db, ds)
 
+	ds.Sync()
+
 	return ds, nil
 }
 
@@ -46,9 +48,7 @@ func (dataStore *DataStore) Close() {
 	dataStore.db.Close()
 }
 
-// ForceSync Drop and create existing tables to match required schema
-// WARNING: do not run this on a live database...
-func (dataStore *DataStore) ForceSync() {
+func (dataStore *DataStore) Drop() {
 	db := dataStore.db
 
 	db = db.Exec("DROP TABLE IF EXISTS fido_tokens CASCADE;")
@@ -57,6 +57,12 @@ func (dataStore *DataStore) ForceSync() {
 	db = db.Exec("DROP TABLE IF EXISTS action_tokens CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS audit_events CASCADE;")
 	db = db.Exec("DROP TABLE IF EXISTS users CASCADE;")
+
+	dataStore.db = db
+}
+
+func (dataStore *DataStore) Sync() {
+	db := dataStore.db
 
 	db = db.AutoMigrate(&User{})
 	db = db.AutoMigrate(&FidoToken{})
@@ -67,8 +73,12 @@ func (dataStore *DataStore) ForceSync() {
 
 	db = dataStore.OauthStore.Sync(true)
 
-	db = db.Model(&User{}).AddUniqueIndex("idx_user_email", "email")
-	db = db.Model(&User{}).AddUniqueIndex("idx_user_ext_id", "ext_id")
-
 	dataStore.db = db
+}
+
+// ForceSync Drop and create existing tables to match required schema
+// WARNING: do not run this on a live database...
+func (dataStore *DataStore) ForceSync() {
+	dataStore.Drop()
+	dataStore.Sync()
 }

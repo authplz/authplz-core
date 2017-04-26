@@ -150,7 +150,7 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("token", at)
 
-		if _, err := client2.PostForm("/action", http.StatusOK, v); err != nil {
+		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
 			t.Error(err)
 		}
 
@@ -184,7 +184,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusOK, v); err != nil {
+		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
 			t.Error(err)
 		}
 
@@ -272,7 +272,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusOK, v); err != nil {
+		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
 			t.Error(err)
 		}
 
@@ -306,7 +306,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusOK, v); err != nil {
+		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
 			t.Error(err)
 		}
 

@@ -177,7 +177,7 @@ const (
 
 // DoRedirect writes a redirect to the client
 func (c *AuthPlzCtx) DoRedirect(url string, rw web.ResponseWriter, req *web.Request) {
-	http.Redirect(rw, req.Request, url, 302)
+	http.Redirect(rw, req.Request, url, http.StatusFound)
 }
 
 // BindRedirect binds a redirect URL to the user session
