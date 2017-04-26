@@ -148,9 +148,6 @@ func mergeMaps(a, b map[string]string) map[string]string {
 func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
 
-	log.Printf("MailController: %+v", *mc)
-	log.Printf("Event: %+v", event)
-
 	// Fetch the user object for further use
 	// TODO: I wonder if we should just be passing this around to save DB accesses?
 	userID := event.GetUserExtID()
