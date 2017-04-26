@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-)
 
-import (
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/events"
 	"golang.org/x/crypto/bcrypt"

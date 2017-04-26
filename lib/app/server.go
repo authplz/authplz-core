@@ -15,6 +15,7 @@ import (
 	"github.com/ryankurte/authplz/lib/config"
 
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/controllers/mailer"
 	"github.com/ryankurte/authplz/lib/controllers/token"
 
 	"github.com/ryankurte/authplz/lib/modules/2fa/backup"
@@ -97,6 +98,17 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	auditSvc := async.NewAsyncService(auditModule, bufferSize)
 	server.serviceManager.BindService(&auditSvc)
 
+	// Mailer module
+	mailController, err := mailer.NewMailController(config.Name, config.ExternalAddress, config.MailDriver, config.MailOptions, dataStore, tokenControl, config.TemplateDir)
+	if err != nil {
+		log.Fatalf("Error loading mail controller: %s", err)
+		return nil
+	}
+
+	mailSvc := async.NewAsyncService(mailController, bufferSize)
+	server.serviceManager.BindService(&mailSvc)
+
+	// OAuth management module
 	oauthModule := oauth.NewController(dataStore, oauth.DefaultConfig())
 
 	// Create a global context object

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/ryankurte/authplz/lib/app"
 	"github.com/ryankurte/authplz/lib/config"
 )
@@ -8,7 +10,10 @@ import (
 func main() {
 
 	// Load configuration
-	c := config.GetConfig()
+	c, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Create server instance
 	server := app.NewServer(*c)

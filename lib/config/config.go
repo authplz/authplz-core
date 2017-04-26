@@ -21,24 +21,24 @@ import (
 
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
-	Name                  string   `short:"n" long:"name" description:"User friendly service name" default:"AuthPlz"`
-	Address               string   `short:"a" long:"address" description:"Set server bind address (set to none for all interfaces)" default:"localhost"`
-	Port                  string   `short:"p" long:"port" description:"Set server bind port" default:"9001"`
-	ExternalAddress       string   `short:"e" long:"external-address" description:"Set server external address for use with reverse proxies etc."`
-	Database              string   `short:"d" long:"database" description:"Database connection string"`
-	TLSCert               string   `short:"c" long:"tls-cert" description:"TLS Certificate file"`
-	TLSKey                string   `short:"k" long:"tls-key" description:"TLS Key File"`
-	NoTLS                 bool     `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
-	StaticDir             string   `short:"s" long:"static-dir" description:"Directory to load static assets from"`
-	TemplateDir           string   `short:"t" long:"template-dir" description:"Directory to load templates from"`
-	Routes                string   `short:"r" long:"routes-file" description:"YAML encoded static routes for use when redirecting"`
-	AllowedOrigins        []string `short:"o" long:"allowed-origins" description:"List of allowed origins to override AccessControlAllowOrigin headers"`
-	MinimumPasswordLength int      `long:"password-len" description:"Minimum password length"`
-	CookieSecret          string   `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
-	TokenSecret           string   `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
-	OauthSecret           string   `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
-	MailDriver            string   `long:"mail-driver" description:"Mail driver for email sending" default:"mailgun"`
-	MailOptions map[string]string `long:"mail-options" description:"Mail driver options as a colon separated map"`
+	Name                  string            `short:"n" long:"name" description:"User friendly service name" default:"AuthPlz"`
+	Address               string            `short:"a" long:"address" description:"Set server bind address (set to none for all interfaces)" default:"localhost"`
+	Port                  string            `short:"p" long:"port" description:"Set server bind port" default:"9001"`
+	ExternalAddress       string            `short:"e" long:"external-address" description:"Set server external address for use with reverse proxies etc."`
+	Database              string            `short:"d" long:"database" description:"Database connection string"`
+	TLSCert               string            `short:"c" long:"tls-cert" description:"TLS Certificate file"`
+	TLSKey                string            `short:"k" long:"tls-key" description:"TLS Key File"`
+	NoTLS                 bool              `long:"no-tls" description:"Disable TLS for testing or reverse proxying"`
+	StaticDir             string            `short:"s" long:"static-dir" description:"Directory to load static assets from"`
+	TemplateDir           string            `short:"t" long:"template-dir" description:"Directory to load templates from"`
+	Routes                string            `short:"r" long:"routes-file" description:"YAML encoded static routes for use when redirecting"`
+	AllowedOrigins        []string          `short:"o" long:"allowed-origins" description:"List of allowed origins to override AccessControlAllowOrigin headers"`
+	MinimumPasswordLength int               `long:"password-len" description:"Minimum password length"`
+	CookieSecret          string            `long:"cookie-secret" description:"32-byte base64 encoded secret for cookie / session storage" default-mask:"-"`
+	TokenSecret           string            `long:"token-secret" description:"32-byte base64 encoded secret for token use" default-mask:"-"`
+	OauthSecret           string            `long:"oauth-secret" description:"32-byte base64 encoded secret for oauth use" default-mask:"-"`
+	MailDriver            string            `long:"mail-driver" description:"Mail driver for email sending"`
+	MailOptions           map[string]string `long:"mail-options" description:"Mail driver options as a colon separated map"`
 	routes                Routes
 }
 
@@ -76,9 +76,12 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	c.NoTLS = false
 
 	c.StaticDir = "./authplz-ui/build"
-	c.TemplateDir = "./template"
+	c.TemplateDir = "./templates"
 
 	c.MinimumPasswordLength = 12
+
+	c.MailDriver = "logger"
+	c.MailOptions = make(map[string]string)
 
 	c.routes = DefaultRoutes()
 

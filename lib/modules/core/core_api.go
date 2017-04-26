@@ -62,6 +62,8 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
+	log.Printf("Received activation token!")
+
 	// If the user isn't logged in
 	if c.GetUserID() == "" {
 		session := c.GetSession()
@@ -73,8 +75,9 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		session.AddFlash(tokenString)
 		session.Save(req.Request, rw)
 
-		rw.WriteHeader(http.StatusOK)
-		//TODO: redirect to login
+		//TODO: session flash here?
+
+		c.DoRedirect("/#login", rw, req)
 
 	} else {
 		//TODO: handle any active-user tokens here
@@ -252,6 +255,10 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	c.GetSession().Save(req.Request, rw)
 
 	// TODO: Generate and send recovery email
+	err := c.cm.PasswordResetStart(email)
+	if err != nil {
+		log.Printf("Core.RecoverPost error starting recovery for user %s (%s)", email, err)
+	}
 
 	log.Printf("Core.RecoverPost started recovery for user %s", email)
 

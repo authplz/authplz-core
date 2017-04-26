@@ -37,6 +37,7 @@ func TestMain(t *testing.T) {
 	c.NoTLS = true
 	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
 	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
+	c.TemplateDir = "../../templates"
 
 	server := NewServer(*c)
 

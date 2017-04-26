@@ -16,7 +16,6 @@ import (
 
 	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/controllers/mailer/drivers"
-	"github.com/ryankurte/authplz/lib/controllers/token"
 	"github.com/ryankurte/authplz/lib/events"
 	"time"
 )
@@ -30,6 +29,10 @@ type Storer interface {
 	GetUserByExtID(extID string) (interface{}, error)
 }
 
+type TokenCreator interface {
+	BuildToken(userID string, action api.TokenAction, duration time.Duration) (string, error)
+}
+
 type User interface {
 	GetUsername() string
 	GetEmail() string
@@ -37,28 +40,31 @@ type User interface {
 
 // MailController Mail controller instance
 type MailController struct {
-	appName     string
-	templateDir string
-	templates   map[string]template.Template
-	driver      MailDriver
-	storer      Storer
-	token       token.TokenController
-	options     map[string]string
+	domain       string
+	appName      string
+	templateDir  string
+	templates    map[string]template.Template
+	driver       MailDriver
+	storer       Storer
+	tokenCreator TokenCreator
+	options      map[string]string
 }
 
 // Standard mailing templates (required for MailController creation)
 var templateNames = [...]string{"activation", "passwordreset", "loginnotice"}
 
 type MailerConfig struct {
-	AppName     string
-	Driver      string
-	Options     map[string]string
-	Storer      Storer
-	TemplateDir string
+	AppName      string
+	Domain       string
+	Driver       string
+	Options      map[string]string
+	Storer       Storer
+	TokenCreator TokenCreator
+	TemplateDir  string
 }
 
 // NewMailController Creates a mail controller
-func NewMailController(appName, driver string, options map[string]string, storer Storer, templateDir string) (*MailController, error) {
+func NewMailController(appName, domain, driver string, options map[string]string, storer Storer, tokenCreator TokenCreator, templateDir string) (*MailController, error) {
 
 	// Load driver
 	var d MailDriver
@@ -87,12 +93,14 @@ func NewMailController(appName, driver string, options map[string]string, storer
 	}
 
 	return &MailController{
-		appName:     appName,
-		templateDir: templateDir,
-		templates:   templates,
-		driver:      d,
-		storer:      storer,
-		options:     options,
+		domain:       domain,
+		appName:      appName,
+		templateDir:  templateDir,
+		templates:    templates,
+		driver:       d,
+		storer:       storer,
+		tokenCreator: tokenCreator,
+		options:      options,
 	}, nil
 }
 
@@ -118,12 +126,12 @@ func (mc *MailController) SendTemplate(template, address, subject string, data m
 
 // SendActivation Send a activation email to the provided address
 func (mc *MailController) SendActivation(email string, data map[string]string) error {
-	return mc.SendTemplate("activation", email, mc.appName+" account activation", data)
+	return mc.SendTemplate("activation", email, mc.appName+" Account Activation", data)
 }
 
 // SendPasswordReset Send a password reset email to the provided address
 func (mc *MailController) SendPasswordReset(email string, data map[string]string) error {
-	return mc.SendTemplate("passwordreset", email, mc.appName+" password reset", data)
+	return mc.SendTemplate("passwordreset", email, mc.appName+" Password Reset", data)
 }
 
 func mergeMaps(a, b map[string]string) map[string]string {
@@ -140,6 +148,11 @@ func mergeMaps(a, b map[string]string) map[string]string {
 func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
 
+	log.Printf("MailController: %+v", *mc)
+	log.Printf("Event: %+v", event)
+
+	// Fetch the user object for further use
+	// TODO: I wonder if we should just be passing this around to save DB accesses?
 	userID := event.GetUserExtID()
 	u, err := mc.storer.GetUserByExtID(userID)
 	if err != nil {
@@ -148,21 +161,36 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 	}
 	user := u.(User)
 
+	// Fill in base data
 	data := make(map[string]string)
-	data["servicename"] = mc.appName
-	data["email"] = user.GetEmail()
-	data["username"] = user.GetUsername()
+	data["Domain"] = mc.domain
+	data["ServiceName"] = mc.appName
+	data["Email"] = user.GetEmail()
+	data["Username"] = user.GetUsername()
 
+	// Handle types of events
 	err = nil
 	switch event.GetType() {
 	case events.EventAccountCreated:
-		token, err := mc.token.BuildToken(userID, api.TokenActionActivate, time.Hour)
+		// Account creation causes an activation email to be sent
+		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionActivate, time.Hour)
 		if err != nil {
 			log.Printf("MailController.HandleEvent error creating token %s", err)
 			return err
 		}
-		data["actionurl"] = token
+		data["Token"] = token
+		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
 		err = mc.SendActivation(user.GetEmail(), mergeMaps(data, event.GetData()))
+	case events.EventPasswordResetReq:
+		// Password recovery request causes a password recovery email to be sent
+		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionRecovery, time.Hour)
+		if err != nil {
+			log.Printf("MailController.HandleEvent error creating token %s", err)
+			return err
+		}
+		data["Token"] = token
+		data["ActionURL"] = fmt.Sprintf("%s/api/recovery?token=%s", mc.domain, token)
+		err = mc.SendPasswordReset(user.GetEmail(), mergeMaps(data, event.GetData()))
 	default:
 	}
 

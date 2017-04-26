@@ -3,9 +3,21 @@ package mailer
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/ryankurte/authplz/lib/api"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/ryankurte/authplz/lib/events"
 )
+
+type FakeTokenGenerator struct {
+}
+
+func (ftg *FakeTokenGenerator) BuildToken(userID string, action api.TokenAction, duration time.Duration) (string, error) {
+	return fmt.Sprintf("%s:%s:%s", userID, action, duration), nil
+}
 
 type FakeStorer struct {
 	Users map[string]datastore.User
@@ -44,28 +56,25 @@ func TestMailController(t *testing.T) {
 
 	storer := FakeStorer{make(map[string]datastore.User)}
 	storer.Users["test-id"] = datastore.User{
+		ExtID:    "test-id",
 		Username: "test-username",
 		Email:    "test-email",
 	}
 
+	driver := FakeDriver{}
+
 	// Run tests
 	t.Run("Create mail controller", func(t *testing.T) {
-		lmc, err := NewMailController("AuthPlz Test", "logger", options, &storer, "../../../templates")
-		if err != nil {
-			fmt.Println(err)
-			t.Error(err)
-		}
+		lmc, err := NewMailController("AuthPlz Test", "test.kurte.nz", "logger", options, &storer, &FakeTokenGenerator{}, "../../../templates")
+		assert.Nil(t, err)
 
-		//lmc.driver = &FakeDriver{}
+		lmc.driver = &driver
 		mc = lmc
 	})
 
 	t.Run("Can send emails", func(t *testing.T) {
 		err := mc.SendMail(testAddress, "test subject", "test body")
-		if err != nil {
-			fmt.Println(err)
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 	})
 
 	t.Run("Can send activation emails", func(t *testing.T) {
@@ -75,10 +84,8 @@ func TestMailController(t *testing.T) {
 		data["UserName"] = "TestUser"
 
 		err := mc.SendActivation(testAddress, data)
-		if err != nil {
-			fmt.Println(err)
-			t.Error(err)
-		}
+		assert.Nil(t, err)
+		assert.EqualValues(t, driver.Subject, fmt.Sprintf("%s Account Activation", mc.appName))
 	})
 
 	t.Run("Can send password reset emails", func(t *testing.T) {
@@ -88,10 +95,36 @@ func TestMailController(t *testing.T) {
 		data["UserName"] = "TestUser"
 
 		err := mc.SendPasswordReset(testAddress, data)
-		if err != nil {
-			fmt.Println(err)
-			t.Error(err)
+		assert.Nil(t, err)
+		assert.EqualValues(t, driver.Subject, fmt.Sprintf("%s Password Reset", mc.appName))
+	})
+
+	t.Run("Handles AccountCreated event", func(t *testing.T) {
+		e := events.AuthPlzEvent{
+			UserExtID: "test-id",
+			Time:      time.Now(),
+			Type:      events.EventAccountCreated,
+			Data:      make(map[string]string),
 		}
+
+		err := mc.HandleEvent(&e)
+		assert.Nil(t, err)
+
+		assert.EqualValues(t, driver.Subject, fmt.Sprintf("%s Account Activation", mc.appName))
+	})
+
+	t.Run("Handles StartRecovery event", func(t *testing.T) {
+		e := events.AuthPlzEvent{
+			UserExtID: "test-id",
+			Time:      time.Now(),
+			Type:      events.EventPasswordResetReq,
+			Data:      make(map[string]string),
+		}
+
+		err := mc.HandleEvent(&e)
+		assert.Nil(t, err)
+
+		assert.EqualValues(t, driver.Subject, fmt.Sprintf("%s Password Reset", mc.appName))
 	})
 
 }
