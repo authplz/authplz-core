@@ -1,0 +1,83 @@
+# AuthPlz Example Configuration
+# $VARIABLES are loaded from the environment with the specified prefix
+
+# User friendly application name
+name: AuthPlz Example
+
+# Server binding configuration
+bind-address: localhost
+bind-port: 9000
+
+# External application address (required for reverse proxying)
+external-address: https://localhost:3000
+
+# Database connection
+database: "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+
+# Allowed origins for API requests
+# This is automatically set to bind-address:bind-port or external-address if set
+# but can be overridden here if required
+allowed-origins:
+  - https://localhost:3000
+
+# Secrets
+cookie-secret: $COOKIE_SECRET
+token-secret: $TOKEN_SECRET
+
+# TLS configuration
+tls:
+  cert: server.pem 
+  key: server.key
+  disabled: false
+
+# Template and static file directories
+static-dir: ~/projects/authplz-ui/static
+template-dir: ./templates
+  
+# OAuth (Client) Configuration
+# Scopes define what resources an admin or users client can grant access to.
+# These are heirachicle and are split by '.' (ie public includes public.read)
+# Grants correspond to OAuth grant types that clients can utilise
+# Allowed responses defines what responses are allowed for OAuth clients
+oauth:
+  secret: $OAUTH_SECRET
+  admin:
+    scopes: ["public.read", "public.write", "private.read", "private.write", "introspect", "offline"]
+    grants: ["authorization_code", "implicit", "refresh_token", "client_credentials"]
+  user:
+    scopes: ["public.read", "public.write", "private.read", "private.write", "offline"]
+    grants: ["authorization_code", "implicit", "refresh_token"]
+  allowed-responses: ["code", "token", "id_token"]
+
+# Mailer configuration
+mailer:
+  driver: mailgun 
+  options:
+    domain:  $MG_DOMAIN 
+    address: $MG_ADDRESS 
+    key:     $MG_APIKEY 
+    secret:  $MG_PRIKEY
+
+# Route configuration
+# This allows frontend implementations to set routes for static page redirects
+routes:
+  user-login:       "/#/login"
+  user-logout:      "/#/logout"
+  user-create:      "/#/create"
+
+  account-manage:   "/#/account"
+
+  u2f-manage:       "/#/2fa-u2f-manage"
+  u2f-register:     "/#/2fa-u2f-register"
+  u2f-authorize:    "/#/2fa-u2f-authorize"
+
+  totp-manage:      "/#/2fa-totp-manage"
+  totp-register:    "/#/2fa-totp-register"
+  totp-authorize:   "/#/2fa-totp-authorize"
+
+  backup-manage:    "/#/2fa-backup-manage"
+  backup-authorize: "/#/2fa-backup-authorize"
+
+  oauth-manage:     "/#/oauth-manage"
+  oauth-create:     "/#/oauth-create"
+  oauth-authorize:  "/#/oauth-authorize"

@@ -21,7 +21,7 @@ import (
 func TestMain(t *testing.T) {
 
 	// Fetch default configuration
-	c, err := config.GetConfig()
+	c, err := config.LoadConfig("../../authplz.yml", "AUTHPLZ_")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -34,7 +34,7 @@ func TestMain(t *testing.T) {
 	var userID = ""
 
 	// Attempt database connection
-	c.NoTLS = true
+	c.TLS.Disabled = true
 	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
 	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
 	c.TemplateDir = "../../templates"

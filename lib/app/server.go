@@ -99,7 +99,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager.BindService(&auditSvc)
 
 	// Mailer module
-	mailController, err := mailer.NewMailController(config.Name, config.ExternalAddress, config.MailDriver, config.MailOptions, dataStore, tokenControl, config.TemplateDir)
+	mailController, err := mailer.NewMailController(config.Name, config.ExternalAddress, config.Mailer.Driver, config.Mailer.Options, dataStore, tokenControl, config.TemplateDir)
 	if err != nil {
 		log.Fatalf("Error loading mail controller: %s", err)
 		return nil
@@ -159,7 +159,7 @@ func (server *AuthPlzServer) Start() {
 
 	// Start with/without TLS
 	var err error
-	if server.config.NoTLS == true {
+	if server.config.TLS.Disabled == true {
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
@@ -167,7 +167,7 @@ func (server *AuthPlzServer) Start() {
 		err = http.ListenAndServe(address, contextHandler)
 	} else {
 		log.Printf("Listening at: https://%s", address)
-		err = http.ListenAndServeTLS(address, server.config.TLSCert, server.config.TLSKey, contextHandler)
+		err = http.ListenAndServeTLS(address, server.config.TLS.Cert, server.config.TLS.Key, contextHandler)
 	}
 
 	// Stop async services

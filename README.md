@@ -39,9 +39,8 @@ Check out [design.md](design.md) for more.
 
 ## Usage
 
-Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project (and have been grossly neglected). Paths should be set using the `AUTHPLZ_STATICDIR` and `AUTHPLZ_TEMPLATEDIR` environmental flags, or by passing `--static-dir` and `--template-dir` flags on the command line.
-
-For development purposes, it may be convenient to add these variables to your environment (prefix with `AUTHPLZ_` then export in `~/.bashrc` or `~/.bash_profile`).
+Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project (and have been grossly neglected).
+Configuration is now via a yaml [configuration file](authplz.yml) which supports explicit loading of environmental variables and explains all the required config options. Use `./authplz --help` to display options to specify the config file or environment prefix.
 
 ### Dependencies
 
