@@ -1,5 +1,5 @@
 hash: 0055ed3cde8c8105403f55f7fbf972081ff3095c28fda7eac7376eb1807b9cac
-updated: 2017-04-18T11:07:25.264504769+12:00
+updated: 2017-06-13T16:17:00.895070999+12:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877
@@ -54,6 +54,8 @@ imports:
   - totp
 - name: github.com/ryankurte/go-async
   version: 68217616a03b5fc9615755facf86022f31a3a867
+- name: github.com/ryankurte/go-structparse
+  version: b7d011634ec4b9702f921c93cc481d7d9aed10b1
 - name: github.com/ryankurte/go-u2f
   version: 3c596e93a5a117d20ca7004bcece76ae379a405a
 - name: github.com/satori/go.uuid
@@ -78,6 +80,8 @@ imports:
   - unicode/norm
 - name: gopkg.in/mailgun/mailgun-go.v1
   version: a4002e2df2e8ca2da6a6fbb4a72871b504e49f50
+- name: gopkg.in/yaml.v2
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9

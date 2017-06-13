@@ -13,7 +13,8 @@ install:
 	go get -u github.com/golang/lint/golint
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -u golang.org/x/oauth2
-	go get -t ./...
+	go get -t github.com/Masterminds/glide
+	glide install
 
 # Build backend and frontend components
 build:
