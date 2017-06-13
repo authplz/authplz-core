@@ -11,6 +11,9 @@ script:
 after_script:
 - make cross
 - tar -cvf build/templates.tgz templates/*
+cache:
+  directories:
+  - vendor
 notifications:
   email: false
 deploy:
