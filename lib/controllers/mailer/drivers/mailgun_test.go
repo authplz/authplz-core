@@ -12,10 +12,10 @@ func TestMailController(t *testing.T) {
 
 	options := make(map[string]string)
 
-	options["domain"] = os.Getenv("MG_DOMAIN")
-	options["address"] = os.Getenv("MG_ADDRESS")
-	options["key"] = os.Getenv("MG_APIKEY")
-	options["secret"] = os.Getenv("MG_PRIKEY")
+	options["domain"] = os.Getenv("AUTHPLZ_MG_DOMAIN")
+	options["address"] = os.Getenv("AUTHPLZ_MG_ADDRESS")
+	options["key"] = os.Getenv("AUTHPLZ_MG_APIKEY")
+	options["secret"] = os.Getenv("AUTHPLZ_MG_PRIKEY")
 
 	testAddress := "test@kurte.nz"
 
