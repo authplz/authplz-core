@@ -1,5 +1,5 @@
-hash: 7a8b58259d43e25af5935020a4ca13fb3abeb6de74342b486420cdc523a5467c
-updated: 2017-07-04T16:00:00.327722853+12:00
+hash: fd1457d3e5902e8a246e213862071d617bdb3c3b7fce33165a842edcd0140892
+updated: 2017-07-04T16:14:42.997721061+12:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 4918b99a7cb949bb295f3c7bbaf24b577d806e35
@@ -15,7 +15,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: d2709f9f1f31ebcda9651b03077758c1f3a0018c
 - name: github.com/gocraft/web
-  version: 0973dfd3866277297f7caed311af67cc4ca1126e
+  version: 6a73d2f729df8199aca71885fbc470a5576a29d2
 - name: github.com/gorilla/context
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 - name: github.com/gorilla/securecookie
