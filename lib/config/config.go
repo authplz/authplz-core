@@ -24,7 +24,7 @@ import (
 
 type AuthPlzCLI struct {
 	ConfigFile string `short:"c" long:"config" description:"AuthPlz configuration file" default:"./authplz.yml"`
-	Prefix     string `short:"p" long:"prefix" description:"Prefix for environmental variable loading" default:"AUTHPLZ_"`
+	Prefix     string `short:"p" long:"prefix" description:"Prefix for environmental variable loading" default:""`
 }
 
 // AuthPlzConfig configuration structure
