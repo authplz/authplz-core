@@ -20,7 +20,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
-	"github.com/ory-am/fosite"
+	"github.com/ory/fosite"
 	"github.com/pkg/errors"
 
 	"fmt"
@@ -310,7 +310,7 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("AuthRequest: %+v", authorizeRequest)
 
 	// Create response
-	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, req.Request, &authorizeRequest, NewSessionWrap(&oauthSession))
+	response, err := c.oc.OAuth2.NewAuthorizeResponse(c.fositeContext, &authorizeRequest, NewSessionWrap(&oauthSession))
 	if err != nil {
 		log.Printf("OauthAPI.AuthorizeConfirmPost error: %s", errors.Cause(err))
 		c.oc.OAuth2.WriteAuthorizeError(rw, &authorizeRequest, err)
@@ -403,7 +403,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Build response
-	response, err := c.oc.OAuth2.NewAccessResponse(ctx, req.Request, ar)
+	response, err := c.oc.OAuth2.NewAccessResponse(ctx, ar)
 	if err != nil {
 		log.Printf("oauth.TokenPost NewAccessResponse error: %s", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)

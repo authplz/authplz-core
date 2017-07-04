@@ -17,8 +17,8 @@ import:
   version: ^1.0.0
   subpackages:
   - dialects/postgres
-- package: github.com/ory-am/fosite
-  version: ^0.9.5
+- package: github.com/ory/fosite
+  version: ^0.9.7
   subpackages:
   - compose
 - package: github.com/pkg/errors

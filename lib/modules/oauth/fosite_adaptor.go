@@ -1,12 +1,11 @@
 package oauth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"golang.org/x/net/context"
-
-	"github.com/ory-am/fosite"
+	"github.com/ory/fosite"
 )
 
 // FositeAdaptor adapts a generic interface for osin compliance
@@ -36,7 +35,7 @@ func UnpackRequest(data string) (fosite.Request, error) {
 
 // Client storage
 
-func (oa *FositeAdaptor) GetClient(id string) (fosite.Client, error) {
+func (oa *FositeAdaptor) GetClient(ctx context.Context, id string) (fosite.Client, error) {
 	c, err := oa.Storer.GetClientByID(id)
 	if err != nil {
 		return nil, err

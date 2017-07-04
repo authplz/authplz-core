@@ -65,10 +65,12 @@ func (dataStore *DataStore) Sync() {
 	db := dataStore.db
 
 	db = db.AutoMigrate(&User{})
+	db = db.AutoMigrate(&ActionToken{})
+
 	db = db.AutoMigrate(&FidoToken{})
 	db = db.AutoMigrate(&TotpToken{})
-	db = db.AutoMigrate(&ActionToken{})
 	db = db.AutoMigrate(&BackupToken{})
+
 	db = db.AutoMigrate(&AuditEvent{})
 
 	db = dataStore.OauthStore.Sync(true)

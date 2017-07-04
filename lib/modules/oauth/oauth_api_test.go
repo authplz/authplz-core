@@ -22,7 +22,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 
 	//"github.com/dghubble/oauth1"
-	"github.com/ory-am/fosite"
+	"github.com/ory/fosite"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ryankurte/authplz/lib/controllers/datastore"

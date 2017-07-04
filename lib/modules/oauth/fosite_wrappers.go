@@ -1,7 +1,7 @@
 package oauth
 
 import (
-	"github.com/ory-am/fosite"
+	"github.com/ory/fosite"
 	"net/url"
 	"time"
 )

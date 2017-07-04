@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ory-am/fosite"
-	"github.com/ory-am/fosite/compose"
+	"github.com/ory/fosite"
+	"github.com/ory/fosite/compose"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -100,6 +100,7 @@ func NewController(store Storer, config Config) *Controller {
 		oauthConfig,
 		wrappedStore,
 		strat,
+		nil,
 
 		compose.OAuth2AuthorizeExplicitFactory,
 		compose.OAuth2AuthorizeImplicitFactory,
