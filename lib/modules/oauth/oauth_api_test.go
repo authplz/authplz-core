@@ -25,6 +25,7 @@ import (
 	"github.com/ory/fosite"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/modules/core"
 	"github.com/ryankurte/authplz/lib/modules/user"
@@ -99,7 +100,7 @@ func TestOauthAPI(t *testing.T) {
 		t.FailNow()
 	}
 
-	config := DefaultConfig()
+	config := config.DefaultOAuthConfig()
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
 

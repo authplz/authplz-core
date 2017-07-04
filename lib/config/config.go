@@ -43,7 +43,7 @@ type AuthPlzConfig struct {
 	TemplateDir string `yaml:"template-dir"`
 
 	TLS    TLSConfig    `yaml:"tls"`
-	OAuth  OauthConfig  `yaml:"oauth"`
+	OAuth  OAuthConfig  `yaml:"oauth"`
 	Mailer MailerConfig `yaml:"mailer"`
 	Routes RouteConfig  `yaml:"routes"`
 
@@ -90,6 +90,8 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
 	c.Mailer.Driver = "logger"
 	c.Mailer.Options = make(map[string]string)
+
+	c.OAuth = DefaultOAuthConfig()
 
 	c.Routes = DefaultRoutes()
 
@@ -157,7 +159,7 @@ func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 		log.Panic("Error decoding cookie secret")
 	}
 
-	oauthSecret, err := base64.URLEncoding.DecodeString(c.OAuth.Secret)
+	oauthSecret, err := base64.URLEncoding.DecodeString(c.OAuth.TokenSecret)
 	if err != nil {
 		log.Println(err)
 		log.Panic("Error decoding oauth secret")
@@ -165,7 +167,7 @@ func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 
 	c.TokenSecret = string(tokenSecret)
 	c.CookieSecret = string(cookieSecret)
-	c.OAuth.Secret = string(oauthSecret)
+	c.OAuth.TokenSecret = string(oauthSecret)
 
 	return c, nil
 }

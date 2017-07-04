@@ -109,7 +109,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.serviceManager.BindService(&mailSvc)
 
 	// OAuth management module
-	oauthModule := oauth.NewController(dataStore, oauth.DefaultConfig())
+	oauthModule := oauth.NewController(dataStore, config.OAuth)
 
 	// Create a global context object
 	server.ctx = appcontext.NewGlobalCtx(sessionStore)

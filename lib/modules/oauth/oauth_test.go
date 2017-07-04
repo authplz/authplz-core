@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ryankurte/authplz/lib/config"
 	"github.com/ryankurte/authplz/lib/controllers/datastore"
 	"github.com/ryankurte/authplz/lib/test"
 )
@@ -18,7 +19,7 @@ func NoTestOauth(t *testing.T) {
 		t.FailNow()
 	}
 
-	config := DefaultConfig()
+	config := config.DefaultOAuthConfig()
 
 	oauthModule := NewController(ts.DataStore, config)
 	if err != nil {

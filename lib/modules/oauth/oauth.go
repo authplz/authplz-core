@@ -21,6 +21,8 @@ import (
 	"github.com/ory/fosite/compose"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/ryankurte/authplz/lib/config"
 )
 
 const (
@@ -33,52 +35,15 @@ const (
 // This is a safe error return for the OAuth API to wrap underlying errors
 var ErrInternal = errors.New("OAuth internal error")
 
-type configSplit struct {
-	Admin []string
-	User  []string
-}
-
-// Config OAuth controller coniguration structure
-type Config struct {
-	// Redirect to client app for oauth authorization
-	AuthorizeRedirect string
-	// Secret for OAuth token attestation
-	TokenSecret string
-	// AllowedScopes defines the scopes a client can grant for admins and users
-	AllowedScopes configSplit
-	// AllowedGrants defines the grant types a client can support for admins and users
-	AllowedGrants configSplit
-	// AllowedResponses defines response types a client can support
-	AllowedResponses []string
-}
-
-// DefaultConfig generates a default configuration for the OAuth module
-func DefaultConfig() Config {
-	secret, _ := generateSecret(64)
-	return Config{
-		AuthorizeRedirect: "/#/oauth-authorize",
-		TokenSecret:       secret,
-		AllowedScopes: configSplit{
-			Admin: []string{"public.read", "public.write", "private.read", "private.write", "introspect", "offline"},
-			User:  []string{"public.read", "public.write", "private.read", "private.write", "offline"},
-		},
-		AllowedGrants: configSplit{
-			Admin: []string{"authorization_code", "implicit", "refresh_token", "client_credentials"},
-			User:  []string{"authorization_code", "implicit", "refresh_token"},
-		},
-		AllowedResponses: []string{"code", "token", "id_token"},
-	}
-}
-
 // Controller OAuth module controller
 type Controller struct {
 	OAuth2 fosite.OAuth2Provider
 	store  Storer
-	config Config
+	config config.OAuthConfig
 }
 
 // NewController Creates a new OAuth2 controller instance
-func NewController(store Storer, config Config) *Controller {
+func NewController(store Storer, config config.OAuthConfig) *Controller {
 
 	// Create configuration
 	var oauthConfig = &compose.Config{
