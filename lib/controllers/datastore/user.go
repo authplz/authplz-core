@@ -200,9 +200,9 @@ func (dataStore *DataStore) GetUserByUsername(username string) (interface{}, err
 func (dataStore *DataStore) UpdateUser(user interface{}) (interface{}, error) {
 	u := user.(*User)
 
-	err := dataStore.db.Save(&u).Error
-	if err != nil {
-		return nil, err
+	dataStore.db = dataStore.db.Save(&u)
+	if dataStore.db.Error != nil {
+		return nil, dataStore.db.Error
 	}
 
 	return user, nil

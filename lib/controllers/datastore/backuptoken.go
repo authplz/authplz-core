@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -55,6 +56,38 @@ func (dataStore *DataStore) AddBackupToken(userid, name, secret string) (interfa
 
 	// Add the token to the user and save
 	user.BackupTokens = append(user.BackupTokens, token)
+	_, err = dataStore.UpdateUser(user)
+	return user, err
+}
+
+// AddBackupToken creates a backupt token token instance to a user in the database
+func (dataStore *DataStore) AddBackupTokens(userid string, names, secrets []string) (interface{}, error) {
+
+	// Fetch user
+	u, err := dataStore.GetUserByExtID(userid)
+	if err != nil {
+		return nil, err
+	}
+
+	user := u.(*User)
+
+	if len(names) != len(secrets) {
+		return nil, fmt.Errorf("Error: name and secret arrays must have matching lengths")
+	}
+
+	for i := range names {
+		// Create a token instance
+		token := BackupToken{
+			UserID: user.ID,
+			Name:   names[i],
+			Secret: secrets[i],
+			Used:   false,
+		}
+		// Add the token to the user and save
+		user.BackupTokens = append(user.BackupTokens, token)
+	}
+
+	// Update user instance
 	_, err = dataStore.UpdateUser(user)
 	return user, err
 }

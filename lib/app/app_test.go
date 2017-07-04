@@ -38,6 +38,7 @@ func TestMain(t *testing.T) {
 	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
 	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
 	c.TemplateDir = "../../templates"
+	c.Mailer.Driver = "logger"
 
 	server := NewServer(*c)
 

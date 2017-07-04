@@ -74,7 +74,7 @@ func TestBackupModule(t *testing.T) {
 		assert.Nil(t, err)
 
 		if !ok {
-			t.Errorf("Backup code validation failed (expected success)")
+			t.Errorf("Backup code validation failed (expected success) code: %s", code)
 		}
 	})
 
