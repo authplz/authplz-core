@@ -22,7 +22,7 @@ If you would like to be involved with this project, please first read (and agree
 
 ## Status
 
-Early WIP. Backend components fairly functional (but by no means feature complete), frontend components in desparate need of work.
+Early WIP. Backend components fairly functional (but by no means feature complete), frontend components in desparate need of work. Please don't use this unless you know what you're getting into...
 
 [![GitHub tag](https://img.shields.io/github/tag/ryankurte/authplz.svg)](https://github.com/ryankurte/authplz)
 [![Build Status](https://travis-ci.com/ryankurte/authplz.svg?token=s4CML2iJ2hd54vvqz5FP&branch=master)](https://travis-ci.com/ryankurte/authplz/branches)
