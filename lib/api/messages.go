@@ -2,95 +2,61 @@
 
 package api
 
-import (
-	"log"
+import ()
+
+// Response Common API response object
+type Response struct {
+	// Response code
+	Code string `json:"code"`
+}
+
+// API Response Messages for frontend / internationalisation parsing
+const (
+	// General messages
+	NotImplemented   = "NotImplemented"
+	InternalError    = "InternalError"
+	FormParsingError = "FormParsingError"
+	DecodingFailed   = "DecodingFailed"
+	ActionMissing    = "ActionMissing"
+
+	// User input messages
+	InvalidEmail             = "InvalidEmail"
+	InvalidUsername          = "InvalidUsername"
+	MissingPassword          = "MissingPassword"
+	PasswordComplexityTooLow = "PasswordComplexityTooLow"
+	DuplicateUserAccount     = "DuplicateUserAccount"
+	CreateUserSuccess        = "CreateUserSuccess"
+
+	// Status messages
+	LoginSuccessful      = "LoginSuccessful"
+	LogoutSuccessful     = "LogoutSuccessful"
+	ActivationSuccessful = "ActivationSuccessful"
+	AccountLocked        = "AccountLocked"
+	UnlockSuccessful     = "UnlockSuccessful"
+	PasswordUpdated      = "PasswordUpdated"
+	AlreadyAuthenticated = "AlreadyAuthenticated"
+	Unauthorized         = "Unauthorized"
+	InvalidToken         = "InvalidToken"
+
+	// Second factor messages
+	SecondFactorRequired         = "SecondFactorRequired"
+	SecondFactorNoRequestSession = "SecondFactorNoSession"
+	SecondFactorInvalidSession   = "SecondFactorInvalidSession"
+	SecondFactorBadResponse      = "SecondFactorBadResponse"
+	SecondFactorSuccess          = "SecondFactorSuccess"
+	SecondFactorFailed           = "SecondFactorFailed"
+	TokenNameRequired            = "TokenNameRequired"
+
+	U2FRegistrationFailed    = "U2FRegistrationFailed"
+	U2FRegistrationComplete  = "U2FRegistrationComplete"
+	NoU2FPending             = "NoU2FPending"
+	NoU2FTokenFound          = "NoU2FTokenFound"
+	RecoveryNoRequestPending = "RecoveryNoRequestPending"
+
+	// OAuth messages
+	OAuthInvalidClientName  = "OAuthInvalidClientName"
+	OAuthInvalidRedirect    = "OAuthInvalidRedirect"
+	OAuthNoAuthorizePending = "OAuthNoAuthorizePending"
+	OAuthNoTokenFound       = "OAuthNoTokenFound"
+	OAuthNoGrantedScopes    = "OAuthNoGrantedScopes"
 )
-
-// API result types
-const ResultOk string = "ok"
-const ResultError string = "error"
-
-// Common API response object
-type ApiResponse struct {
-	// Either "ok" indicating success or "error" indicating failure
-	Result string `json:"result"`
-	// Message corresponding to response status
-	Message string `json:"message"`
-}
-
-// API status message container
-// Represents all available API instances
-type ApiMessageContainer struct {
-	CreateUserSuccess        string
-	PasswordComplexityTooLow string
-	LoginSuccessful          string
-	LogoutSuccessful         string
-	ActivationSuccessful     string
-	UnlockSuccessful         string
-	PasswordUpdated          string
-	AlreadyAuthenticated     string
-	Unauthorized             string
-	InvalidToken             string
-	InternalError            string
-	SecondFactorRequired     string
-	U2FRegistrationFailed    string
-	U2FRegistrationComplete  string
-	NoU2FPending             string
-	NoU2FTokenFound          string
-	TokenNameRequired        string
-	NoOAuthPending           string
-	NoOAuthTokenFound        string
-	FormParsingError         string
-	DuplicateUserAccount     string
-}
-
-// Create API message structure for English responses
-// TODO: these structs should be loaded from the template directory
-var ApiMessageEn = ApiMessageContainer{
-	CreateUserSuccess:        "Created user account, check your emails for an activation token",
-	PasswordComplexityTooLow: "Password does not meet complexity requirements",
-	LoginSuccessful:          "Login successful",
-	LogoutSuccessful:         "Logout successful",
-	ActivationSuccessful:     "Account activation successful",
-	UnlockSuccessful:         "Account unlock successful",
-	PasswordUpdated:          "Password Updated",
-	AlreadyAuthenticated:     "Already logged in, please log out to change accounts",
-	Unauthorized:             "You must be logged in to view this page",
-	InvalidToken:             "Invalid token",
-	InternalError:            "Internal server error",
-	U2FRegistrationFailed:    "U2F Registration failed",
-	SecondFactorRequired:     "U2F Authentication required",
-	U2FRegistrationComplete:  "U2F Registration complete",
-	NoU2FPending:             "U2F no authentication pending",
-	NoU2FTokenFound:          "U2F matching u2f token found",
-	TokenNameRequired:        "U2F token name required",
-	NoOAuthPending:           "No OAuth authorization pending",
-	NoOAuthTokenFound:        "No OAuth Token Found",
-	FormParsingError:         "Error parsing submitted form",
-	DuplicateUserAccount:     "A user account with that username or email address already exists",
-}
-
-// Default locale for external use
-var DefaultLocale string = "en"
-
-// Fetch the APIMessageContainer for a given language to provide locale specific response messages
-func GetAPILocale(lang string) *ApiMessageContainer {
-	switch lang {
-	case "en":
-		return &ApiMessageEn
-	default:
-		log.Printf("API message unhandled request for locale: %s\n", lang)
-		return &ApiMessageEn
-	}
-}
-
-// API Response instances
-// TODO: deprecate these
-var ApiResponseLoginSuccess = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).LoginSuccessful}
-var ApiResponseLogoutSuccess = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).LogoutSuccessful}
-var ApiResponseActivationSuccessful = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).ActivationSuccessful}
-var ApiResponseUnlockSuccessful = ApiResponse{ResultOk, GetAPILocale(DefaultLocale).UnlockSuccessful}
-
-var ApiResponseUnauthorized = ApiResponse{ResultError, GetAPILocale(DefaultLocale).Unauthorized}
-var ApiResponseInvalidToken = ApiResponse{ResultError, GetAPILocale(DefaultLocale).InvalidToken}
-var ApiResponseInternalError = ApiResponse{ResultError, GetAPILocale(DefaultLocale).InternalError}

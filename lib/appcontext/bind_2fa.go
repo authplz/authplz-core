@@ -3,8 +3,8 @@ package appcontext
 import (
 	"log"
 
-	"github.com/gocraft/web"
 	"github.com/authplz/authplz-core/lib/api"
+	"github.com/gocraft/web"
 )
 
 // SecondFactorRequest is a request for 2fa
@@ -37,14 +37,14 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (str
 	request := c.session.Values[secondFactorRequestSessionKey]
 
 	if request == nil {
-		c.WriteApiResult(rw, api.ResultError, "No 2fa request session")
+		c.WriteAPIResult(rw, api.SecondFactorNoRequestSession)
 		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
 		return "", ""
 	}
 
 	secondFactorRequest, ok := c.session.Values[secondFactorRequestSessionKey].(SecondFactorRequest)
 	if !ok {
-		c.WriteApiResult(rw, api.ResultError, "Invalid 2fa request session")
+		c.WriteAPIResult(rw, api.SecondFactorInvalidSession)
 		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
 	}
 

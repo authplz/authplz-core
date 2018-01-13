@@ -17,11 +17,11 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
 	"github.com/pquerna/otp"
-	"github.com/authplz/authplz-core/lib/api"
-	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
 //"github.com/authplz/authplz-core/lib/api"
@@ -49,8 +49,8 @@ const (
 )
 
 // Session middleware to retrieve a totp session from a request
-func totpSessionMiddleware(ctx *totpAPICtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	totpSession, err := ctx.Global.SessionStore.Get(req.Request, totpSessionKey)
+func totpSessionMiddleware(c *totpAPICtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	totpSession, err := c.Global.SessionStore.Get(req.Request, totpSessionKey)
 	if err != nil {
 		log.Printf("TOTPSessionMiddlware: error fetching %s  (%s)", totpSessionKey, err)
 
@@ -59,11 +59,11 @@ func totpSessionMiddleware(ctx *totpAPICtx, rw web.ResponseWriter, req *web.Requ
 		totpSession.Save(req.Request, rw)
 
 		// Write error code
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 	// Bind session instance
-	ctx.totpSession = totpSession
+	c.totpSession = totpSession
 	next(rw, req)
 }
 
@@ -81,7 +81,7 @@ type RegisterChallenge struct {
 func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -96,7 +96,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	token, err := c.totpModule.CreateToken(c.GetUserID())
 	if err != nil {
 		log.Printf("TOTPEnrolGet: error creating token (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	img, err := token.Image(200, 200)
 	if err != nil {
 		log.Printf("TOTPEnrolGet: error creating token image (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 
@@ -126,21 +126,21 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	log.Println("TOTPEnrolGet: Fetched enrolment challenge")
 
 	// Return response
-	c.WriteJson(rw, &resp)
+	c.WriteJSON(rw, &resp)
 }
 
 // TOTPEnrolPost checks a totp code against the session stored TOTP token and enrols the token on success
 func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
 		return
 	}
 
 	// Fetch session variables
 	if c.totpSession.Values[totpRegisterTokenKey] == nil {
 		log.Printf("TOTPEnrolPost: missing session variables (%s)", totpRegisterTokenKey)
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
 	}
 
@@ -161,18 +161,18 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	valid, err := c.totpModule.ValidateRegistration(c.GetUserID(), keyName, token.Secret(), code)
 	if err != nil {
 		log.Printf("TOTPEnrolPost: error validating token registration (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
 
 	if !valid {
 		log.Printf("TOTPEnrolPost: validation failed with invalid token (%s)", err)
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorFailed)
 		return
 	}
 
 	log.Printf("TOTPEnrolPost: enrolled token for user %s", c.GetUserID())
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
 func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
@@ -181,7 +181,7 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
 		log.Printf("totp.TOTPAuthenticatePost No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
 	}
 
@@ -193,25 +193,26 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 	ok, err := c.totpModule.ValidateToken(userid, code)
 	if err != nil {
 		log.Printf("TOTPAuthenticatePost: error validating totp code (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 
 	if !ok {
 		log.Printf("TOTPAuthenticatePost: authentication failed for user %s\n", userid)
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.SecondFactorFailed)
 		return
 	}
 
 	log.Printf("TOTPAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
-	rw.WriteHeader(http.StatusOK)
+
+	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
 func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -219,14 +220,14 @@ func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
 	tokens, err := c.totpModule.ListTokens(c.GetUserID())
 	if err != nil {
 		log.Printf("Error fetching TOTP tokens %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 
 	// Write tokens out
-	c.WriteJson(rw, tokens)
+	c.WriteJSON(rw, tokens)
 }
 
 func (c *totpAPICtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
+	c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 }

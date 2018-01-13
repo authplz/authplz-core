@@ -119,8 +119,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 		Middleware(appcontext.BindContext(&server.ctx)).
 		//Middleware(web.LoggerMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
-		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
-		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
+		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
 
 	router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
 

@@ -35,7 +35,7 @@ func init() {
 	gob.Register(&TokenClaims{})
 }
 
-//TokenController constructor
+//NewTokenController constructor
 func NewTokenController(address string, hmacSecret string, storer Storer) *TokenController {
 	return &TokenController{address: address, hmacSecret: []byte(hmacSecret), storer: storer}
 }
@@ -62,6 +62,7 @@ func (tc *TokenController) buildSignedToken(userID, tokenID string, action api.T
 	return tokenString, err
 }
 
+// BuildToken builds a signed token for the given user id with a provided action and duration for use
 func (tc *TokenController) BuildToken(userID string, action api.TokenAction, duration time.Duration) (string, error) {
 
 	tokenID := uuid.NewV4().String()
@@ -105,7 +106,7 @@ func (tc *TokenController) ValidateToken(userID, tokenString string) (*api.Token
 	// Parse token
 	claims, err := tc.parseToken(tokenString)
 	if err != nil {
-		log.Println("TokenController.ValidateToken: Invalid or expired token (%s)", err)
+		log.Printf("TokenController.ValidateToken: Invalid or expired token (%s)", err)
 		return nil, err
 	}
 
@@ -146,7 +147,7 @@ func (tc *TokenController) SetUsed(tokenString string) error {
 	// Parse and validate
 	claims, err := tc.parseToken(tokenString)
 	if err != nil {
-		log.Println("TokenController.ValidateToken: Invalid or expired token (%s)", err)
+		log.Printf("TokenController.ValidateToken: Invalid or expired token (%s)", err)
 		return err
 	}
 

@@ -12,10 +12,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gocraft/web"
-	"github.com/gorilla/sessions"
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/appcontext"
+	"github.com/gocraft/web"
+	"github.com/gorilla/sessions"
 )
 
 // U2F API context storage
@@ -56,7 +56,7 @@ func (backupCodeModule *Controller) BindAPI(router *web.Router) {
 func (c *backupCodeAPICtx) backupCodesCreate(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
 		return
 	}
 
@@ -66,12 +66,12 @@ func (c *backupCodeAPICtx) backupCodesCreate(rw web.ResponseWriter, req *web.Req
 	codes, err := c.backupCodeModule.CreateCodes(c.GetUserID())
 	if err != nil {
 		log.Printf("backupCodeAuthenticatePost: error validating backupCode code (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
 
 	// Return response
-	c.WriteJson(rw, codes)
+	c.WriteJSON(rw, codes)
 }
 
 //backupCodeAuthenticatePost
@@ -81,7 +81,7 @@ func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req
 	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
 		log.Printf("backupCode.backupCodeAuthenticatePost No pending 2fa requests found")
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteAPIResult(rw, api.SecondFactorNoRequestSession)
 		return
 	}
 
@@ -93,25 +93,26 @@ func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req
 	ok, err := c.backupCodeModule.ValidateCode(userid, code)
 	if err != nil {
 		log.Printf("backupCodeAuthenticatePost: error validating backupCode code (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
 
 	if !ok {
 		log.Printf("backupCodeAuthenticatePost: authentication failed for user %s\n", userid)
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.SecondFactorFailed)
 		return
 	}
 
 	log.Printf("backupCodeAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
-	rw.WriteHeader(http.StatusOK)
+
+	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
 func (c *backupCodeAPICtx) backupCodeListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
 		return
 	}
 
@@ -119,14 +120,14 @@ func (c *backupCodeAPICtx) backupCodeListTokens(rw web.ResponseWriter, req *web.
 	codes, err := c.backupCodeModule.ListCodes(c.GetUserID())
 	if err != nil {
 		log.Printf("Error fetching backupCode tokens %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
 
 	// Write codes out
-	c.WriteJson(rw, codes)
+	c.WriteJSON(rw, codes)
 }
 
 func (c *backupCodeAPICtx) backupCodeRemoveToken(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusNotImplemented)
+	c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 }

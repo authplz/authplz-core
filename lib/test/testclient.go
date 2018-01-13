@@ -116,36 +116,32 @@ func (tc *TestClient) GetJSONWithParams(path string, statusCode int, v url.Value
 }
 
 // CheckApiResponse checks an API resonse matches the provded message
-func CheckApiResponse(status api.ApiResponse, result string, message string) error {
-	if status.Result != result {
-		return fmt.Errorf("Incorrect API result, expected: '%s' received: '%s' message: '%s'", result, status.Result, status.Message)
-	}
-
-	if message != "" && status.Message != message {
-		return fmt.Errorf("Incorrect API message, expected: '%s' received: '%s'", message, status.Message)
+func CheckApiResponse(status api.Response, code string) error {
+	if status.Code != code {
+		return fmt.Errorf("Incorrect API response code, expected: '%s' received: '%s'", code, status.Code)
 	}
 
 	return nil
 }
 
-func ParseAndCheckAPIResponse(resp *http.Response, result string, message string) error {
-	ar := api.ApiResponse{}
+func ParseAndCheckAPIResponse(resp *http.Response, code string) error {
+	ar := api.Response{}
 
 	err := ParseJson(resp, &ar)
 	if err != nil {
 		return err
 	}
 
-	return CheckApiResponse(ar, result, message)
+	return CheckApiResponse(ar, code)
 }
 
-func (tc *TestClient) GetAPIResponse(path string, statusCode int, result string, message string) error {
+func (tc *TestClient) GetAPIResponse(path string, statusCode int, code string) error {
 	resp, err := tc.Get(path, statusCode)
 	if err != nil {
 		return err
 	}
 
-	return ParseAndCheckAPIResponse(resp, result, message)
+	return ParseAndCheckAPIResponse(resp, code)
 }
 
 // Post JSON to an api endpoint

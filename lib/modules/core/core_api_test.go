@@ -69,7 +69,7 @@ func TestCore(t *testing.T) {
 
 	t.Run("Invalid account fails", func(t *testing.T) {
 		v := url.Values{}
-		v.Set("email", "Wrong Email")
+		v.Set("email", "wrong@email.com")
 		v.Set("password", test.FakePass)
 
 		client := test.NewTestClient("http://" + test.Address + "/api")

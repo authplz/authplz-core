@@ -58,11 +58,11 @@ func TestMain(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		resp, err := client.Get("/status", http.StatusOK)
+		resp, err := client.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -164,11 +164,11 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		resp, err := client2.Get("/status", http.StatusOK)
+		resp, err := client2.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -202,7 +202,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -222,7 +222,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -243,11 +243,11 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		resp, err := client2.Get("/status", http.StatusOK)
+		resp, err := client2.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 
@@ -286,11 +286,11 @@ func TestMain(t *testing.T) {
 		}
 
 		// Check user status
-		resp, err := client2.Get("/status", http.StatusOK)
+		resp, err := client2.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -324,7 +324,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 	})
@@ -363,7 +363,7 @@ func TestMain(t *testing.T) {
 			t.FailNow()
 		}
 
-		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).PasswordUpdated)
+		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -511,7 +511,7 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 			t.FailNow()
 		}
-		err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).U2FRegistrationComplete)
+		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -563,8 +563,14 @@ func TestMain(t *testing.T) {
 		v = url.Values{}
 		v.Set("code", code)
 		// Post registration response back
-		if _, err := client.PostForm("/totp/enrol", http.StatusOK, v); err != nil {
+		resp, err := client.PostForm("/totp/enrol", http.StatusOK, v)
+		if err != nil {
 			t.Error(err)
+		}
+		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
 		}
 
 		totpSecret = rc.Secret
@@ -592,7 +598,7 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})
@@ -631,11 +637,11 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err = test.ParseAndCheckAPIResponse(resp, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess); err != nil {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 
@@ -663,11 +669,15 @@ func TestMain(t *testing.T) {
 		// Post response and check login status
 		v = url.Values{}
 		v.Set("code", code)
-		if _, err := client2.PostForm("/totp/authenticate", http.StatusOK, v); err != nil {
+		resp, err := client2.PostForm("/totp/authenticate", http.StatusOK, v)
+		if err != nil {
+			t.Error(err)
+		}
+		if err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess); err != nil {
 			t.Error(err)
 		}
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.ResultOk, api.GetAPILocale(api.DefaultLocale).LoginSuccessful); err != nil {
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful); err != nil {
 			t.Error(err)
 		}
 
@@ -723,12 +733,12 @@ func TestMain(t *testing.T) {
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout
-		if _, err := client.Get("/logout", 200); err != nil {
+		if _, err := client.Get("/logout", http.StatusOK); err != nil {
 			t.Error(err)
 		}
 
 		// Check user status
-		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})

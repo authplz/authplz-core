@@ -10,9 +10,9 @@ import (
 
 import (
 	"github.com/asaskevich/govalidator"
-	"github.com/gocraft/web"
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/appcontext"
+	"github.com/gocraft/web"
 )
 
 // API context instance
@@ -40,7 +40,6 @@ func (userModule *Controller) BindAPI(router *web.Router) {
 	userRouter.Middleware(BindUserContext(userModule))
 
 	// Bind endpoints
-	userRouter.Get("/test", (*apiCtx).Test)
 	userRouter.Get("/status", (*apiCtx).Status)
 	userRouter.Post("/create", (*apiCtx).Create)
 	userRouter.Get("/account", (*apiCtx).AccountGet)
@@ -48,17 +47,12 @@ func (userModule *Controller) BindAPI(router *web.Router) {
 	userRouter.Post("/reset", (*apiCtx).ResetPost)
 }
 
-// Test endpoint
-func (c *apiCtx) Test(rw web.ResponseWriter, req *web.Request) {
-	c.WriteApiResult(rw, api.ResultOk, "Test Response")
-}
-
 // Get user login status
 func (c *apiCtx) Status(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().Unauthorized)
+		c.WriteUnauthorized(rw)
 	} else {
-		c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().LoginSuccessful)
+		c.WriteAPIResult(rw, api.LoginSuccessful)
 	}
 }
 
@@ -69,19 +63,19 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
 		log.Printf("Create: missing or invalid email (%s)", email)
-		c.WriteApiResult(rw, api.ResultError, "Missing or invalid email address field")
+		c.WriteAPIResult(rw, api.InvalidEmail)
 		return
 	}
 	username := strings.ToLower(req.FormValue("username"))
 	if !usernameExp.MatchString(username) {
 		log.Printf("Create: missing or invalid username (%s)", username)
-		c.WriteApiResult(rw, api.ResultError, "Missing or invalid username field")
+		c.WriteAPIResult(rw, api.InvalidUsername)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
 		log.Printf("Create: password parameter required")
-		c.WriteApiResult(rw, api.ResultError, "Missing or invalid password field")
+		c.WriteAPIResult(rw, api.MissingPassword)
 		return
 	}
 
@@ -90,32 +84,32 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		log.Printf("Create: user creation failed with %s", e)
 
 		if e == ErrorDuplicateAccount {
-			c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().DuplicateUserAccount)
+			c.WriteAPIResult(rw, api.DuplicateUserAccount)
 			return
 		} else if e == ErrorPasswordTooShort {
-			c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().PasswordComplexityTooLow)
+			c.WriteAPIResult(rw, api.PasswordComplexityTooLow)
 			return
 		}
 
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
 	if u == nil {
 		log.Printf("Create: user creation failed")
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
 	log.Println("Create: Create OK")
 
-	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().CreateUserSuccess)
+	c.WriteAPIResult(rw, api.CreateUserSuccess)
 }
 
 // Fetch a user object
 func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetAPILocale().Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 
 	}
@@ -123,17 +117,17 @@ func (c *apiCtx) AccountGet(rw web.ResponseWriter, req *web.Request) {
 	u, err := c.um.GetUser(c.GetUserID())
 	if err != nil {
 		log.Print(err)
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteJson(rw, u)
+	c.WriteJSON(rw, u)
 }
 
 // Update user object
 func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, c.GetAPILocale().Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -153,11 +147,11 @@ func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	_, err := c.um.UpdatePassword(c.GetUserID(), oldPass, newPass)
 	if err != nil {
 		log.Print(err)
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().PasswordUpdated)
+	c.WriteAPIResult(rw, api.PasswordUpdated)
 }
 
 // ResetPost handles password reset posts
@@ -193,5 +187,5 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write OK response
-	c.WriteApiResult(rw, api.ResultOk, c.GetAPILocale().PasswordUpdated)
+	c.WriteAPIResult(rw, api.PasswordUpdated)
 }
