@@ -10,7 +10,7 @@ This provides an alternative to hosted solutions such as [StormPath](https://sto
 For a well supported self hosted alternative for Single Sign On (SSO) you may wish to investigate [gluu](https://www.gluu.org), as well as wikipedia's [List of SSO implementations](https://en.wikipedia.org/wiki/List_of_single_sign-on_implementations).
 If you already have user management infrastructure, you may be interested in [coreos/dex](https://github.com/coreos/dex) as an OAuth extension.
 
-If you would like to be involved with this project, please first read (and agree to abide by) the [Code of Conduct](https://github.com/ryankurte/authplz/blob/master/CONDUCT.md), then go ahead and join the chat on [Gitter](https://gitter.im/authplz/Lobby) or [open an issue](https://github.com/ryankurte/authplz/issues/new).
+If you would like to be involved with this project, please first read (and agree to abide by) the [Code of Conduct](https://github.com/authplz/authplz-core/blob/master/CONDUCT.md), then go ahead and join the chat on [Gitter](https://gitter.im/authplz/Lobby) or [open an issue](https://github.com/authplz/authplz-core/issues/new).
 
 ## Goals
 
@@ -24,9 +24,9 @@ If you would like to be involved with this project, please first read (and agree
 
 Early WIP. Backend components fairly functional (but by no means feature complete), frontend components in desparate need of work. Please don't use this unless you know what you're getting into...
 
-[![GitHub tag](https://img.shields.io/github/tag/ryankurte/authplz.svg)](https://github.com/ryankurte/authplz)
-[![Build Status](https://travis-ci.org/ryankurte/authplz.svg)](https://travis-ci.org/ryankurte/authplz/branches)
-[![Documentation](https://img.shields.io/badge/docs-godoc-blue.svg)](https://godoc.org/github.com/ryankurte/authplz)
+[![GitHub tag](https://img.shields.io/github/tag/authplz/authplz-core.svg)](https://github.com/authplz/authplz-core)
+[![Build Status](https://travis-ci.org/authplz/authplz-core.svg)](https://travis-ci.org/authplz/authplz-core/branches)
+[![Documentation](https://img.shields.io/badge/docs-godoc-blue.svg)](https://godoc.org/github.com/authplz/authplz-core)
 [![Chat](https://img.shields.io/gitter/room/gitterHQ/gitter.svg)](https://gitter.im/authplz/Lobby)
 
 ### Tasks
@@ -39,7 +39,7 @@ Check out [design.md](design.md) for more.
 
 ## Usage
 
-Frontend components and templates are now in a [ryankurte/authplz-ui](https://github.com/ryankurte/authplz-ui) project (and have been grossly neglected).
+Frontend components and templates are now in a [authplz/authplz-ui](https://github.com/authplz/authplz-ui) project (and have been grossly neglected).
 Configuration is now via a yaml [configuration file](authplz.yml) which supports explicit loading of environmental variables and explains all the required config options. Use `./authplz --help` to display options to specify the config file or environment prefix.
 
 ### Dependencies
@@ -54,10 +54,10 @@ If you have contributor access to the repository, changes should be created in b
 
 All features must be implemented with tests to demonstrate the correct and incorrect behaviours of the feature.
 
-1. `go get github.com/ryankurte/authplz.git` to fetch the core repo into your GOPATH
-2. `cd $GOPATH/src/github.com/ryankurte/authplz` to switch to the repo
-3. (For out of tree development) `git remote add upstream github.com/ryankurte/authplz.git` to add the root as an upstream
-4. (For out of tree development) `git remote set-url github.com/YOURNAME/authplz.git` to set the master to your fork
+1. `go get github.com/authplz/authplz-core.git` to fetch the core repo into your GOPATH
+2. `cd $GOPATH/src/github.com/authplz/authplz-core` to switch to the repo
+3. (For out of tree development) `git remote add upstream github.com/authplz/authplz-core.git` to add the root as an upstream
+4. (For out of tree development) `git remote set-url github.com/YOURNAME/authplz-core.git` to set the master to your fork
 5. Run `./gencert.sh` to generate self signed TLS certificates
 6. Run `make build-env` and `make start-env` to build and run dependent services (eg. the database)
 7. `git checkout -b "feature/my-new-feature"` to create a new branch

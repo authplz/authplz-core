@@ -11,12 +11,11 @@ bind-port: 9000
 # External application address (required for reverse proxying)
 external-address: https://localhost:3000
 
-# Database connection
+# Database connection string
 database: "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
 
 # Allowed origins for API requests
-# This is automatically set to bind-address:bind-port or external-address if set
-# but can be overridden here if required
+# This is automatically set to bind-address:bind-port or external-address if set but can be overridden here if required
 allowed-origins:
   - https://localhost:3000
 
