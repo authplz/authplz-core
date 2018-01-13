@@ -17,6 +17,10 @@ func TestMailController(t *testing.T) {
 	options["key"] = os.Getenv("AUTHPLZ_MG_APIKEY")
 	options["secret"] = os.Getenv("AUTHPLZ_MG_PRIKEY")
 
+	if _, ok := options["domain"]; !ok {
+		t.SkipNow()
+	}
+
 	testAddress := "test@kurte.nz"
 
 	// Run tests
