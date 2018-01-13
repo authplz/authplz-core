@@ -8,34 +8,34 @@ import (
 
 func TestMailController(t *testing.T) {
 
-	var driver *MailgunDriver
-
 	options := make(map[string]string)
 
+	// Fetch options from environment
 	options["domain"] = os.Getenv("AUTHPLZ_MG_DOMAIN")
 	options["address"] = os.Getenv("AUTHPLZ_MG_ADDRESS")
 	options["key"] = os.Getenv("AUTHPLZ_MG_APIKEY")
 	options["secret"] = os.Getenv("AUTHPLZ_MG_PRIKEY")
 
-	if _, ok := options["domain"]; !ok {
+	// Skip tests if domain is not valid
+	if v, ok := options["domain"]; !ok || v == "" {
 		t.SkipNow()
+		return
 	}
 
 	testAddress := "test@kurte.nz"
 
-	// Run tests
-	t.Run("Create mail controller", func(t *testing.T) {
-		d, err := NewMailgunDriver(options)
-		if err != nil {
-			fmt.Println(err)
-			t.Error(err)
-		}
-		d.SetTestMode(true)
-		driver = d
-	})
+	// Create driver for test use
+	d, err := NewMailgunDriver(options)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
+	d.SetTestMode(true)
+
+	// Run tests
 	t.Run("Can send emails", func(t *testing.T) {
-		err := driver.Send(testAddress, "test subject", "test body")
+		err := d.Send(testAddress, "test subject", "test body")
 		if err != nil {
 			fmt.Println(err)
 			t.Error(err)
