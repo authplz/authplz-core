@@ -2,7 +2,7 @@
  * OAuth Module Controller
  * This manages OAuth registration/alteration/revocation
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -22,7 +22,7 @@ import (
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/ryankurte/authplz/lib/config"
+	"github.com/authplz/authplz-core/lib/config"
 )
 
 const (

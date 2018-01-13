@@ -10,7 +10,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 func init() {

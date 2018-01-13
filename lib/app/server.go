@@ -10,22 +10,22 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/appcontext"
-	"github.com/ryankurte/authplz/lib/config"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/config"
 
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/controllers/mailer"
-	"github.com/ryankurte/authplz/lib/controllers/token"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/controllers/mailer"
+	"github.com/authplz/authplz-core/lib/controllers/token"
 
-	"github.com/ryankurte/authplz/lib/modules/2fa/backup"
-	"github.com/ryankurte/authplz/lib/modules/2fa/totp"
-	"github.com/ryankurte/authplz/lib/modules/2fa/u2f"
+	"github.com/authplz/authplz-core/lib/modules/2fa/backup"
+	"github.com/authplz/authplz-core/lib/modules/2fa/totp"
+	"github.com/authplz/authplz-core/lib/modules/2fa/u2f"
 
-	"github.com/ryankurte/authplz/lib/modules/audit"
-	"github.com/ryankurte/authplz/lib/modules/core"
-	"github.com/ryankurte/authplz/lib/modules/oauth"
-	"github.com/ryankurte/authplz/lib/modules/user"
+	"github.com/authplz/authplz-core/lib/modules/audit"
+	"github.com/authplz/authplz-core/lib/modules/core"
+	"github.com/authplz/authplz-core/lib/modules/oauth"
+	"github.com/authplz/authplz-core/lib/modules/user"
 
 	"github.com/ryankurte/go-async"
 )

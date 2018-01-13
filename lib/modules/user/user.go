@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/events"
 	"golang.org/x/crypto/bcrypt"
 )
 

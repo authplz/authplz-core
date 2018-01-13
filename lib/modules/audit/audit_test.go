@@ -6,9 +6,9 @@ import (
 )
 
 import (
-	"github.com/ryankurte/authplz/lib/config"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/config"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/events"
 	"github.com/ryankurte/go-async"
 )
 

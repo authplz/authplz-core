@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/modules/user"
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/modules/user"
+	"github.com/authplz/authplz-core/lib/test"
 )
 
 func TestCore(t *testing.T) {

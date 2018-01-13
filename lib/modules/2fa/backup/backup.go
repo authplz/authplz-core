@@ -2,7 +2,7 @@
  * (2fa) Backup Code Module Controller
  * This defines the controller for the 2fa Backup Code module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/events"
 
 	"github.com/NebulousLabs/entropy-mnemonics"
 	"golang.org/x/crypto/bcrypt"

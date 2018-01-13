@@ -2,7 +2,7 @@
  * (2fa) Backup Code Module tests
  * This defines the tests for the 2fa Backup Code module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -14,9 +14,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ryankurte/authplz/lib/config"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/config"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/test"
 )
 
 func TestBackupModule(t *testing.T) {

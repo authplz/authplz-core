@@ -3,9 +3,9 @@ package u2f
 import (
 	"testing"
 
-	"github.com/ryankurte/authplz/lib/config"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/config"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/test"
 
 	"github.com/ryankurte/go-u2f"
 )

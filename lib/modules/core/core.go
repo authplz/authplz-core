@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/events"
 )
 
 // Controller core module instance storage

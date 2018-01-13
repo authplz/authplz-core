@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/controllers/token"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/controllers/token"
 
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/test"
 )
 
 const (

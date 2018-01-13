@@ -2,7 +2,7 @@
  * TOTP Module Controller
  * This defines the TOTP module controller
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -12,7 +12,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/events"
 
 	"github.com/gocraft/web"
 	"github.com/pquerna/otp"

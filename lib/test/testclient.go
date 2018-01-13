@@ -8,7 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // TestClient instance

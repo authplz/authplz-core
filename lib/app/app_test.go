@@ -11,11 +11,11 @@ import (
 	"github.com/ryankurte/go-u2f"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/config"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/modules/2fa/totp"
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/config"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/modules/2fa/totp"
+	"github.com/authplz/authplz-core/lib/test"
 )
 
 func TestMain(t *testing.T) {

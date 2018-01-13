@@ -3,7 +3,7 @@
  * This provides a 2fa interface for binding into the core module as well as helpers to
  * create and bind a router to the server instance.
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -13,7 +13,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/events"
 
 	u2f "github.com/ryankurte/go-u2f"
 )

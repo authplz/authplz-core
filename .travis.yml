@@ -22,5 +22,5 @@ deploy:
     secure: qdAyobnKh+eyJ+L3t+sQw2ZxjxlObwfOY/b5/PeT4Lix0f2+Wl7HlV4xhZZ8qXW6kvhac4L+rGytEo3RdVJtLSHdrG5wfPsbsOq3aWNTkWGmFTxwdgvY+n65PRYFRsjPuhtqfJ9B87ArjZIlC77y35+98g5b1qGHh4a70JXVa7cVjY/t0CulkbM7keGjzaR/ft7mBmMVtfN+8IkZY2PE4Z8p5hAyfG7CuIaLXRwLwNaj/M9dA22GxhwiX8As/UxpzzfuUGOsFZU6hRd828gra3DYQsDihyT4KhBRMsVlyqp9DKzj+oTdNyi+nWi0EOjQWQ/II5dvYFGgX3arHrbb7B0LUVNceQhdFala7Fw3a2b0ZzxjJxXlvKpuKA10aLgsjPkbDQ+fsearDPg9Xji0tjjVc/XTVcv1UTmLOog4MDrpRtGbyC2E/7BSZTj2QT88YURZgSzYb12+SMkjmbmGN608eR5EC1Cv3vr64P+saKdhFGiteov6wAzbw+hUyGws0jMbZYV/76TmsrxeleX1wQ0H3CCuZXPm6HOSWTuCXtlRBUZl7yuZ10YbLJfBWAE0fkko7fwXg3HrToEbCC5rxiAV72ygEP7MjvjC2yExuDnyWgB3iFaDWPzwksx0Ftu6GFpYYwsDF8l8nE0XBc5oT8gkHPHyHGdqDdh9iaASC4w=
   file: build/*
   on:
-    repo: ryankurte/authplz
+    repo: authplz/authplz-core
     tag: true

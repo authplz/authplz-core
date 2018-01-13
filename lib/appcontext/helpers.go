@@ -2,7 +2,7 @@ package appcontext
 
 import (
 	"encoding/json"
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 	"log"
 	"net/http"
 )

@@ -2,7 +2,7 @@
  * U2F / Fido Module API implementation
  * This provides U2F endpoints for device registration, authentication and management
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -21,8 +21,8 @@ import (
 	"github.com/gocraft/web"
 	"github.com/ryankurte/go-u2f"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
 const (

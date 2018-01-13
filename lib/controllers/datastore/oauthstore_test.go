@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ryankurte/authplz/lib/config"
+	"github.com/authplz/authplz-core/lib/config"
 
-	"github.com/ryankurte/authplz/lib/controllers/datastore/oauth2"
+	"github.com/authplz/authplz-core/lib/controllers/datastore/oauth2"
 )
 
 func TestOauthstore(t *testing.T) {

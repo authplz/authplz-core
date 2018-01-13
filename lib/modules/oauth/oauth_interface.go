@@ -2,7 +2,7 @@
  * OAuth Module Interfaces
  * Defines interfaces required by the OAuth module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 

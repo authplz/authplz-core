@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/ryankurte/authplz/lib/app"
-	"github.com/ryankurte/authplz/lib/config"
+	"github.com/authplz/authplz-core/lib/app"
+	"github.com/authplz/authplz-core/lib/config"
 )
 
 func main() {

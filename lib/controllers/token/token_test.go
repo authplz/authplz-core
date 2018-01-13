@@ -8,8 +8,8 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
 )
 
 type FakeActionTokenStore struct {

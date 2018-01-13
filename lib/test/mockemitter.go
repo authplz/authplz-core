@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/ryankurte/authplz/lib/events"
+	"github.com/authplz/authplz-core/lib/events"
 )
 
 type MockEventEmitter struct {

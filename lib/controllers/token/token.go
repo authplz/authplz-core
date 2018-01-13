@@ -12,7 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/satori/go.uuid"
 
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // Custom claims object

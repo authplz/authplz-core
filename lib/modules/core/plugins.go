@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // BindActionHandler Binds a token action handler instance to the core module

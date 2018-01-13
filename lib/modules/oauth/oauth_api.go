@@ -2,7 +2,7 @@
  * OAuth Module API
  * Provides endpoints for the OAuth module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -24,8 +24,8 @@ import (
 	"github.com/pkg/errors"
 
 	"fmt"
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
 // APICtx API context instance

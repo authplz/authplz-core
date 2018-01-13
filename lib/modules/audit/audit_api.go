@@ -7,7 +7,7 @@ import (
 
 import (
 	"github.com/gocraft/web"
-	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
 // APICtx API context instance

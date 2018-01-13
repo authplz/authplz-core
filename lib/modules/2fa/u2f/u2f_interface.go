@@ -2,7 +2,7 @@
  * U2F / Fido Module API interfaces
  * This defines the interfaces required to use the u2f module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 

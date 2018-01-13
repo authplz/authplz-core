@@ -2,7 +2,7 @@
  * OAuth Module Session Definitions
  * This session object is used internally to transfer user and expiry information to the storage providers
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 package oauth

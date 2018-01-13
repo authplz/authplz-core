@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/gocraft/web"
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 const (

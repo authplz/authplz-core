@@ -11,8 +11,8 @@ import (
 import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gocraft/web"
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
 // API context instance

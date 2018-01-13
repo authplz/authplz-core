@@ -3,7 +3,7 @@ package core
 import (
 	"log"
 
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // SecondFactorCompleted handles completion of a 2fa provider

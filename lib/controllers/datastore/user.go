@@ -11,7 +11,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 
-	"github.com/ryankurte/authplz/lib/controllers/datastore/oauth2"
+	"github.com/authplz/authplz-core/lib/controllers/datastore/oauth2"
 )
 
 var ErrInvalidQuery = errors.New("Invalid DB Query argument")

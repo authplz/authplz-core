@@ -3,7 +3,7 @@ package appcontext
 import (
 	"github.com/gocraft/web"
 
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // GetLocaleMiddleware Middleware to grab locale query string or cookies for use in API responses

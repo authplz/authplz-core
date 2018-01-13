@@ -55,7 +55,7 @@ checks: format lint coverage
 # Container control
 
 docker:
-	docker build -t ryankurte/authplz .
+	docker build -t authplz/authplz-core .
 
 # Build containerized development environment
 build-env: clean-env

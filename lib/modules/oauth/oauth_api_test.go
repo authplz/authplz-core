@@ -2,7 +2,7 @@
  * OAuth Module API Tests
  * Tests the functionality of the OAuth API
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -25,11 +25,11 @@ import (
 	"github.com/ory/fosite"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ryankurte/authplz/lib/config"
-	"github.com/ryankurte/authplz/lib/controllers/datastore"
-	"github.com/ryankurte/authplz/lib/modules/core"
-	"github.com/ryankurte/authplz/lib/modules/user"
-	"github.com/ryankurte/authplz/lib/test"
+	"github.com/authplz/authplz-core/lib/config"
+	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/modules/core"
+	"github.com/authplz/authplz-core/lib/modules/user"
+	"github.com/authplz/authplz-core/lib/test"
 )
 
 type OauthError struct {

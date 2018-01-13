@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ryankurte/authplz/lib/config"
+	"github.com/authplz/authplz-core/lib/config"
 )
 
 func TestDatastore(t *testing.T) {

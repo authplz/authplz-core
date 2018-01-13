@@ -1,4 +1,4 @@
-package: github.com/ryankurte/authplz
+package: github.com/authplz/authplz-core
 import:
 - package: github.com/NebulousLabs/entropy-mnemonics
 - package: github.com/asaskevich/govalidator

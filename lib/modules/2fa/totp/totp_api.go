@@ -2,7 +2,7 @@
  * TOTP Module API
  * This defines the API methods bound to the TOTP module
  *
- * AuthPlz Project (https://github.com/ryankurte/AuthPlz)
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 
@@ -20,11 +20,11 @@ import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
 	"github.com/pquerna/otp"
-	"github.com/ryankurte/authplz/lib/api"
-	"github.com/ryankurte/authplz/lib/appcontext"
+	"github.com/authplz/authplz-core/lib/api"
+	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
-//"github.com/ryankurte/authplz/lib/api"
+//"github.com/authplz/authplz-core/lib/api"
 
 // U2F API context storage
 type totpAPICtx struct {

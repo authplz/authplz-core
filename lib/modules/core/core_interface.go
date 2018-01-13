@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/ryankurte/authplz/lib/api"
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 // LoginProvider Interface for a user control module

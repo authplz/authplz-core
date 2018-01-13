@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/ryankurte/authplz/lib/controllers/datastore/oauth2"
+	"github.com/authplz/authplz-core/lib/controllers/datastore/oauth2"
 )
 
 var ErrUserNotFound = errors.New("User account not found")
