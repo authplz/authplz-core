@@ -17,6 +17,7 @@ database: "host=localhost user=postgres dbname=postgres sslmode=disable password
 # Allowed origins for API requests
 # This is automatically set to bind-address:bind-port or external-address if set but can be overridden here if required
 allowed-origins:
+  - https://authplz.herokuapp.com
   - https://localhost:3000
 
 # Secrets
