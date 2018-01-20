@@ -23,7 +23,6 @@ import (
 	"github.com/ory/fosite"
 	"github.com/pkg/errors"
 
-	"fmt"
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/appcontext"
 )
@@ -86,7 +85,7 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -94,29 +93,31 @@ func (c *APICtx) ClientsGet(rw web.ResponseWriter, req *web.Request) {
 
 	clients, err := c.oc.GetClients(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth clients")
+		log.Printf("oauth.CliensGet error fetching oauth clients %s", err)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteJson(rw, clients)
+	c.WriteJSON(rw, clients)
 }
 
 // OptionsGet fetch OAuth client options
 func (c *APICtx) OptionsGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
 	// TODO: isAdmin filter here
 	options, err := c.oc.GetOptions(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth options")
+		log.Printf("oauth.CliensGet error error fetching OAuth options %s", err)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteJson(rw, options)
+	c.WriteJSON(rw, options)
 }
 
 // ClientReq is a client request object used to create an OAuth client
@@ -135,7 +136,7 @@ var validResponses = []string{"code", "token"}
 func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -144,20 +145,21 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 	defer req.Body.Close()
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&clientReq); err != nil {
-		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.DecodingFailed)
+		return
 	}
 
 	// Validate name
 	if !clientNameExp.MatchString(clientReq.Name) {
-		message := fmt.Sprintf("Invalid client name %s", clientReq.Name)
-		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, message)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthInvalidClientName)
+		return
 	}
 
 	// Validate request URLs
 	for _, url := range clientReq.Redirects {
 		if !govalidator.IsURL(url) {
-			message := fmt.Sprintf("Invalid redirect URL: %s", url)
-			c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, message)
+			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthInvalidRedirect)
+			return
 		}
 	}
 
@@ -166,11 +168,12 @@ func (c *APICtx) ClientsPost(rw web.ResponseWriter, req *web.Request) {
 	// Create client instance
 	client, err := c.oc.CreateClient(c.GetUserID(), clientReq.Name, clientReq.Scopes, clientReq.Redirects, clientReq.Grants, clientReq.Responses, true)
 	if err != nil {
-		c.WriteApiResultWithCode(rw, http.StatusInternalServerError, api.ResultError, err.Error())
+		log.Printf("oauth.ClientsPost error creating client: %s", err)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteJson(rw, client)
+	c.WriteJSON(rw, client)
 }
 
 // AuthorizeRequestGet External OAuth authorization endpoint
@@ -217,13 +220,13 @@ type AuthorizationRequest struct {
 func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
 	// Fetch OAuth Authorization Request from session
 	if c.GetSession().Values["oauth"] == nil {
-		c.WriteApiResult(rw, api.ResultError, api.ApiMessageEn.NoOAuthPending)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoAuthorizePending)
 		return
 	}
 	ar := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
@@ -240,7 +243,7 @@ func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Write back to user
-	c.WriteJson(rw, &resp)
+	c.WriteJSON(rw, &resp)
 }
 
 // AuthorizeConfirm authorization confirmation object
@@ -256,13 +259,13 @@ type AuthorizeConfirm struct {
 func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
 	// Fetch authorization request from session
 	if c.GetSession().Values["oauth"] == nil {
-		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, api.ApiMessageEn.NoOAuthPending)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoAuthorizePending)
 		return
 	}
 
@@ -270,12 +273,12 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	defer req.Body.Close()
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&authorizeConfirm); err != nil {
-		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Error decoding AuthorizeConfirm object")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.DecodingFailed)
 		return
 	}
 
 	if len(authorizeConfirm.GrantedScopes) == 0 {
-		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "No granted scopes provided")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoGrantedScopes)
 		return
 	}
 
@@ -351,16 +354,16 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	token, err := c.oc.GetAccessTokenInfo(sig)
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, err.Error())
+		log.Printf("OauthAPI.AccessTokenInfoGet GetAccessTokenInfo error: %s", err)
+		c.WriteInternalError(rw)
 		return
 	}
-
 	if token == nil {
-		c.WriteApiResult(rw, api.ResultError, c.GetAPILocale().NoOAuthTokenFound)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoTokenFound)
 		return
 	}
 
-	c.WriteJson(rw, token)
+	c.WriteJSON(rw, token)
 }
 
 // TokenPost Uses an authorization to fetch an access token
@@ -381,7 +384,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Create access request
 	ar, err := c.oc.OAuth2.NewAccessRequest(ctx, req.Request, NewSessionWrap(&session))
 	if err != nil {
-		log.Printf("oauth.TokenPost NewAccessRequest error: %s", err)
+		log.Printf("OauthAPI.TokenPost NewAccessRequest error: %s", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
@@ -405,7 +408,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	// Build response
 	response, err := c.oc.OAuth2.NewAccessResponse(ctx, ar)
 	if err != nil {
-		log.Printf("oauth.TokenPost NewAccessResponse error: %s", err)
+		log.Printf("OauthAPI.TokenPost NewAccessResponse error: %s", err)
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
@@ -418,17 +421,18 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 func (c *APICtx) SessionsInfoGet(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
 	sessions, err := c.oc.GetUserSessions(c.GetUserID())
 	if err != nil {
-		c.WriteApiResult(rw, api.ResultError, "Internal server error fetching OAuth sessions")
+		log.Printf("OauthAPI.SessionsInfoGet GetUserSessions error: %s", err)
+		c.WriteInternalError(rw)
 		return
 	}
 
-	c.WriteJson(rw, sessions)
+	c.WriteJSON(rw, sessions)
 }
 
 // TestGet test endpoint

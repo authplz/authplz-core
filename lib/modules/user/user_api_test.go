@@ -4,9 +4,7 @@ import (
 	"log"
 	"net/http"
 	"testing"
-)
 
-import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
@@ -46,8 +44,7 @@ func TestUserApi(t *testing.T) {
 		//Middleware(web.LoggerMiddleware).
 		//Middleware(web.ShowErrorsMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
-		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware).
-		Middleware((*appcontext.AuthPlzCtx).GetLocaleMiddleware)
+		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
 
 	userModule.BindAPI(router)
 
@@ -65,7 +62,7 @@ func TestUserApi(t *testing.T) {
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {
-		if err := client.GetAPIResponse("/status", http.StatusOK, api.ResultError, api.GetAPILocale(api.DefaultLocale).Unauthorized); err != nil {
+		if err := client.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized); err != nil {
 			t.Error(err)
 		}
 	})

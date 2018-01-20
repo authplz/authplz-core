@@ -58,11 +58,11 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		tokenString = req.URL.Query().Get("token")
 	}
 	if tokenString == "" {
-		c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Action endpoint requires token in query string")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.ActionMissing)
 		return
 	}
 
-	log.Printf("Received activation token!")
+	log.Printf("core.Action Received activation token")
 
 	// If the user isn't logged in
 	if c.GetUserID() == "" {
@@ -81,7 +81,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 	} else {
 		//TODO: handle any active-user tokens here
-		c.WriteApiResultWithCode(rw, http.StatusNotImplemented, api.ResultError, "Action endpoint not yet implemented for logged in users")
+		c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 	}
 }
 
@@ -91,19 +91,19 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Missing or invalid email argument")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidEmail)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Missing password argument")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 
 	// Check user is not already logged in
 	if c.GetUserID() != "" {
 		log.Printf("Core.Login: user already authenticated (%s)\n", c.GetUserID())
-		c.WriteApiResult(rw, api.ResultOk, "Already logged in")
+		c.WriteAPIResult(rw, api.AlreadyAuthenticated)
 		return
 	}
 
@@ -114,11 +114,11 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		err := c.cm.PostLoginFailure(u)
 		if err != nil {
 			log.Printf("Core.Login: PostLoginFailure error (%s)\n", err)
-			c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+			c.WriteInternalError(rw)
 			return
 		}
 
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+		c.WriteInternalError(rw)
 		log.Printf("Core.Login: user controller error %s\n", e)
 		return
 	}
@@ -126,7 +126,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Reject invalid credentials
 	if !loginOk {
 		log.Printf("Core.Login: invalid credentials\n")
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Incorrect email or password")
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -135,7 +135,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	user, castOk := u.(UserInterface)
 	if !loginOk || !castOk {
 		log.Println("Core.Login Failure: user account not found")
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Incorrect email or password")
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -148,18 +148,18 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		// Handle token and call require action
 		tokenOk, err := c.cm.HandleToken(user.GetExtID(), user, tokenString)
 		if err != nil {
-			c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+			c.WriteInternalError(rw)
 			return
 		}
 		if !tokenOk {
-			c.WriteApiResultWithCode(rw, http.StatusBadRequest, api.ResultError, "Invalid action token")
+			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidToken)
 			return
 		}
 
 		// Reload login state
 		loginOk, u, e = c.cm.userControl.Login(email, password)
 		if e != nil {
-			c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+			c.WriteInternalError(rw)
 			log.Printf("Core.Login: user controller error %s\n", e)
 			return
 		}
@@ -170,12 +170,12 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	preLoginOk, err := c.cm.PreLogin(u)
 	if err != nil {
 		log.Printf("Core.Login: PreLogin error (%s)\n", err)
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+		c.WriteInternalError(rw)
 		return
 	}
 	if !preLoginOk {
 		log.Printf("Core.Login: PreLogin blocked login\n")
-		c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Login blocked, check you're emails for an unlock link")
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.AccountLocked)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		err := c.cm.PostLoginSuccess(u)
 		if err != nil {
 			log.Printf("Core.Login: PostLoginSuccess error (%s)\n", err)
-			c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+			c.WriteInternalError(rw)
 			return
 		}
 
@@ -215,13 +215,13 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		c.LoginUser(user.GetExtID(), rw, req)
 
 		rw.WriteHeader(http.StatusOK)
-		c.WriteApiResult(rw, api.ResultOk, "Logged in successfully")
+		c.WriteAPIResult(rw, api.LoginSuccessful)
 		return
 	}
 
 	// Should be impossible to hit this
 	log.Printf("Core.Login: Login failed (unknown)\n")
-	c.WriteApiResultWithCode(rw, http.StatusUnauthorized, api.ResultError, "Internal server error")
+	c.WriteInternalError(rw)
 }
 
 // Logout Endpoint ends a user session

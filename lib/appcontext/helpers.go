@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// WriteJson Helper to write objects out as JSON
-func (c *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
+// WriteJSON Helper to write objects out as JSON
+func (c *AuthPlzCtx) WriteJSON(w http.ResponseWriter, i interface{}) {
 	js, err := json.Marshal(i)
 	if err != nil {
 		log.Print(err)
@@ -20,14 +20,15 @@ func (c *AuthPlzCtx) WriteJson(w http.ResponseWriter, i interface{}) {
 	w.Write(js)
 }
 
-// WriteApiResult Helper to write API results messages
-func (c *AuthPlzCtx) WriteApiResult(w http.ResponseWriter, result string, message string) {
-	apiResp := api.ApiResponse{Result: result, Message: message}
-	c.WriteJson(w, apiResp)
+// WriteAPIResult Helper to write API result messages
+func (c *AuthPlzCtx) WriteAPIResult(w http.ResponseWriter, code string) {
+	apiResp := api.Response{Code: code}
+	c.WriteJSON(w, apiResp)
 }
 
-func (c *AuthPlzCtx) WriteApiResultWithCode(w http.ResponseWriter, status int, result string, message string) {
-	apiResp := api.ApiResponse{Result: result, Message: message}
+// WriteAPIResultWithCode Helper to write API result messsages while setting the HTTP response code
+func (c *AuthPlzCtx) WriteAPIResultWithCode(w http.ResponseWriter, status int, code string) {
+	apiResp := api.Response{Code: code}
 
 	js, err := json.Marshal(&apiResp)
 	if err != nil {
@@ -40,4 +41,14 @@ func (c *AuthPlzCtx) WriteApiResultWithCode(w http.ResponseWriter, status int, r
 	w.WriteHeader(status)
 
 	w.Write(js)
+}
+
+// WriteUnauthorized helper to write unauthorized status and message
+func (c *AuthPlzCtx) WriteUnauthorized(w http.ResponseWriter) {
+	c.WriteAPIResultWithCode(w, http.StatusUnauthorized, api.Unauthorized)
+}
+
+// WriteInternalError helper to write internal error status and message
+func (c *AuthPlzCtx) WriteInternalError(w http.ResponseWriter) {
+	c.WriteAPIResultWithCode(w, http.StatusInternalServerError, api.InternalError)
 }

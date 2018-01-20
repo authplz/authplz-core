@@ -6,8 +6,8 @@ import (
 )
 
 import (
-	"github.com/gocraft/web"
 	"github.com/authplz/authplz-core/lib/appcontext"
+	"github.com/gocraft/web"
 )
 
 // APICtx API context instance
@@ -53,5 +53,5 @@ func (c *APICtx) GetEvents(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	c.WriteJson(rw, events)
+	c.WriteJSON(rw, events)
 }
