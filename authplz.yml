@@ -6,13 +6,13 @@ name: AuthPlz Example
 
 # Server binding configuration
 bind-address: localhost
-bind-port: 9000
+bind-port: $PORT
 
 # External application address (required for reverse proxying)
-external-address: https://localhost:3000
+external-address: https://authplz.herokuapp.com
 
 # Database connection string
-database: "host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+database: $DATABASE_URL
 
 # Allowed origins for API requests
 # This is automatically set to bind-address:bind-port or external-address if set but can be overridden here if required
