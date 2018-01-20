@@ -26,9 +26,9 @@ token-secret: $TOKEN_SECRET
 
 # TLS configuration
 tls:
-  cert: server.pem 
-  key: server.key
-  disabled: false
+#  cert: server.pem 
+#  key: server.key
+  disabled: true
 
 # Template and static file directories
 static-dir: ~/projects/authplz-ui/static
