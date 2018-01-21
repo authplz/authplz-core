@@ -5,7 +5,7 @@
 name: AuthPlz Example
 
 # Server binding configuration
-bind-address: localhost
+bind-address: $HOST
 bind-port: $PORT
 
 # External application address (required for reverse proxying)
