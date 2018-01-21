@@ -1,1 +1,1 @@
-web: authplz -c ./authplz.yml
+web: authplz -c ./authplz.yml -p ""
