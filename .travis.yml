@@ -4,10 +4,15 @@ services:
 - postgresql: 9.4
 install:
 - make install
+env:
+- AUTHPLZ_DATABASE_URL="host=localhost user=postgres dbname=postgres sslmode=disable password=postgres"
+- AUTHPLZ_EXTERNAL_ADDRESS=https://localhost:3000
+- AUTHPLZ_HOST=localhost
+- AUTHPLZ_PORT=9000
 before_script:
 - psql -c "ALTER ROLE postgres WITH PASSWORD 'postgres';" -U postgres
 script:
-- make test
+- . ./setenv.sh && make test
 after_script:
 - make cross
 - tar -cvf build/templates.tgz templates/*
