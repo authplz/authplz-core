@@ -38,3 +38,4 @@ authplz-app
 
 cli
 service
+*_mocks.go

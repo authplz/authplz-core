@@ -97,6 +97,12 @@ func TestBackupModule(t *testing.T) {
 
 		code := strings.Join([]string{codes.Tokens[0].Name, codes.Tokens[0].Code}, " ")
 
+		mockCode := NewMockCode(ctrl)
+		mockCode.EXPECT().GetName().Return(codes.Tokens[0].Name)
+		mockCode.EXPECT().IsUsed().Return(true)
+
+		mockStore.EXPECT().GetBackupTokenByName(userID, codes.Tokens[0].Name).Return(mockCode, nil)
+
 		ok, err := bc.ValidateCode(userID, code)
 		assert.Nil(t, err)
 		if ok {

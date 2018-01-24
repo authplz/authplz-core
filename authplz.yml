@@ -9,7 +9,7 @@ bind-address: $HOST
 bind-port: $PORT
 
 # External application address (required for reverse proxying)
-external-address: https://authplz.herokuapp.com
+external-address: $EXTERNAL_ADDRESS
 
 # Database connection string
 database: $DATABASE_URL
@@ -17,8 +17,8 @@ database: $DATABASE_URL
 # Allowed origins for API requests
 # This is automatically set to bind-address:bind-port or external-address if set but can be overridden here if required
 allowed-origins:
-  - https://authplz.herokuapp.com
   - https://localhost:3000
+  - https://authplz.herokuapp.com
 
 # Secrets
 cookie-secret: $COOKIE_SECRET

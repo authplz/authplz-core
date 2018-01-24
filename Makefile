@@ -25,7 +25,7 @@ run: build
 	./authplz
 
 # Test application
-test:
+test: mocks
 	@go test -p=1 ./lib/...
 
 mocks:
