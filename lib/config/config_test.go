@@ -22,7 +22,7 @@ func TestConfig(t *testing.T) {
 	assert.EqualValues(t, "AuthPlz Example", c.Name)
 	assert.EqualValues(t, "localhost", c.Address)
 	assert.EqualValues(t, "9000", c.Port)
-	assert.EqualValues(t, "https://localhost:3000", c.ExternalAddress)
+	//assert.EqualValues(t, "https://localhost:3000", c.ExternalAddress)
 
 	assert.EqualValues(t, testCookieSecret, c.CookieSecret)
 	assert.EqualValues(t, testTokenSecret, c.TokenSecret)
