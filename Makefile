@@ -14,6 +14,8 @@ install:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -u golang.org/x/oauth2
 	go get -t github.com/Masterminds/glide
+	go get github.com/golang/mock/gomock
+	go get github.com/golang/mock/mockgen
 	glide install
 
 # Build backend and frontend components
@@ -25,11 +27,11 @@ run: build
 	./authplz
 
 # Test application
-test:
+test: mocks
 	@go test -p=1 ./lib/...
 
 mocks:
-	mockgen -source lib/modules/2fa/backup/backup_interfaces.go -destination lib/modules/2fa/backup/backup_mocks.go -package backup Storer
+	mockgen -source lib/modules/2fa/backup/backup_interfaces.go -destination lib/modules/2fa/backup/backup_mocks.go -package backup Storer,Code
 
 cross: dir
 	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-linux-amd64 ./cmd/authplz

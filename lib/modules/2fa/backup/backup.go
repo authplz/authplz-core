@@ -203,6 +203,10 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	// Translate mnemonic form to bytes
 	mnemonicKey := strings.Join(phrase[recoveryNameLen:], " ")
 	key, err := mnemonics.FromString(mnemonicKey, mnemonics.English)
+	if err != nil {
+		log.Printf("Backup.ValidateCode invalid mnemonic")
+		return false, err
+	}
 
 	// Fetch associated codes with for the provided user
 	c, err := bc.backupStore.GetBackupTokenByName(userid, name)
