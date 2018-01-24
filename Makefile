@@ -14,6 +14,8 @@ install:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -u golang.org/x/oauth2
 	go get -t github.com/Masterminds/glide
+	go get github.com/golang/mock/gomock
+	go get github.com/golang/mock/mockgen
 	glide install
 
 # Build backend and frontend components
