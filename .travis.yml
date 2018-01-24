@@ -7,7 +7,7 @@ install:
 before_script:
 - psql -c "ALTER ROLE postgres WITH PASSWORD 'postgres';" -U postgres
 script:
-- . ./setenv.sh && make test
+- make test
 after_script:
 - make cross
 - tar -cvf build/templates.tgz templates/*
