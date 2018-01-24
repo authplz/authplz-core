@@ -22,4 +22,5 @@ deploy:
   skip_cleanup: true
   on:
     repo: authplz/authplz-core
-    tag: true
+    branch: master
+    tags: true
