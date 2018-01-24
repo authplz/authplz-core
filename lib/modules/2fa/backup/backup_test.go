@@ -12,65 +12,76 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/authplz/authplz-core/lib/config"
-	"github.com/authplz/authplz-core/lib/controllers/datastore"
 	"github.com/authplz/authplz-core/lib/test"
 )
 
+type BackupTest struct {
+	name string
+	f    func(t *testing.T, bc *Controller)
+}
+
+var tests = []BackupTest{}
+
 func TestBackupModule(t *testing.T) {
-	var fakeEmail = "test@abc.com"
-	var fakePass = "abcDEF123@abcDEF123@"
-	var fakeName = "user.sdfsfdF"
 
-	c, _ := config.DefaultConfig()
+	userID := "1"
+	var keys = make([]BackupKey, 0)
+	var codes *CreateResponse
 
-	// Attempt database connection
-	dataStore, err := datastore.NewDataStore(c.Database)
-	if err != nil {
-		t.Error("Error opening database")
-		t.FailNow()
-	}
-
-	// Force synchronization
-	dataStore.ForceSync()
-
-	// Create user for tests
-	u, err := dataStore.AddUser(fakeEmail, fakeName, fakePass)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	user := u.(*datastore.User)
-
-	mockEventEmitter := test.MockEventEmitter{}
-
-	// Create backup controller
-	bc := NewController("Test Service", dataStore, &mockEventEmitter)
+	// Mocks don't work unless ctrl is instantiated in every subtest (with the appropriate t)
+	// There /has/ to be a way of refactoring this, but, idk what it is :-/
 
 	t.Run("Create backup token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := NewMockStorer(ctrl)
+		bc := NewController("Test Service", mockStore, &test.MockEventEmitter{})
+
 		code, err := bc.generateCode(recoveryKeyLen)
 		assert.Nil(t, err)
 		assert.NotNil(t, code)
 	})
 
-	var tokens *CreateResponse
-
 	t.Run("Create backup tokens for user", func(t *testing.T) {
-		codes, err := bc.CreateCodes(user.GetExtID())
-		assert.Nil(t, err)
-		assert.NotNil(t, codes)
+		var err error
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := NewMockStorer(ctrl)
+		bc := NewController("Test Service", mockStore, &test.MockEventEmitter{})
 
-		tokens = codes
+		mockStore.EXPECT().AddBackupToken(userID, gomock.Any(), gomock.Any()).Times(numRecoveryKeys).Do(func(userID, name, key string) {
+			keys = append(keys, BackupKey{userID, name, key})
+		})
+
+		codes, err = bc.CreateCodes(userID)
+		assert.Nil(t, err)
+		assert.Len(t, keys, numRecoveryKeys)
+		assert.Len(t, codes.Tokens, numRecoveryKeys)
 	})
 
 	t.Run("Validate backup tokens for user", func(t *testing.T) {
-		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := NewMockStorer(ctrl)
+		bc := NewController("Test Service", mockStore, &test.MockEventEmitter{})
 
-		// TODO: resolve intermittent failure (I think due to database sync time)
+		code := strings.Join([]string{codes.Tokens[0].Name, codes.Tokens[0].Code}, " ")
 
-		ok, err := bc.ValidateCode(user.GetExtID(), code)
+		mockCode := NewMockCode(ctrl)
+		mockCode.EXPECT().GetName().Return(codes.Tokens[0].Name)
+		mockCode.EXPECT().IsUsed().Return(false)
+		mockCode.EXPECT().GetHashedSecret().Return(keys[0].Hash)
+		mockCode.EXPECT().SetUsed()
+
+		mockStore.EXPECT().GetBackupTokenByName(userID, codes.Tokens[0].Name).Return(mockCode, nil)
+
+		mockCode.EXPECT().GetName().Return(codes.Tokens[0].Name)
+		mockStore.EXPECT().UpdateBackupToken(mockCode)
+
+		ok, err := bc.ValidateCode(userID, code)
 		assert.Nil(t, err)
 
 		if !ok {
@@ -79,9 +90,14 @@ func TestBackupModule(t *testing.T) {
 	})
 
 	t.Run("Backup codes can only be validated once", func(t *testing.T) {
-		code := strings.Join([]string{tokens.Tokens[0].Name, tokens.Tokens[0].Code}, " ")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := NewMockStorer(ctrl)
+		bc := NewController("Test Service", mockStore, &test.MockEventEmitter{})
 
-		ok, err := bc.ValidateCode(user.GetExtID(), code)
+		code := strings.Join([]string{codes.Tokens[0].Name, codes.Tokens[0].Code}, " ")
+
+		ok, err := bc.ValidateCode(userID, code)
 		assert.Nil(t, err)
 		if ok {
 			t.Errorf("Backup code validation succeeded (expected failure)")

@@ -36,7 +36,7 @@ template-dir: ./templates
   
 # OAuth (Client) Configuration
 # Scopes define what resources an admin or users client can grant access to.
-# These are heirachicle and are split by '.' (ie public includes public.read)
+# These are heirachicle and are split by '.' (eg. public includes public.read)
 # Grants correspond to OAuth grant types that clients can utilise
 # Allowed responses defines what responses are allowed for OAuth clients
 oauth:

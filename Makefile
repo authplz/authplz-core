@@ -29,7 +29,7 @@ test:
 	@go test -p=1 ./lib/...
 
 mocks:
-	mockgen -source lib/modules/2fa/backup/backup_interfaces.go -destination lib/modules/2fa/backup/backup_mocks.go -package backup Storer
+	mockgen -source lib/modules/2fa/backup/backup_interfaces.go -destination lib/modules/2fa/backup/backup_mocks.go -package backup Storer,Code
 
 cross: dir
 	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-linux-amd64 ./cmd/authplz
