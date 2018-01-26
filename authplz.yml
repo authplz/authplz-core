@@ -1,5 +1,5 @@
 # AuthPlz Example Configuration
-# $VARIABLES are loaded from the environment with the specified prefix
+# $VARIABLES are loaded from the environment with the prefix specified on the command line
 
 # User friendly application name
 name: AuthPlz Example

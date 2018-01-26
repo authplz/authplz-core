@@ -47,13 +47,13 @@ func (backupCodeModule *Controller) BindAPI(router *web.Router) {
 	backupCodeRouter.Middleware(bindBackupCodeContext(backupCodeModule))
 
 	// Bind endpoints
-	backupCodeRouter.Get("/create", (*backupCodeAPICtx).backupCodesCreate)
-	backupCodeRouter.Post("/authenticate", (*backupCodeAPICtx).backupCodeAuthenticatePost)
-	backupCodeRouter.Get("/codes", (*backupCodeAPICtx).backupCodeListTokens)
+	backupCodeRouter.Get("/create", (*backupCodeAPICtx).BackupCodesCreate)
+	backupCodeRouter.Post("/authenticate", (*backupCodeAPICtx).BackupCodeAuthenticatePost)
+	backupCodeRouter.Get("/codes", (*backupCodeAPICtx).BackupCodeListTokens)
 }
 
-// backupCodeEnrolGet creates a set of backup codes and returns them to the user
-func (c *backupCodeAPICtx) backupCodesCreate(rw web.ResponseWriter, req *web.Request) {
+// BackupCodesCreate creates a set of backup codes and returns them to the user
+func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
@@ -74,8 +74,8 @@ func (c *backupCodeAPICtx) backupCodesCreate(rw web.ResponseWriter, req *web.Req
 	c.WriteJSON(rw, codes)
 }
 
-//backupCodeAuthenticatePost
-func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+// BackupCodeAuthenticatePost authenticates a backup code
+func (c *backupCodeAPICtx) BackupCodeAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
@@ -109,7 +109,8 @@ func (c *backupCodeAPICtx) backupCodeAuthenticatePost(rw web.ResponseWriter, req
 	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
-func (c *backupCodeAPICtx) backupCodeListTokens(rw web.ResponseWriter, req *web.Request) {
+// List backup tokens
+func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
@@ -128,6 +129,6 @@ func (c *backupCodeAPICtx) backupCodeListTokens(rw web.ResponseWriter, req *web.
 	c.WriteJSON(rw, codes)
 }
 
-func (c *backupCodeAPICtx) backupCodeRemoveToken(rw web.ResponseWriter, req *web.Request) {
+func (c *backupCodeAPICtx) BackupCodeRemoveToken(rw web.ResponseWriter, req *web.Request) {
 	c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 }
