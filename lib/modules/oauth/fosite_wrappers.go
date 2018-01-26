@@ -43,6 +43,7 @@ func NewSessionWrap(s interface{}) fosite.Session {
 	return &SessionWrap{s.(UserSession)}
 }
 
+// SetExpiresAt sets the expiry date of a session instance
 func (session *SessionWrap) SetExpiresAt(key fosite.TokenType, exp time.Time) {
 	switch key {
 	case fosite.AccessToken:
@@ -56,6 +57,7 @@ func (session *SessionWrap) SetExpiresAt(key fosite.TokenType, exp time.Time) {
 	}
 }
 
+// GetExpiresAt fetches the expiry date for a given token type
 func (session *SessionWrap) GetExpiresAt(key fosite.TokenType) time.Time {
 	switch key {
 	case fosite.AccessToken:
@@ -92,6 +94,10 @@ func NewAuthorizeCodeWrap(i interface{}) fosite.Requester {
 
 func (s *AuthorizeCodeWrap) GetID() string {
 	return s.GetID()
+}
+
+func (s *AuthorizeCodeWrap) SetID(id string) {
+	s.SetRequestID(id)
 }
 
 func (s *AuthorizeCodeWrap) GetClient() fosite.Client {
