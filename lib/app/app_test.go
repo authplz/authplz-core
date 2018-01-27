@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+
 	"net/http"
 	"net/url"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/config"
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/modules/2fa/backup"
 	"github.com/authplz/authplz-core/lib/modules/2fa/totp"
 	"github.com/authplz/authplz-core/lib/test"
 )
@@ -587,6 +589,27 @@ func TestMain(t *testing.T) {
 		}
 	})
 
+	var backupTokens []backup.BackupKey
+
+	t.Run("Logged in users can create backup tokens", func(t *testing.T) {
+		// Generate backup tokens
+		var rr backup.CreateResponse
+		resp, err := client.GetWithParams("/backupcode/create", http.StatusOK, url.Values{})
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		err = test.ParseJson(resp, &rr)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		assert.Len(t, rr.Tokens, backup.NumRecoveryKeys)
+		backupTokens = rr.Tokens
+	})
+
 	t.Run("Second factor required for login", func(t *testing.T) {
 		client2 := test.NewTestClient(apiPath)
 
@@ -670,6 +693,35 @@ func TestMain(t *testing.T) {
 		v = url.Values{}
 		v.Set("code", code)
 		resp, err := client2.PostForm("/totp/authenticate", http.StatusOK, v)
+		if err != nil {
+			t.Error(err)
+		}
+		if err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess); err != nil {
+			t.Error(err)
+		}
+
+		if err := client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful); err != nil {
+			t.Error(err)
+		}
+
+	})
+
+	t.Run("Second factor allows login (backup code)", func(t *testing.T) {
+
+		client2 := test.NewTestClient(apiPath)
+
+		// Start login
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		if _, err := client2.PostForm("/login", http.StatusAccepted, v); err != nil {
+			t.Error(err)
+		}
+
+		// Post response and check login status
+		v = url.Values{}
+		v.Set("code", backupTokens[0].Name+" "+backupTokens[0].Code)
+		resp, err := client2.PostForm("/backupcode/authenticate", http.StatusOK, v)
 		if err != nil {
 			t.Error(err)
 		}

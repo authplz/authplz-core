@@ -23,9 +23,9 @@ import (
 )
 
 const (
+	NumRecoveryKeys  = 5
 	recoveryKeyLen   = 128 / 8
 	recoveryNameLen  = 3
-	numRecoveryKeys  = 5
 	backupHashRounds = 12
 )
 
@@ -117,7 +117,7 @@ type CreateResponse struct {
 // CreateCodes creates a set of backup codes for a user
 // TODO: should this erase existing codes?
 func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
-	keys := make([]BackupKey, numRecoveryKeys)
+	keys := make([]BackupKey, NumRecoveryKeys)
 
 	// Generate backup keys
 	for i := range keys {
