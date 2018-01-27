@@ -23,6 +23,10 @@ func (or *OauthRequest) GetRequestID() string {
 	return or.RequestID
 }
 
+func (or *OauthRequest) SetRequestID(id string) {
+	or.RequestID = id
+}
+
 func (or *OauthRequest) GetClient() interface{} {
 	return &or.Client
 }

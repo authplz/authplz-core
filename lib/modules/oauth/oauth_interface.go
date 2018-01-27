@@ -41,6 +41,7 @@ type SessionBase interface {
 	SetSession(session interface{})
 
 	GetRequestID() string
+	SetRequestID(string)
 	GetUserID() string
 
 	GetRequestedAt() time.Time

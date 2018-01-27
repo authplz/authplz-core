@@ -11,12 +11,14 @@ dir:
 # Install dependencies
 install:
 	go get -u github.com/golang/lint/golint
-	go get -u github.com/jteeuwen/go-bindata/...
-	go get -u golang.org/x/oauth2
-	go get -t github.com/Masterminds/glide
+	go get -u github.com/golang/dep/cmd/dep
 	go get github.com/golang/mock/gomock
 	go get github.com/golang/mock/mockgen
-	glide install
+
+	go get -u github.com/jteeuwen/go-bindata/...
+	go get -u golang.org/x/oauth2
+	
+	dep ensure
 
 # Build backend and frontend components
 build:

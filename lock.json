@@ -1,0 +1,303 @@
+{
+    "memo": "acd035f1fb6c423e2d53da192a47aa203c8bf085e785f2381d82b710175c275c",
+    "projects": [
+        {
+            "name": "github.com/NebulousLabs/entropy-mnemonics",
+            "branch": "master",
+            "revision": "7b01a644a63680b90de22bacfb11d832e944eaab",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/asaskevich/govalidator",
+            "branch": "master",
+            "revision": "872bb01704d183fe276bce6fa429408a87661998",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/boombuler/barcode",
+            "branch": "master",
+            "revision": "c07adc95a07cb6213cf4c104caab763bce2d49c0",
+            "packages": [
+                ".",
+                "qr",
+                "utils"
+            ]
+        },
+        {
+            "name": "github.com/davecgh/go-spew",
+            "branch": "master",
+            "revision": "346938d642f2ec3594ed81d874461961cd0faa76",
+            "packages": [
+                "spew"
+            ]
+        },
+        {
+            "name": "github.com/dgrijalva/jwt-go",
+            "branch": "master",
+            "revision": "2268707a8f0843315e2004ee4f1d021dc08baedf",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/gocraft/web",
+            "branch": "master",
+            "revision": "c8ca29bc8a1cec97abe95c662e29dd8d31aff6e3",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/golang/mock",
+            "branch": "master",
+            "revision": "bd3c8e81be01eef76d4b503f5e687d2d1354d2d9",
+            "packages": [
+                "gomock"
+            ]
+        },
+        {
+            "name": "github.com/golang/protobuf",
+            "branch": "master",
+            "revision": "925541529c1fa6821df4e44ce2723319eb2be768",
+            "packages": [
+                "proto"
+            ]
+        },
+        {
+            "name": "github.com/gorilla/context",
+            "branch": "master",
+            "revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/gorilla/securecookie",
+            "branch": "master",
+            "revision": "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/gorilla/sessions",
+            "branch": "master",
+            "revision": "ba78acc856fe7c79891d516131b3d903cc8d9367",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/gtank/cryptopasta",
+            "branch": "master",
+            "revision": "1f550f6f2f69009f6ae57347c188e0a67cd4e500",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/jessevdk/go-flags",
+            "branch": "master",
+            "revision": "f88afde2fa19a30cf50ba4b05b3d13bc6bae3079",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/jinzhu/gorm",
+            "branch": "master",
+            "revision": "45ccb134373e7d9fa76d5987a6fed6cd5a5adfd4",
+            "packages": [
+                ".",
+                "dialects/postgres"
+            ]
+        },
+        {
+            "name": "github.com/jinzhu/inflection",
+            "branch": "master",
+            "revision": "1c35d901db3da928c72a72d8458480cc9ade058f",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/lib/pq",
+            "branch": "master",
+            "revision": "2704adc878c21e1329f46f6e56a1c387d788ff94",
+            "packages": [
+                ".",
+                "hstore",
+                "oid"
+            ]
+        },
+        {
+            "name": "github.com/mohae/deepcopy",
+            "branch": "master",
+            "revision": "c48cc78d482608239f6c4c92a4abd87eb8761c90",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/ory/fosite",
+            "version": "v0.16.2",
+            "revision": "b94312e25f011b54894da69256416271c23b5d14",
+            "packages": [
+                ".",
+                "compose",
+                "handler/oauth2",
+                "handler/openid",
+                "token/hmac",
+                "token/jwt"
+            ]
+        },
+        {
+            "name": "github.com/pborman/uuid",
+            "version": "v1.1",
+            "revision": "e790cca94e6cc75c7064b1332e63811d4aae1a53",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/pkg/errors",
+            "branch": "master",
+            "revision": "ff09b135c25aae272398c51a07235b90a75aa4f0",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/pmezard/go-difflib",
+            "version": "v1.0.0",
+            "revision": "c0b812dadcf4498dede02bb7f0c5c478be997e34",
+            "packages": [
+                "difflib"
+            ]
+        },
+        {
+            "name": "github.com/pquerna/otp",
+            "branch": "master",
+            "revision": "9e1935374bc73ffe011187dafed51a412b90fe43",
+            "packages": [
+                ".",
+                "hotp",
+                "totp"
+            ]
+        },
+        {
+            "name": "github.com/ryankurte/go-async",
+            "branch": "master",
+            "revision": "68217616a03b5fc9615755facf86022f31a3a867",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/ryankurte/go-structparse",
+            "branch": "master",
+            "revision": "887e1c5bfc048e8df5985b79ebf49e8d3c8746ba",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/ryankurte/go-u2f",
+            "branch": "master",
+            "revision": "8faf24c0d2de3513550043535c03d2cae433168e",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/satori/go.uuid",
+            "branch": "master",
+            "revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/stretchr/testify",
+            "branch": "master",
+            "revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+            "packages": [
+                "assert"
+            ]
+        },
+        {
+            "name": "golang.org/x/crypto",
+            "branch": "master",
+            "revision": "bd6f299fb381e4c3393d1c4b1f0b94f5e77650c8",
+            "packages": [
+                "bcrypt",
+                "blowfish"
+            ]
+        },
+        {
+            "name": "golang.org/x/net",
+            "branch": "master",
+            "revision": "1a68b1313cf4ad7778376e82641197b60c02f65c",
+            "packages": [
+                "context"
+            ]
+        },
+        {
+            "name": "golang.org/x/oauth2",
+            "branch": "master",
+            "revision": "f047394b6d14284165300fd82dad67edb3a4d7f6",
+            "packages": [
+                ".",
+                "clientcredentials",
+                "internal"
+            ]
+        },
+        {
+            "name": "golang.org/x/text",
+            "branch": "master",
+            "revision": "fc7fa097411d30e6708badff276c4c164425590c",
+            "packages": [
+                "internal/gen",
+                "internal/triegen",
+                "internal/ucd",
+                "transform",
+                "unicode/cldr",
+                "unicode/norm"
+            ]
+        },
+        {
+            "name": "google.golang.org/appengine",
+            "version": "v1.0.0",
+            "revision": "150dc57a1b433e64154302bdc40b6bb8aefa313a",
+            "packages": [
+                "internal",
+                "internal/base",
+                "internal/datastore",
+                "internal/log",
+                "internal/remote_api",
+                "internal/urlfetch",
+                "urlfetch"
+            ]
+        },
+        {
+            "name": "gopkg.in/mailgun/mailgun-go.v1",
+            "branch": "master",
+            "revision": "a4002e2df2e8ca2da6a6fbb4a72871b504e49f50",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "gopkg.in/yaml.v2",
+            "branch": "v2",
+            "revision": "eb3733d160e74a9c7e442f435eb3bea458e1d19f",
+            "packages": [
+                "."
+            ]
+        }
+    ]
+}
