@@ -166,26 +166,28 @@ func (totpModule *Controller) ValidateToken(userid string, token string) (bool, 
 
 // TokenResp is a sanatised token instance to return from the controller
 type TokenResp struct {
+	ExtID      string
 	Name       string
 	LastUsed   time.Time
 	UsageCount uint
 }
 
 // ListTokens lists tokens for a given user
-func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
+func (totpModule *Controller) ListTokens(userid string) ([]TokenResp, error) {
 	// Fetch tokens from database
 	tokens, err := totpModule.totpStore.GetTotpTokens(userid)
 	if err != nil {
 		log.Printf("TOTPModule.ListTokens: error fetching TOTP tokens (%s)", err)
-		return make([]interface{}, 0), err
+		return nil, err
 	}
 
 	log.Printf("tokens: %+v", tokens)
 
-	cleanTokens := make([]interface{}, len(tokens))
+	cleanTokens := make([]TokenResp, len(tokens))
 	for i, t := range tokens {
 		ti := t.(TokenInterface)
-		cleanTokens[i] = &TokenResp{
+		cleanTokens[i] = TokenResp{
+			ExtID:      ti.GetExtID(),
 			Name:       ti.GetName(),
 			LastUsed:   ti.GetLastUsed(),
 			UsageCount: ti.GetCounter(),
@@ -195,4 +197,28 @@ func (totpModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	log.Printf("cleantokens: %+v", cleanTokens)
 
 	return cleanTokens, nil
+}
+
+// RemoveToken removes a token by matching user and token external IDs
+func (totpModule *Controller) RemoveToken(userid, tokenID string) (bool, error) {
+	tokens, err := totpModule.totpStore.GetTotpTokens(userid)
+	if err != nil {
+		log.Printf("TOTPModule.ListTokens: error fetching TOTP tokens (%s)", err)
+		return false, err
+	}
+
+	for _, t := range tokens {
+		token := t.(TokenInterface)
+		if token.GetExtID() == tokenID {
+			err := totpModule.totpStore.DeleteTotpToken(token)
+			if err != nil {
+				log.Printf("TOTPModule.ListTokens: error deleting TOTP tokens (%s)", err)
+				return false, err
+			} else {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }

@@ -109,6 +109,7 @@ func (bc *Controller) generateCode(len int) (*BackupKey, error) {
 	return &key, nil
 }
 
+// CreateResponse is output when codes are created
 type CreateResponse struct {
 	Service string
 	Tokens  []BackupKey
@@ -250,6 +251,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 	return true, nil
 }
 
+// BackupCode is a backup code information structure
 type BackupCode struct {
 	Name      string
 	Used      bool

@@ -15,6 +15,7 @@ import (
 // TokenInterface Token instance interface
 // Storer token objects must implement this interface
 type TokenInterface interface {
+	GetExtID() string
 	GetName() string
 	GetSecret() string
 	GetCounter() uint
@@ -34,12 +35,14 @@ type User interface {
 type Storer interface {
 	// Fetch a user instance by user id (should be able to remove this)
 	GetUserByExtID(userid string) (interface{}, error)
-	// Add a fido token to a given user
+	// Add a totp token to a given user
 	AddTotpToken(userid, name, secret string, counter uint) (interface{}, error)
-	// Fetch fido tokens for a given user
+	// Fetch totp tokens for a given user
 	GetTotpTokens(userid string) ([]interface{}, error)
-	// Update a provided fido token
+	// Update a provided totp token
 	UpdateTotpToken(token interface{}) (interface{}, error)
+	// Remove a totp token
+	DeleteTotpToken(token interface{}) error
 }
 
 // CompletedHandler Callback for 2fa signature completion
