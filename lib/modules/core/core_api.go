@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -44,6 +43,7 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	coreRouter.Post("/action", (*coreCtx).Action)
 	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
 	coreRouter.Post("/recovery", (*coreCtx).RecoverPost)
+	coreRouter.Get("/2fa-status", (*coreCtx).SecondFactorStatus)
 }
 
 // Handle an action token (both get and post calls)
@@ -184,16 +184,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	if loginOk && preLoginOk && secondFactorRequired {
 		log.Println("Core.Login: Partial login (2fa required)")
 		c.Bind2FARequest(rw, req, user.GetExtID(), "login")
-
-		rw.Header().Set("Content-Type", "application/json")
-		rw.WriteHeader(http.StatusAccepted)
-		js, err := json.Marshal(factorsAvailable)
-		if err != nil {
-			log.Print(err)
-			return
-		}
-		rw.Write(js)
-
+		c.WriteJSONWithStatus(rw, http.StatusAccepted, factorsAvailable)
 		return
 	}
 
@@ -220,6 +211,18 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Should be impossible to hit this
 	log.Printf("Core.Login: Login failed (unknown)\n")
 	c.WriteInternalError(rw)
+}
+
+func (c *coreCtx) SecondFactorStatus(rw web.ResponseWriter, req *web.Request) {
+	if c.GetUserID() == "" {
+		rw.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Check for available second factors
+	_, factorsAvailable := c.cm.CheckSecondFactors(c.GetUserID())
+
+	c.WriteJSON(rw, factorsAvailable)
 }
 
 // Logout Endpoint ends a user session
@@ -305,14 +308,7 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 		c.Bind2FARequest(rw, req, user.GetExtID(), "recover")
 
 		// Write available factors to client
-		rw.WriteHeader(http.StatusAccepted)
-		rw.Header().Set("Content-Type", "application/json")
-		js, err := json.Marshal(factorsAvailable)
-		if err != nil {
-			log.Print(err)
-			return
-		}
-		rw.Write(js)
+		c.WriteJSONWithStatus(rw, http.StatusAccepted, factorsAvailable)
 		return
 	}
 

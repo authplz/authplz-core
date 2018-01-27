@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+
 	"net/http"
 	"net/url"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/config"
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
+	"github.com/authplz/authplz-core/lib/modules/2fa/backup"
 	"github.com/authplz/authplz-core/lib/modules/2fa/totp"
 	"github.com/authplz/authplz-core/lib/test"
 )
@@ -62,9 +64,8 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Check default CORS header", func(t *testing.T) {
@@ -111,9 +112,8 @@ func TestMain(t *testing.T) {
 		v.Set("password", fakePass)
 		v.Set("username", fakeName)
 
-		if _, err := client.PostForm("/create", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client.PostForm("/create", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		u, _ := server.ds.GetUserByEmail(fakeEmail)
 
@@ -134,9 +134,8 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		if _, err := client.PostForm("/login", http.StatusUnauthorized, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client.PostForm("/login", http.StatusUnauthorized, v)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Account activation requires valid activation token", func(t *testing.T) {
@@ -151,26 +150,23 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("token", at)
 
-		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/action", http.StatusFound, v)
+		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/action", http.StatusBadRequest, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/action", http.StatusBadRequest, v)
+		assert.Nil(t, err)
 
 		// Check user status
 		resp, err := client2.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Accounts can be activated", func(t *testing.T) {
@@ -185,26 +181,23 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/action", http.StatusFound, v)
+		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/login", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/login", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Check user status
 		resp, err := client2.Get("/status", http.StatusOK)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Activated users can login", func(t *testing.T) {
@@ -213,18 +206,16 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client.PostForm("/login", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client.PostForm("/login", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Check user status
 		resp, err := client.Get("/status", http.StatusOK)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
@@ -237,9 +228,8 @@ func TestMain(t *testing.T) {
 
 		// Attempt login to cause account lock
 		for i := 0; i < 10; i++ {
-			if _, err := client2.PostForm("/login", http.StatusUnauthorized, v); err != nil {
-				t.Error(err)
-			}
+			_, err := client2.PostForm("/login", http.StatusUnauthorized, v)
+			assert.Nil(t, err)
 		}
 
 		// Check user status
@@ -247,18 +237,16 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
+		assert.Nil(t, err)
 
 		// Set to correct password
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
 		// Check login still fails
-		if _, err := client2.PostForm("/login", http.StatusUnauthorized, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/login", http.StatusUnauthorized, v)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Account unlock requires valid unlock token", func(t *testing.T) {
@@ -273,26 +261,23 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/action", http.StatusFound, v)
+		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/login", http.StatusBadRequest, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/login", http.StatusBadRequest, v)
+		assert.Nil(t, err)
 
 		// Check user status
 		resp, err := client2.Get("/status", http.StatusUnauthorized)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Locked accounts can be unlocked", func(t *testing.T) {
@@ -307,26 +292,23 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		if _, err := client2.PostForm("/action", http.StatusFound, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/action", http.StatusFound, v)
+		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
 		v = url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/login", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/login", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Check user status
 		resp, err := client2.Get("/status", http.StatusOK)
 		if err != nil {
 			t.Error(err)
 		}
-		if err := test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.LoginSuccessful)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Logged in users can get account info", func(t *testing.T) {
@@ -378,10 +360,8 @@ func TestMain(t *testing.T) {
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
 		v.Set("email", fakeEmail)
-		if _, err := client2.PostForm("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client2.PostForm("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Generate a recovery token
 		d, _ := time.ParseDuration("10m")
@@ -390,19 +370,15 @@ func TestMain(t *testing.T) {
 		// Get recovery endpoint with token
 		v = url.Values{}
 		v.Set("token", token)
-		if _, err := client2.GetWithParams("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client2.GetWithParams("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
 		newPass := "Reset Password 78@"
 		v = url.Values{}
 		v.Set("password", newPass)
-		if _, err := client2.PostForm("/reset", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client2.PostForm("/reset", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Update fakePass for further calls
 		fakePass = newPass
@@ -415,10 +391,8 @@ func TestMain(t *testing.T) {
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
 		v.Set("email", fakeEmail)
-		if _, err := client2.PostForm("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client2.PostForm("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Generate a recovery token
 		d, _ := time.ParseDuration("10m")
@@ -427,10 +401,8 @@ func TestMain(t *testing.T) {
 		// Get recovery endpoint with token
 		v = url.Values{}
 		v.Set("token", token)
-		if _, err := client3.GetWithParams("/recovery", http.StatusBadRequest, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client3.GetWithParams("/recovery", http.StatusBadRequest, v)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Password reset submissions rejected across clients", func(t *testing.T) {
@@ -440,10 +412,8 @@ func TestMain(t *testing.T) {
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
 		v.Set("email", fakeEmail)
-		if _, err := client2.PostForm("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client2.PostForm("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Generate a recovery token
 		d, _ := time.ParseDuration("10m")
@@ -452,19 +422,15 @@ func TestMain(t *testing.T) {
 		// Get recovery endpoint with token
 		v = url.Values{}
 		v.Set("token", token)
-		if _, err := client2.GetWithParams("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client2.GetWithParams("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
 		newPass := "Reset Password 78@"
 		v = url.Values{}
 		v.Set("password", newPass)
-		if _, err := client3.PostForm("/reset", http.StatusBadRequest, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client3.PostForm("/reset", http.StatusBadRequest, v)
+		assert.Nil(t, err)
 
 		// Update fakePass for further calls
 		fakePass = newPass
@@ -481,16 +447,10 @@ func TestMain(t *testing.T) {
 		// Generate enrolment request
 		var rr u2f.RegisterRequestMessage
 		resp, err := client.GetWithParams("/u2f/enrol", http.StatusOK, v)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		err = test.ParseJson(resp, &rr)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		// Check AppId is set correctly
 		if rr.AppID != c.ExternalAddress {
@@ -500,30 +460,19 @@ func TestMain(t *testing.T) {
 
 		// Handle via virtual token
 		registerResp, err := vt.HandleRegisterRequest(rr)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		// Post registration response back
 		resp, err = client.PostJSON("/u2f/enrol", http.StatusOK, registerResp)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 	})
 
 	t.Run("Logged in users can list fido tokens", func(t *testing.T) {
 		var regs []u2f.Registration
-		if err := client.GetJSON("/u2f/tokens", 200, &regs); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		err := client.GetJSON("/u2f/tokens", 200, &regs)
+		assert.Nil(t, err)
 
 		if len(regs) != 1 {
 			t.Errorf("No registrations returned")
@@ -537,10 +486,8 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("name", "fakeToken")
 		var rc totp.RegisterChallenge
-		if err := client.GetJSONWithParams("/totp/enrol", http.StatusOK, v, &rc); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		err := client.GetJSONWithParams("/totp/enrol", http.StatusOK, v, &rc)
+		assert.Nil(t, err)
 
 		// Check Name is set correctly
 		if rc.Issuer != c.Name {
@@ -555,36 +502,42 @@ func TestMain(t *testing.T) {
 
 		// Generate challenge response
 		code, err := _totp.GenerateCode(rc.Secret, time.Now())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		v = url.Values{}
 		v.Set("code", code)
 		// Post registration response back
 		resp, err := client.PostForm("/totp/enrol", http.StatusOK, v)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		totpSecret = rc.Secret
 	})
 
 	t.Run("Logged in users can list totp tokens", func(t *testing.T) {
 		var tokens []totp.TokenResp
-		if err := client.GetJSON("/totp/tokens", 200, &tokens); err != nil {
-			t.Error(err)
-		}
+		err := client.GetJSON("/totp/tokens", 200, &tokens)
+		assert.Nil(t, err)
 
 		if len(tokens) != 1 {
 			t.Errorf("No registrations returned")
 		}
+	})
+
+	var backupTokens []backup.BackupKey
+
+	t.Run("Logged in users can create backup tokens", func(t *testing.T) {
+		// Generate backup tokens
+		var rr backup.CreateResponse
+		resp, err := client.GetWithParams("/backupcode/create", http.StatusOK, url.Values{})
+		assert.Nil(t, err)
+
+		err = test.ParseJson(resp, &rr)
+		assert.Nil(t, err)
+
+		assert.Len(t, rr.Tokens, backup.NumRecoveryKeys)
+		backupTokens = rr.Tokens
 	})
 
 	t.Run("Second factor required for login", func(t *testing.T) {
@@ -594,13 +547,16 @@ func TestMain(t *testing.T) {
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
 
-		if _, err := client2.PostForm("/login", http.StatusAccepted, v); err != nil {
-			t.Error(err)
-		}
+		resp, err := client2.PostForm("/login", http.StatusAccepted, v)
+		assert.Nil(t, err)
 
-		if err := client2.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = client2.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized)
+		assert.Nil(t, err)
+
+		factors := make(map[string]bool)
+		err = test.ParseJson(resp, &factors)
+		assert.Nil(t, err)
+		assert.EqualValues(t, map[string]bool{"totp": true, "u2f": true, "backup": true}, factors)
 	})
 
 	t.Run("Second factor allows login (u2f)", func(t *testing.T) {
@@ -611,15 +567,13 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/login", http.StatusAccepted, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/login", http.StatusAccepted, v)
+		assert.Nil(t, err)
 
 		// Fetch U2F request
 		var sr u2f.SignRequestMessage
-		if err := client2.GetJSON("/u2f/authenticate", 200, &sr); err != nil {
-			t.Error(err)
-		}
+		err = client2.GetJSON("/u2f/authenticate", 200, &sr)
+		assert.Nil(t, err)
 
 		if sr.AppID != c.ExternalAddress {
 			t.Errorf("U2F register AppId mismatch (expected %s received %s)", c.ExternalAddress, sr.AppID)
@@ -627,23 +581,17 @@ func TestMain(t *testing.T) {
 
 		// Handle via virtual token
 		signResp, err := vt.HandleAuthenticationRequest(sr)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		// Post response and check login status
 		resp, err := client2.PostJSON("/u2f/authenticate", http.StatusOK, signResp)
-		if err != nil {
-			t.Error(err)
-		}
-		if err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess); err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
+		assert.Nil(t, err)
+
+		err = client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful)
+		assert.Nil(t, err)
 
 	})
 
@@ -655,9 +603,8 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("email", fakeEmail)
 		v.Set("password", fakePass)
-		if _, err := client2.PostForm("/login", http.StatusAccepted, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/login", http.StatusAccepted, v)
+		assert.Nil(t, err)
 
 		// Generate challenge response
 		code, err := _totp.GenerateCode(totpSecret, time.Now())
@@ -673,13 +620,37 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
+		assert.Nil(t, err)
 
-		if err := client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful); err != nil {
+		err = client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful)
+		assert.Nil(t, err)
+
+	})
+
+	t.Run("Second factor allows login (backup code)", func(t *testing.T) {
+
+		client2 := test.NewTestClient(apiPath)
+
+		// Start login
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+		_, err := client2.PostForm("/login", http.StatusAccepted, v)
+		assert.Nil(t, err)
+
+		// Post response and check login status
+		v = url.Values{}
+		v.Set("code", backupTokens[0].Name+" "+backupTokens[0].Code)
+		resp, err := client2.PostForm("/backupcode/authenticate", http.StatusOK, v)
+		if err != nil {
 			t.Error(err)
 		}
+		err = test.ParseAndCheckAPIResponse(resp, api.SecondFactorSuccess)
+		assert.Nil(t, err)
+
+		err = client2.GetAPIResponse("/status", http.StatusOK, api.LoginSuccessful)
+		assert.Nil(t, err)
 
 	})
 
@@ -689,9 +660,8 @@ func TestMain(t *testing.T) {
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
 		v.Set("email", fakeEmail)
-		if _, err := client2.PostForm("/recovery", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err := client2.PostForm("/recovery", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Generate a recovery token
 		d, _ := time.ParseDuration("10m")
@@ -700,9 +670,8 @@ func TestMain(t *testing.T) {
 		// Get recovery endpoint with token
 		v = url.Values{}
 		v.Set("token", token)
-		if _, err := client2.GetWithParams("/recovery", http.StatusAccepted, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.GetWithParams("/recovery", http.StatusAccepted, v)
+		assert.Nil(t, err)
 
 		// Generate 2fa response
 		code, err := _totp.GenerateCode(totpSecret, time.Now())
@@ -714,33 +683,60 @@ func TestMain(t *testing.T) {
 		// Post 2fa response
 		v = url.Values{}
 		v.Set("code", code)
-		if _, err := client2.PostForm("/totp/authenticate", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/totp/authenticate", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
 		newPass := "Reset Password 78@ cats"
 		v = url.Values{}
 		v.Set("password", newPass)
-		if _, err := client2.PostForm("/reset", http.StatusOK, v); err != nil {
-			t.Error(err)
-		}
+		_, err = client2.PostForm("/reset", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Update fakePass for further calls
 		fakePass = newPass
 	})
 
+	t.Run("Logged in users can list backup tokens", func(t *testing.T) {
+		resp, err := client.Get("/backupcode/codes", http.StatusOK)
+		assert.Nil(t, err)
+
+		codes := make([]backup.BackupCode, 0)
+
+		err = test.ParseJson(resp, &codes)
+		assert.Nil(t, err)
+		assert.Len(t, codes, backup.NumRecoveryKeys)
+		assert.EqualValues(t, true, codes[0].Used)
+	})
+
+	t.Run("Logged in users can remove backup tokens", func(t *testing.T) {
+		_, err := client.Get("/backupcode/clear", http.StatusOK)
+		assert.Nil(t, err)
+
+		client2 := test.NewTestClient(apiPath)
+
+		v := url.Values{}
+		v.Set("email", fakeEmail)
+		v.Set("password", fakePass)
+
+		resp, err := client2.PostForm("/login", http.StatusAccepted, v)
+		assert.Nil(t, err)
+
+		factors := make(map[string]bool)
+		err = test.ParseJson(resp, &factors)
+		assert.Nil(t, err)
+		assert.EqualValues(t, map[string]bool{"totp": true, "u2f": true, "backup": false}, factors)
+	})
+
 	t.Run("Logged in users can logout", func(t *testing.T) {
 
 		// Perform logout
-		if _, err := client.Get("/logout", http.StatusOK); err != nil {
-			t.Error(err)
-		}
+		_, err := client.Get("/logout", http.StatusOK)
+		assert.Nil(t, err)
 
 		// Check user status
-		if err := client.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized); err != nil {
-			t.Error(err)
-		}
+		err = client.GetAPIResponse("/status", http.StatusUnauthorized, api.Unauthorized)
+		assert.Nil(t, err)
 	})
 
 }
