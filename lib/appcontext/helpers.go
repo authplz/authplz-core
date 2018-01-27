@@ -9,6 +9,11 @@ import (
 
 // WriteJSON Helper to write objects out as JSON
 func (c *AuthPlzCtx) WriteJSON(w http.ResponseWriter, i interface{}) {
+	c.WriteJSONWithStatus(w, http.StatusOK, i)
+}
+
+// WriteJSON Helper to write objects out as JSON
+func (c *AuthPlzCtx) WriteJSONWithStatus(w http.ResponseWriter, status int, i interface{}) {
 	js, err := json.Marshal(i)
 	if err != nil {
 		log.Print(err)
@@ -17,6 +22,7 @@ func (c *AuthPlzCtx) WriteJSON(w http.ResponseWriter, i interface{}) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	w.Write(js)
 }
 

@@ -53,6 +53,9 @@ const (
 	NoU2FTokenFound          = "NoU2FTokenFound"
 	RecoveryNoRequestPending = "RecoveryNoRequestPending"
 
+	BackupTokenOverwriteRequired = "CreateBackupTokenOverwriteRequired"
+	BackupTokensRemoved          = "BackupTokensRemoved"
+
 	// OAuth messages
 	OAuthInvalidClientName  = "OAuthInvalidClientName"
 	OAuthInvalidRedirect    = "OAuthInvalidRedirect"
