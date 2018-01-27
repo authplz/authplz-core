@@ -279,3 +279,11 @@ func (bc *Controller) ListCodes(userid string) ([]BackupCode, error) {
 
 	return safeCodes, nil
 }
+
+// ClearPendingTokens deletes pending backup tokens
+func (bc *Controller) ClearPendingTokens(userid string) error {
+	err := bc.backupStore.ClearPendingBackupTokens(userid)
+	data := make(map[string]string)
+	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesRemoved, data))
+	return err
+}

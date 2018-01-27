@@ -133,11 +133,22 @@ func (dataStore *DataStore) GetBackupTokenByName(userid, name string) (interface
 
 // UpdateBackupToken updates a backup token instance
 func (dataStore *DataStore) UpdateBackupToken(token interface{}) (interface{}, error) {
-
 	err := dataStore.db.Save(token).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return token, nil
+}
+
+// ClearPendingBackupTokens removes any unused backup tokens
+func (dataStore *DataStore) ClearPendingBackupTokens(userid string) error {
+	u, err := dataStore.GetUserByExtID(userid)
+	if err != nil {
+		return err
+	}
+	user := u.(*User)
+
+	err = dataStore.db.Delete(&BackupToken{UserID: user.ID, Used: false}).Error
+	return err
 }
