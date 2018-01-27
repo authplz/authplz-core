@@ -65,6 +65,7 @@ func NewMailController(appName, domain, driver string, options map[string]string
 	}
 
 	// Load templates from specified directory
+	// Note that this will fail if any templates are missing
 	var templates = make(map[string]template.Template)
 	for _, name := range templateNames {
 		fileName := fmt.Sprintf("%s/%s.tmpl", templateDir, name)
@@ -162,8 +163,8 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 	// Handle types of events
 	err = nil
 	switch event.GetType() {
-	case events.AccountCreated:
-		// Account creation causes an activation email to be sent
+	case events.AccountCreated, events.AccountNotActivated:
+		// Account creation or attemped login while not activated causes an activation email to be sent
 		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionActivate, time.Hour)
 		if err != nil {
 			log.Printf("MailController.HandleEvent error creating token %s", err)
@@ -184,8 +185,8 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 		data["ActionURL"] = fmt.Sprintf("%s/api/recovery?token=%s", mc.domain, token)
 		err = mc.SendPasswordReset(user.GetEmail(), mergeMaps(data, event.GetData()))
 
-	case events.AccountLocked:
-		// Account lock causes unlock email to be sent
+	case events.AccountLocked, events.AccountNotUnlocked:
+		// Account lock and attempted login while locked causes unlock email to be sent
 		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionUnlock, time.Hour)
 		if err != nil {
 			log.Printf("MailController.HandleEvent error creating token %s", err)
@@ -196,6 +197,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 		err = mc.SendUnlock(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.PasswordUpdate:
+		// Password update notice email
 		err = mc.SendPasswordChanged(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	default:
