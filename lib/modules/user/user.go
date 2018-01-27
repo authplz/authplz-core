@@ -17,12 +17,12 @@ const hashRounds = 8
 // Controller User controller instance storage
 type Controller struct {
 	userStore  Storer
-	emitter    events.EventEmitter
+	emitter    events.Emitter
 	hashRounds int
 }
 
 // NewController Create a new user controller
-func NewController(userStore Storer, emitter events.EventEmitter) *Controller {
+func NewController(userStore Storer, emitter events.Emitter) *Controller {
 	return &Controller{userStore, emitter, hashRounds}
 }
 
@@ -77,7 +77,7 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 
 	// Emit user creation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountCreated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountCreated, data))
 
 	log.Printf("UserModule.Create: User %s created\r\n", user.GetExtID())
 
@@ -110,7 +110,7 @@ func (userModule *Controller) Activate(email string) (user User, err error) {
 
 	// Emit user activation event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountActivated, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountActivated, data))
 
 	log.Printf("UserModule.Activate: User %s account activated\r\n", user.GetExtID())
 
@@ -143,7 +143,7 @@ func (userModule *Controller) Lock(email string) (user User, err error) {
 
 	// Emit user unlock event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountLocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account locked\r\n", user.GetExtID())
 
@@ -176,7 +176,7 @@ func (userModule *Controller) Unlock(email string) (user User, err error) {
 
 	// Emit user unlock event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountUnlocked, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountUnlocked, data))
 
 	log.Printf("UserModule.Unlock: User %s account unlocked\r\n", user.GetExtID())
 
@@ -215,7 +215,7 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 				user.SetLocked(true)
 
 				data := make(map[string]string)
-				userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLocked, data))
+				userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountLocked, data))
 			}
 
 			u, err = userModule.userStore.UpdateUser(user)
@@ -342,7 +342,7 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 
 	// Emit password update event
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventPasswordUpdate, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.PasswordUpdate, data))
 
 	// Log update
 	log.Printf("UserModule.handleSetPassword: User %s password updated\r\n", user.GetExtID())
@@ -448,18 +448,21 @@ func (userModule *Controller) PreLogin(u interface{}) (bool, error) {
 
 	if user.IsEnabled() == false {
 		//TODO: handle disabled error
+		userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountNotEnabled, events.NewData()))
 		log.Printf("UserModule.PreLogin: User %s login failed, account disabled\r\n", user.GetExtID())
 		return false, nil
 	}
 
 	if user.IsActivated() == false {
 		//TODO: handle un-activated error
+		userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountNotActivated, events.NewData()))
 		log.Printf("UserModule.PreLogin: User %s login failed, account deactivated\r\n", user.GetExtID())
 		return false, nil
 	}
 
 	if user.IsLocked() == true {
 		//TODO: handle locked error
+		userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.AccountNotUnlocked, events.NewData()))
 		log.Printf("UserModule.PreLogin: User %s login failed, account locked\r\n", user.GetExtID())
 		return false, nil
 	}
@@ -480,7 +483,7 @@ func (userModule *Controller) PostLoginSuccess(u interface{}) error {
 	}
 
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginSuccess, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.LoginSuccess, data))
 
 	return nil
 }
@@ -490,7 +493,7 @@ func (userModule *Controller) PostLoginFailure(u interface{}) error {
 	user := u.(User)
 
 	data := make(map[string]string)
-	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.EventAccountLoginFailure, data))
+	userModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.LoginFailure, data))
 
 	return nil
 }

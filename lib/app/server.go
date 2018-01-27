@@ -105,6 +105,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 		return nil
 	}
 
+	// Create async mailer service and distribute events to it
 	mailSvc := async.NewAsyncService(mailController, bufferSize)
 	server.serviceManager.BindService(&mailSvc)
 

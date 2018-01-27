@@ -7,6 +7,7 @@ import (
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
 	"github.com/authplz/authplz-core/lib/events"
 	"github.com/authplz/authplz-core/lib/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserController(t *testing.T) {
@@ -51,6 +52,7 @@ func TestUserController(t *testing.T) {
 			t.Error("User login succeeded (and shouldn't have)")
 			t.FailNow()
 		}
+		assert.EqualValues(t, events.AccountNotActivated, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Activate user", func(t *testing.T) {
@@ -62,10 +64,7 @@ func TestUserController(t *testing.T) {
 		if u == nil {
 			t.Error("No login result")
 		}
-
-		if mockEventEmitter.Event.Type != events.EventAccountActivated {
-			t.Error("Expected EventAccountActivated")
-		}
+		assert.EqualValues(t, events.AccountActivated, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Login user", func(t *testing.T) {
@@ -90,7 +89,7 @@ func TestUserController(t *testing.T) {
 		}
 	})
 
-	t.Run("PostLoginSuccess hook updates last login time", func(t *testing.T) {
+	t.Run("PostLoginSuccess hook updates last login time and creates event", func(t *testing.T) {
 		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
 		if u1 == nil {
 			t.Error("No user found")
@@ -112,6 +111,8 @@ func TestUserController(t *testing.T) {
 			t.Errorf("Login times match (initial: %v new: %v)", u1.(User).GetLastLogin(), u2.(User).GetLastLogin())
 			t.FailNow()
 		}
+
+		assert.EqualValues(t, events.LoginSuccess, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Login rejects logins with invalid passwords", func(t *testing.T) {
@@ -151,6 +152,8 @@ func TestUserController(t *testing.T) {
 		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
 		u.(User).SetEnabled(true)
 		uc.userStore.UpdateUser(u)
+
+		assert.EqualValues(t, events.AccountNotEnabled, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Login locks accounts after N failed attempts", func(t *testing.T) {
@@ -167,10 +170,7 @@ func TestUserController(t *testing.T) {
 		if !u.(User).IsLocked() {
 			t.Errorf("Account not locked")
 		}
-
-		if mockEventEmitter.Event.Type != events.EventAccountLocked {
-			t.Error("Expected EventAccountLocked")
-		}
+		assert.EqualValues(t, events.AccountLocked, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("PreLogin blocks locked accounts", func(t *testing.T) {
@@ -183,6 +183,7 @@ func TestUserController(t *testing.T) {
 		if res {
 			t.Error("User account was not locked", res)
 		}
+		assert.EqualValues(t, events.AccountNotUnlocked, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Unlock unlocks accounts", func(t *testing.T) {
@@ -197,10 +198,7 @@ func TestUserController(t *testing.T) {
 		if u.(User).IsLocked() {
 			t.Errorf("Account is still locked")
 		}
-
-		if mockEventEmitter.Event.Type != events.EventAccountUnlocked {
-			t.Error("Expected EventAccountUnlocked")
-		}
+		assert.EqualValues(t, events.AccountUnlocked, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Get user", func(t *testing.T) {
@@ -242,6 +240,8 @@ func TestUserController(t *testing.T) {
 		}
 
 		fakePass = newPass
+
+		assert.EqualValues(t, events.PasswordUpdate, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Update password updates password changed time", func(t *testing.T) {
@@ -291,9 +291,7 @@ func TestUserController(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if mockEventEmitter.Event.Type != events.EventAccountLoginSuccess {
-			t.Error("Expected EventAccountLoginSuccess")
-		}
+		assert.EqualValues(t, events.LoginSuccess, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("PostLoginFailure causes login failure event", func(t *testing.T) {
@@ -303,9 +301,7 @@ func TestUserController(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if mockEventEmitter.Event.Type != events.EventAccountLoginFailure {
-			t.Error("Expected EventAccountLoginFailure")
-		}
+		assert.EqualValues(t, events.LoginFailure, mockEventEmitter.Event.Type)
 	})
 
 	// Tear down user controller
