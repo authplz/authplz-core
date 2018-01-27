@@ -112,3 +112,8 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[metadata.heroku]
+  root-package = "github.com/authplz/authplz-core"
+  go-version = "1.9.2"
+  install = [ "./cmd/authplz/..." ]
