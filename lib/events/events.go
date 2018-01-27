@@ -15,43 +15,49 @@ import (
 // EventType wraps strings for type safety
 type EventType string
 
+// Account Events
 const (
-	// Account Events
+	AccountCreated      string = "account_created"
+	AccountActivated    string = "account_activated"
+	AccountNotActivated string = "account_not_activated"
+	AccountLocked       string = "account_locked"
+	AccountUnlocked     string = "account_unlocked"
+	AccountNotUnlocked  string = "account_not_unlocked"
+	AccountEnabled      string = "account_enabled"
+	AccountDisabled     string = "account_disabled"
+	AccountNotEnabled   string = "account_not_enabled"
+	AccountDeleted      string = "account_deleted"
+	PasswordUpdate      string = "password_update"
+	PasswordResetReq    string = "password_reset_request"
+)
 
-	EventAccountCreated   string = "account_created"
-	EventAccountActivated string = "account_activated"
-	EventAccountLocked    string = "account_locked"
-	EventAccountUnlocked  string = "account_unlocked"
-	EventAccountEnabled   string = "account_enabled"
-	EventAccountDisabled  string = "account_disabled"
-	EventAccountDeleted   string = "account_deleted"
-	EventPasswordUpdate   string = "password_update"
-	EventPasswordResetReq string = "password_reset_request"
+// 2FA Events
+const (
+	SecondFactorTotpAdded          string = "totp_added"
+	SecondFactorTotpUsed           string = "totp_used"
+	SecondFactorTotpRemoved        string = "totp_removed"
+	SecondFactorU2FAdded           string = "u2f_added"
+	SecondFactorU2FUsed            string = "u2f_used"
+	SecondFactorU2FRemoved         string = "u2f_removed"
+	SecondFactorBackupCodesAdded   string = "backup_code_added"
+	SecondFactorBackupCodesUsed    string = "backup_code_used"
+	SecondFactorBackupCodesRemoved string = "backup_code_removed"
+)
 
-	// 2FA Events
+// Login Events
+const (
+	LoginSuccess          string = "login_success"
+	LoginFailure          string = "login_failure"
+	AccountLoginNewDevice string = "login_new_device"
+	Logout                string = "logout"
+)
 
-	Event2faTotpAdded          string = "totp_added"
-	Event2faTotpUsed           string = "totp_used"
-	Event2faTotpRemoved        string = "totp_removed"
-	Event2faU2FAdded           string = "u2f_added"
-	Event2faU2FUsed            string = "u2f_used"
-	Event2faU2FRemoved         string = "u2f_removed"
-	Event2faBackupCodesAdded   string = "backup_code_added"
-	Event2faBackupCodesUsed    string = "backup_code_used"
-	Event2faBackupCodesRemoved string = "backup_code_removed"
-
-	// Login Events
-
-	EventAccountLoginSuccess   string = "login_success"
-	EventAccountLoginFailure   string = "login_failure"
-	EventAccountLoginNewDevice string = "login_new_device"
-
-	// OAuth Events
-
-	EventClientCreated      string = "oauth_client_created"
-	EventClientRemoved      string = "oauth_client_removed"
-	EventClientAuthorized   string = "oauth_client_authorized"
-	EventClientDeauthorized string = "oauth_client_deauthorized"
+// OAuth Events
+const (
+	OAuthClientCreated      string = "oauth_client_created"
+	OAuthClientRemoved      string = "oauth_client_removed"
+	OAuthClientAuthorized   string = "oauth_client_authorized"
+	OAuthClientDeauthorized string = "oauth_client_deauthorized"
 )
 
 // AuthPlzEvent event type for asynchronous communication
@@ -79,7 +85,12 @@ func NewEvent(userExtID, eventType string, data map[string]string) *AuthPlzEvent
 	return &AuthPlzEvent{userExtID, time.Now(), eventType, data}
 }
 
-// EventEmitter interface for event producers
-type EventEmitter interface {
+// NewData creates a new blank data object
+func NewData() map[string]string {
+	return make(map[string]string)
+}
+
+// Emitter interface for event producers
+type Emitter interface {
 	SendEvent(interface{})
 }

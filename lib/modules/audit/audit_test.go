@@ -41,7 +41,7 @@ func TestAuditController(t *testing.T) {
 
 	// Run tests
 	t.Run("Add login event", func(t *testing.T) {
-		err := ac.AddEvent(user.GetExtID(), events.EventAccountCreated, time.Now(), make(map[string]string))
+		err := ac.AddEvent(user.GetExtID(), events.AccountCreated, time.Now(), make(map[string]string))
 		if err != nil {
 			t.Error(err)
 		}
@@ -64,7 +64,7 @@ func TestAuditController(t *testing.T) {
 	t.Run("Post audit event", func(t *testing.T) {
 		d := make(map[string]string)
 		d["ip"] = "127.0.0.1"
-		e := events.AuthPlzEvent{user.GetExtID(), time.Now(), events.EventAccountActivated, d}
+		e := events.AuthPlzEvent{user.GetExtID(), time.Now(), events.AccountActivated, d}
 
 		serviceManager.SendEvent(&e)
 

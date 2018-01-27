@@ -31,10 +31,13 @@ type Controller struct {
 	preLogin         map[string]PreLoginHook
 	postLoginSuccess map[string]PostLoginSuccessHook
 	postLoginFailure map[string]PostLoginFailureHook
+
+	// Event emitter for core user states
+	emitter events.Emitter
 }
 
 // NewController Create a new core module instance
-func NewController(tokenValidator TokenValidator, loginProvider LoginProvider, emitter events.EventEmitter) *Controller {
+func NewController(tokenValidator TokenValidator, loginProvider LoginProvider, emitter events.Emitter) *Controller {
 	return &Controller{
 		tokenControl:         tokenValidator,
 		userControl:          loginProvider,
@@ -45,5 +48,6 @@ func NewController(tokenValidator TokenValidator, loginProvider LoginProvider, e
 		postLoginSuccess: make(map[string]PostLoginSuccessHook),
 		postLoginFailure: make(map[string]PostLoginFailureHook),
 		eventHandlers:    make(map[string]EventHandler),
+		emitter:          emitter,
 	}
 }

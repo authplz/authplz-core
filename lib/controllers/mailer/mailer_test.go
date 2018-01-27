@@ -1,3 +1,11 @@
+/*
+ * Mailer module controller
+ * This manages email sending based on system events
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package mailer
 
 import (
@@ -103,7 +111,7 @@ func TestMailController(t *testing.T) {
 		e := events.AuthPlzEvent{
 			UserExtID: "test-id",
 			Time:      time.Now(),
-			Type:      events.EventAccountCreated,
+			Type:      events.AccountCreated,
 			Data:      make(map[string]string),
 		}
 
@@ -117,7 +125,7 @@ func TestMailController(t *testing.T) {
 		e := events.AuthPlzEvent{
 			UserExtID: "test-id",
 			Time:      time.Now(),
-			Type:      events.EventPasswordResetReq,
+			Type:      events.PasswordResetReq,
 			Data:      make(map[string]string),
 		}
 

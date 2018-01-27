@@ -33,10 +33,12 @@ test: mocks
 	@go test -p=1 ./lib/...
 
 mocks:
-	mockgen -source lib/modules/core/core_interface.go 			-destination lib/modules/core/core_mocks.go 		-package core
-	mockgen -source lib/modules/user/user_interface.go 			-destination lib/modules/user/user_mocks.go 		-package user
-	mockgen -source lib/modules/2fa/backup/backup_interface.go  -destination lib/modules/2fa/backup/backup_mocks.go -package backup
-	mockgen -source lib/modules/oauth/oauth_interface.go 		-destination lib/modules/oauth/oauth_mocks.go 		-package oauth
+	mockgen -source lib/modules/core/core_interface.go 			-destination lib/modules/core/core_mocks.go 			-package core
+	mockgen -source lib/events/events.go 						-destination lib/events/event_mocks.go 					-package events
+	mockgen -source lib/controllers/mailer/mailer_interface.go 	-destination lib/controllers/mailer/mailer_mocks.go 	-package mailer
+	mockgen -source lib/modules/user/user_interface.go 			-destination lib/modules/user/user_mocks.go 			-package user
+	mockgen -source lib/modules/2fa/backup/backup_interface.go  -destination lib/modules/2fa/backup/backup_mocks.go 	-package backup
+	mockgen -source lib/modules/oauth/oauth_interface.go 		-destination lib/modules/oauth/oauth_mocks.go 			-package oauth
 
 cross: dir
 	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-linux-amd64 ./cmd/authplz

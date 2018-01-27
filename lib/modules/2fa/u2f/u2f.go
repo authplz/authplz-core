@@ -22,14 +22,14 @@ import (
 type Controller struct {
 	url      string
 	u2fStore Storer
-	emitter  events.EventEmitter
+	emitter  events.Emitter
 }
 
 // NewController creates a new U2F controller
 // U2F tokens are issued against the provided url, the browser will reject any u2f requests not from this domain.
 // A CompletedHandler is required for completion of authorization actions, as well as a Storer to
 // provide underlying storage to the U2F module
-func NewController(url string, u2fStore Storer, emitter events.EventEmitter) *Controller {
+func NewController(url string, u2fStore Storer, emitter events.Emitter) *Controller {
 	return &Controller{
 		url:      url,
 		u2fStore: u2fStore,
@@ -101,7 +101,7 @@ func (u2fModule *Controller) ValidateRegistration(userid, tokenName string, chal
 	}
 
 	data := make(map[string]string)
-	u2fModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faU2FAdded, data))
+	u2fModule.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorU2FAdded, data))
 
 	// Indicate successful registration
 	return true, nil
@@ -150,7 +150,7 @@ func (u2fModule *Controller) ValidateSignature(userid string, challenge *u2f.Cha
 
 	data := make(map[string]string)
 	data["Token Name"] = token.GetName()
-	u2fModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faU2FUsed, data))
+	u2fModule.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorU2FUsed, data))
 
 	// Indicate successful authentication
 	return true, nil

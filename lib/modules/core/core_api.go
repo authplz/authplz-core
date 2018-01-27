@@ -12,8 +12,6 @@ import (
 	"github.com/authplz/authplz-core/lib/appcontext"
 )
 
-import ()
-
 // Temporary mapping between contexts
 type coreCtx struct {
 	// Base context for shared components
@@ -232,6 +230,7 @@ func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	c.LogoutUser(rw, req)
+
 	rw.WriteHeader(http.StatusOK)
 }
 

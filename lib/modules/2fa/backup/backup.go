@@ -35,13 +35,13 @@ const (
 type Controller struct {
 	issuerName  string
 	backupStore Storer
-	emitter     events.EventEmitter
+	emitter     events.Emitter
 }
 
 // NewController creates a new backup code controller
 // Backup tokens are issued with an associated issuer name to assist with user identification of codes.
 // A Storer provides underlying storage to the backup code module
-func NewController(issuerName string, backupStore Storer, emitter events.EventEmitter) *Controller {
+func NewController(issuerName string, backupStore Storer, emitter events.Emitter) *Controller {
 	return &Controller{
 		issuerName:  issuerName,
 		backupStore: backupStore,
@@ -140,7 +140,7 @@ func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
 	resp := CreateResponse{bc.issuerName, keys}
 
 	data := make(map[string]string)
-	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesAdded, data))
+	bc.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorBackupCodesAdded, data))
 
 	return &resp, nil
 }
@@ -245,7 +245,7 @@ func (bc *Controller) ValidateCode(userid string, codeString string) (bool, erro
 
 	data := make(map[string]string)
 	data["Code Name"] = code.GetName()
-	bc.emitter.SendEvent(events.NewEvent(userid, events.Event2faBackupCodesUsed, data))
+	bc.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorBackupCodesUsed, data))
 
 	return true, nil
 }
