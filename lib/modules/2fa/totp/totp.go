@@ -23,14 +23,14 @@ import (
 type Controller struct {
 	issuerName string
 	totpStore  Storer
-	emitter    events.EventEmitter
+	emitter    events.Emitter
 }
 
 // NewController creates a new TOTP controller
 // TOTP tokens are issued against the provided issuer name and user email account.
 // A CompletedHandler is required for completion of authorization actions, as welll as a Storer to
 // provide underlying storage to the TOTP module
-func NewController(issuerName string, totpStore Storer, emitter events.EventEmitter) *Controller {
+func NewController(issuerName string, totpStore Storer, emitter events.Emitter) *Controller {
 	return &Controller{
 		issuerName: issuerName,
 		totpStore:  totpStore,
@@ -119,7 +119,7 @@ func (totpModule *Controller) ValidateRegistration(userid, tokenName, secret, to
 
 	data := make(map[string]string)
 	data["Token Name"] = t.(TokenInterface).GetName()
-	totpModule.emitter.SendEvent(events.NewEvent(userid, events.Event2faTotpAdded, data))
+	totpModule.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorTotpAdded, data))
 
 	return true, nil
 }

@@ -1,0 +1,19 @@
+<html>
+<head></head>
+<body>
+<p>
+Hi {{.Username}},
+<br \><br \>
+Your account for {{.ServiceName}} has been locked due to to an excess number of password attempts.
+To unlock your account, please click <a href="{{.ActionURL}}">here</a> or copy the following link into the address bar:
+<br \><br \>
+{{.ActionURL}}
+<br \><br \>
+If this isn't you, you may consider adding <a href="https://en.wikipedia.org/wiki/Multi-factor_authentication">Multi-Factor Authentication</a> for {{.ServiceName}}.
+<br \><br \>
+Thanks,
+<br \><br \>
+The team at {{.ServiceName}}
+</p>
+</body>
+</html>

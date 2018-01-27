@@ -122,7 +122,7 @@ func (coreModule *Controller) PostLoginFailure(u interface{}) error {
 	return nil
 }
 
-// PostLoginFailure Runs bound post login failure handlers
+// PasswordResetStart Runs bound post login failure handlers
 func (coreModule *Controller) PasswordResetStart(email string) error {
 
 	return nil

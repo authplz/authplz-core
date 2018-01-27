@@ -20,24 +20,6 @@ import (
 	"time"
 )
 
-// MailDriver defines the interface that must be implemented by a mailer driver
-type MailDriver interface {
-	Send(to, subject, body string) error
-}
-
-type Storer interface {
-	GetUserByExtID(extID string) (interface{}, error)
-}
-
-type TokenCreator interface {
-	BuildToken(userID string, action api.TokenAction, duration time.Duration) (string, error)
-}
-
-type User interface {
-	GetUsername() string
-	GetEmail() string
-}
-
 // MailController Mail controller instance
 type MailController struct {
 	domain       string
@@ -51,9 +33,10 @@ type MailController struct {
 }
 
 // Standard mailing templates (required for MailController creation)
-var templateNames = [...]string{"activation", "passwordreset", "loginnotice"}
+var templateNames = [...]string{"activation", "passwordreset", "passwordchange", "loginnotice", "unlock"}
 
-type MailerConfig struct {
+// Config Generic Mail Controller Configuration
+type Config struct {
 	AppName      string
 	Domain       string
 	Driver       string
@@ -82,6 +65,7 @@ func NewMailController(appName, domain, driver string, options map[string]string
 	}
 
 	// Load templates from specified directory
+	// Note that this will fail if any templates are missing
 	var templates = make(map[string]template.Template)
 	for _, name := range templateNames {
 		fileName := fmt.Sprintf("%s/%s.tmpl", templateDir, name)
@@ -134,6 +118,16 @@ func (mc *MailController) SendPasswordReset(email string, data map[string]string
 	return mc.SendTemplate("passwordreset", email, mc.appName+" Password Reset", data)
 }
 
+// SendPasswordChanged Send a password changed email to the provided address
+func (mc *MailController) SendPasswordChanged(email string, data map[string]string) error {
+	return mc.SendTemplate("passwordchanged", email, mc.appName+" Password Changed", data)
+}
+
+// SendUnlock Send a activation email to the provided address
+func (mc *MailController) SendUnlock(email string, data map[string]string) error {
+	return mc.SendTemplate("unlock", email, mc.appName+" Account Activation", data)
+}
+
 func mergeMaps(a, b map[string]string) map[string]string {
 	c := make(map[string]string)
 	for i := range a {
@@ -145,6 +139,7 @@ func mergeMaps(a, b map[string]string) map[string]string {
 	return c
 }
 
+// HandleEvent processes events sent to the mailer process.
 func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
 
@@ -168,8 +163,8 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 	// Handle types of events
 	err = nil
 	switch event.GetType() {
-	case events.EventAccountCreated:
-		// Account creation causes an activation email to be sent
+	case events.AccountCreated, events.AccountNotActivated:
+		// Account creation or attemped login while not activated causes an activation email to be sent
 		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionActivate, time.Hour)
 		if err != nil {
 			log.Printf("MailController.HandleEvent error creating token %s", err)
@@ -178,7 +173,8 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 		data["Token"] = token
 		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
 		err = mc.SendActivation(user.GetEmail(), mergeMaps(data, event.GetData()))
-	case events.EventPasswordResetReq:
+
+	case events.PasswordResetReq:
 		// Password recovery request causes a password recovery email to be sent
 		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionRecovery, time.Hour)
 		if err != nil {
@@ -188,6 +184,22 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 		data["Token"] = token
 		data["ActionURL"] = fmt.Sprintf("%s/api/recovery?token=%s", mc.domain, token)
 		err = mc.SendPasswordReset(user.GetEmail(), mergeMaps(data, event.GetData()))
+
+	case events.AccountLocked, events.AccountNotUnlocked:
+		// Account lock and attempted login while locked causes unlock email to be sent
+		token, err := mc.tokenCreator.BuildToken(userID, api.TokenActionUnlock, time.Hour)
+		if err != nil {
+			log.Printf("MailController.HandleEvent error creating token %s", err)
+			return err
+		}
+		data["Token"] = token
+		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
+		err = mc.SendUnlock(user.GetEmail(), mergeMaps(data, event.GetData()))
+
+	case events.PasswordUpdate:
+		// Password update notice email
+		err = mc.SendPasswordChanged(user.GetEmail(), mergeMaps(data, event.GetData()))
+
 	default:
 	}
 
