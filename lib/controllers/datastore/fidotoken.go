@@ -97,11 +97,14 @@ func (dataStore *DataStore) GetFidoTokens(userid string) ([]interface{}, error) 
 
 // UpdateFidoToken updates a fido token instance
 func (dataStore *DataStore) UpdateFidoToken(token interface{}) (interface{}, error) {
-
 	err := dataStore.db.Save(token).Error
 	if err != nil {
 		return nil, err
 	}
-
 	return token, nil
+}
+
+// RemoveFidoToken deletes a totp token
+func (dataStore *DataStore) RemoveFidoToken(token interface{}) error {
+	return dataStore.db.Delete(token).Error
 }

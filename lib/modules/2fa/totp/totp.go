@@ -210,7 +210,7 @@ func (totpModule *Controller) RemoveToken(userid, tokenID string) (bool, error) 
 	for _, t := range tokens {
 		token := t.(TokenInterface)
 		if token.GetExtID() == tokenID {
-			err := totpModule.totpStore.DeleteTotpToken(token)
+			err := totpModule.totpStore.RemoveTotpToken(token)
 			if err != nil {
 				log.Printf("TOTPModule.ListTokens: error deleting TOTP tokens (%s)", err)
 				return false, err

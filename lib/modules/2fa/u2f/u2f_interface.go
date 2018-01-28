@@ -36,6 +36,8 @@ type Storer interface {
 	GetFidoTokens(userid string) ([]interface{}, error)
 	// Update a provided fido token
 	UpdateFidoToken(token interface{}) (interface{}, error)
+	// Remove the provided fido token
+	RemoveFidoToken(token interface{}) error
 }
 
 // CompletedHandler Callback for 2fa signature completion

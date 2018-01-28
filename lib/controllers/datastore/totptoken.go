@@ -92,11 +92,10 @@ func (ds *DataStore) UpdateTotpToken(token interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return token, nil
 }
 
-// DeleteTotpToken deletes a totp token
-func (ds *DataStore) DeleteTotpToken(token interface{}) error {
+// RemoveTotpToken deletes a totp token
+func (ds *DataStore) RemoveTotpToken(token interface{}) error {
 	return ds.db.Delete(token).Error
 }

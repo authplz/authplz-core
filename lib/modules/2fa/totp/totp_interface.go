@@ -42,7 +42,7 @@ type Storer interface {
 	// Update a provided totp token
 	UpdateTotpToken(token interface{}) (interface{}, error)
 	// Remove a totp token
-	DeleteTotpToken(token interface{}) error
+	RemoveTotpToken(token interface{}) error
 }
 
 // CompletedHandler Callback for 2fa signature completion
