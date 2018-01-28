@@ -42,4 +42,6 @@ type Storer interface {
 	GetBackupTokenByName(userid, name string) (interface{}, error)
 	// Update a provided backup code
 	UpdateBackupToken(code interface{}) (interface{}, error)
+	// Remove valid backup codes
+	ClearPendingBackupTokens(userid string) error
 }

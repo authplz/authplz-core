@@ -23,9 +23,9 @@ import (
 )
 
 const (
+	NumRecoveryKeys  = 5
 	recoveryKeyLen   = 128 / 8
 	recoveryNameLen  = 3
-	numRecoveryKeys  = 5
 	backupHashRounds = 12
 )
 
@@ -118,7 +118,7 @@ type CreateResponse struct {
 // CreateCodes creates a set of backup codes for a user
 // TODO: should this erase existing codes?
 func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
-	keys := make([]BackupKey, numRecoveryKeys)
+	keys := make([]BackupKey, NumRecoveryKeys)
 
 	// Generate backup keys
 	for i := range keys {
@@ -280,4 +280,12 @@ func (bc *Controller) ListCodes(userid string) ([]BackupCode, error) {
 	}
 
 	return safeCodes, nil
+}
+
+// ClearPendingTokens deletes pending backup tokens
+func (bc *Controller) ClearPendingTokens(userid string) error {
+	err := bc.backupStore.ClearPendingBackupTokens(userid)
+	data := make(map[string]string)
+	bc.emitter.SendEvent(events.NewEvent(userid, events.SecondFactorBackupCodesRemoved, data))
+	return err
 }

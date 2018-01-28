@@ -52,14 +52,14 @@ func TestBackupModule(t *testing.T) {
 		mockStore := NewMockStorer(ctrl)
 		bc := NewController("Test Service", mockStore, &test.MockEventEmitter{})
 
-		mockStore.EXPECT().AddBackupToken(userID, gomock.Any(), gomock.Any()).Times(numRecoveryKeys).Do(func(userID, name, key string) {
+		mockStore.EXPECT().AddBackupToken(userID, gomock.Any(), gomock.Any()).Times(NumRecoveryKeys).Do(func(userID, name, key string) {
 			keys = append(keys, BackupKey{userID, name, key})
 		})
 
 		codes, err = bc.CreateCodes(userID)
 		assert.Nil(t, err)
-		assert.Len(t, keys, numRecoveryKeys)
-		assert.Len(t, codes.Tokens, numRecoveryKeys)
+		assert.Len(t, keys, NumRecoveryKeys)
+		assert.Len(t, codes.Tokens, NumRecoveryKeys)
 	})
 
 	t.Run("Validate backup tokens for user", func(t *testing.T) {
