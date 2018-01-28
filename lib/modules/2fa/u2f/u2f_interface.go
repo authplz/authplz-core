@@ -15,6 +15,7 @@ import (
 // TokenInterface Token instance interface
 // This must be implemented by the token storage implementation
 type TokenInterface interface {
+	GetExtID() string
 	GetName() string
 	GetKeyHandle() string
 	GetPublicKey() string

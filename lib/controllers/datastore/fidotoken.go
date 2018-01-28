@@ -4,11 +4,13 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
 )
 
 // FidoToken Fido/U2F token object
 type FidoToken struct {
 	gorm.Model
+	ExtID       string
 	UserID      uint
 	Name        string
 	KeyHandle   string
@@ -22,6 +24,9 @@ type FidoToken struct {
 
 // GetName fetches the token Name
 func (token *FidoToken) GetName() string { return token.Name }
+
+// GetExtID fetches the external ID for a token
+func (token *FidoToken) GetExtID() string { return token.ExtID }
 
 // GetKeyHandle fetches the token KeyHandle
 func (token *FidoToken) GetKeyHandle() string { return token.KeyHandle }
@@ -57,6 +62,7 @@ func (dataStore *DataStore) AddFidoToken(userid, name, keyHandle, publicKey, cer
 
 	// Create a token instance
 	token := FidoToken{
+		ExtID:       uuid.NewV4().String(),
 		UserID:      user.ID,
 		Name:        name,
 		KeyHandle:   keyHandle,

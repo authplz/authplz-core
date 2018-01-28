@@ -55,7 +55,8 @@ const (
 	U2FTokenRemoved          = "U2FTokenRemoved"
 	RecoveryNoRequestPending = "RecoveryNoRequestPending"
 
-	TOTPTokenRemoved             = "TOTPTokenRemoved"
+	TOTPTokenRemoved = "TOTPTokenRemoved"
+
 	BackupTokenOverwriteRequired = "CreateBackupTokenOverwriteRequired"
 	BackupTokensRemoved          = "BackupTokensRemoved"
 
