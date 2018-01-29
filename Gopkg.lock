@@ -156,6 +156,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
+  version = "v1.2"
+
+[[projects]]
   name = "github.com/ryankurte/go-async"
   packages = ["."]
   revision = "68217616a03b5fc9615755facf86022f31a3a867"
@@ -255,6 +261,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "325ce8d586fe7e021a79120ae510ce356f2cf51773fd9e7e1c03a46e70e1540e"
+  inputs-digest = "8694378ac2d3affe41b042c4599a9d3b42277bea224a14754f0d935697efedad"
   solver-name = "gps-cdcl"
   solver-version = 1

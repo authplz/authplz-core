@@ -57,32 +57,6 @@ func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	}
 }
 
-//NewOptionsHandler creates an options handler to implement CORS
-func NewOptionsHandler(allowedOrigins []string) func(ctx *AuthPlzCtx, rw web.ResponseWriter, r *web.Request, methods []string) {
-	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, methods []string) {
-		rw.Header().Add("Access-Control-Allow-Methods", strings.Join(methods, ", "))
-
-		// Cross Origin Resource Sharing (CORS)
-		origin := req.Header.Get("origin")
-
-		// Append allowed header if a match is found
-		for _, allowed := range allowedOrigins {
-			if allowed == origin {
-				rw.Header().Add("Access-Control-Allow-Origin", allowed)
-				return
-			}
-		}
-
-		// Append default allowedOrigin if no matches are found
-		if len(allowedOrigins) > 0 {
-			rw.Header().Add("Access-Control-Allow-Origin", allowedOrigins[0])
-			return
-		}
-		// Allow everything if no allowedOrigins are specified
-		rw.Header().Add("Access-Control-Allow-Origin", "*")
-	}
-}
-
 // GetSession fetches the base user session instance
 // Modules can use this base session or their own session instances
 func (c *AuthPlzCtx) GetSession() *sessions.Session {

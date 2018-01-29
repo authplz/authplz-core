@@ -44,6 +44,7 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
 	coreRouter.Post("/recovery", (*coreCtx).RecoverPost)
 	coreRouter.Get("/2fa-status", (*coreCtx).SecondFactorStatus)
+	coreRouter.Get("/test", (*coreCtx).TestGet)
 }
 
 // Handle an action token (both get and post calls)
@@ -319,4 +320,9 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Return OK
 	rw.WriteHeader(http.StatusOK)
+}
+
+// TestGet test endpoint
+func (c *coreCtx) TestGet(rw web.ResponseWriter, req *web.Request) {
+	c.WriteAPIResult(rw, api.OK)
 }

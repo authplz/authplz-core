@@ -8,6 +8,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/context"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/sessions"
 
 	"github.com/authplz/authplz-core/lib/api"
@@ -50,17 +51,22 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	server.config = config
 
+	log.Printf("Initialising AuthPlz")
+
 	// Attempt database connection
+	if config.Database == "" {
+		log.Panicf("No database configuration found")
+	}
 	dataStore, err := datastore.NewDataStore(config.Database)
 	if err != nil {
-		log.Panic("Error opening database")
+		log.Panicf("Error opening databaseError opening database '%s'", config.Database)
 	}
 	server.ds = dataStore
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
-	//sessionStore.Options.Secure = true
-	//sessionStore.Options.HttpOnly = true
+	sessionStore.Options.Secure = true
+	sessionStore.Options.HttpOnly = true
 
 	// Create token controller
 	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret), dataStore)
@@ -70,7 +76,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	// Create modules
 
-	// Create service manager
+	// Create service manager (runs processes and distributes messages)
 	server.serviceManager = async.NewServiceManager(bufferSize)
 
 	// User management module
@@ -93,7 +99,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	backupModule := backup.NewController(config.Name, dataStore, server.serviceManager)
 	coreModule.BindSecondFactor("backup", backupModule)
 
-	// Audit module (async components)
+	// Audit module (async service)
 	auditModule := audit.NewController(dataStore)
 	auditSvc := async.NewAsyncService(auditModule, bufferSize)
 	server.serviceManager.BindService(&auditSvc)
@@ -122,13 +128,18 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
 
-	router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
+	log.Printf("Allowed-Origins: %+v", config.AllowedOrigins)
+	//router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
 
 	// Enable static file hosting
 	_, _ = os.Getwd()
-	staticPath := path.Clean(config.StaticDir)
-	log.Printf("Loading static content from: %s\n", staticPath)
-	router.Middleware(web.StaticMiddleware(staticPath))
+	if config.StaticDir != "" {
+		staticPath := path.Clean(config.StaticDir)
+		router.Middleware(web.StaticMiddleware(staticPath))
+		log.Printf("Serving static content from: %s\n", staticPath)
+	} else {
+		log.Printf("Set 'static-dir' configuration variable to serve static content\n")
+	}
 
 	// Bind modules to router
 	coreModule.BindAPI(router)
@@ -152,7 +163,8 @@ func (server *AuthPlzServer) Start() {
 	address := server.config.Address + ":" + server.config.Port
 
 	// Create handlers
-	contextHandler := context.ClearHandler(server.router)
+	corsHandler := handlers.CORS(handlers.AllowedOrigins(server.config.AllowedOrigins))
+	contextHandler := corsHandler(context.ClearHandler(server.router))
 
 	// Start async services
 	server.serviceManager.Run()

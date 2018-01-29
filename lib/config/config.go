@@ -22,9 +22,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type AuthPlzCLI struct {
+// CLIOptions defines options that can be passed on the command line
+// other options must be passed through the configuration file
+type CLIOptions struct {
 	ConfigFile string `short:"c" long:"config" description:"AuthPlz configuration file" default:"./authplz.yml"`
-	Prefix     string `short:"p" long:"prefix" description:"Prefix for environmental variable loading" default:""`
+	Prefix     string `short:"p" long:"prefix" description:"Prefix for environmental variable loading" default:"AUTHPLZ_"`
 }
 
 // AuthPlzConfig configuration structure
@@ -109,6 +111,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 	return &c, nil
 }
 
+// LoadConfig loads configuration from the specified file, using the provided prefix for environmental vars
 func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 
 	c, err := DefaultConfig()
@@ -141,7 +144,7 @@ func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 		c.ExternalAddress = fmt.Sprintf("%s://%s:%s", prefix, c.Address, c.Port)
 	}
 
-	// Populate allowed origins automatically
+	// Populate allowed origins with external address if unspecified
 	if len(c.AllowedOrigins) == 0 {
 		c.AllowedOrigins = []string{c.ExternalAddress}
 	}
@@ -149,20 +152,17 @@ func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 	// Decode secrets to strings
 	tokenSecret, err := base64.URLEncoding.DecodeString(c.TokenSecret)
 	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding token secret")
+		log.Panicf("Error decoding token secret: %s", err)
 	}
 
 	cookieSecret, err := base64.URLEncoding.DecodeString(c.CookieSecret)
 	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding cookie secret")
+		log.Panicf("Error decoding cookie secret: %s", err)
 	}
 
 	oauthSecret, err := base64.URLEncoding.DecodeString(c.OAuth.TokenSecret)
 	if err != nil {
-		log.Println(err)
-		log.Panic("Error decoding oauth secret")
+		log.Panicf("Error decoding oauth secret: %s", err)
 	}
 
 	c.TokenSecret = string(tokenSecret)
@@ -173,12 +173,11 @@ func LoadConfig(filename, envPrefix string) (*AuthPlzConfig, error) {
 }
 
 // GetConfig fetches the server configuration
-// This parses environmental variables, command line flags, and in future
-// will handle file based loading of configurations.
+// This parses environmental variables, command line flags, and handles file based loading of configurations.
 func GetConfig() (*AuthPlzConfig, error) {
 
 	// Load command line arguments
-	cli := AuthPlzCLI{}
+	cli := CLIOptions{}
 	_, err := flags.Parse(&cli)
 	if err != nil {
 		return nil, err
