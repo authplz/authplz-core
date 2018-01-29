@@ -18,6 +18,7 @@ const (
 	FormParsingError = "FormParsingError"
 	DecodingFailed   = "DecodingFailed"
 	ActionMissing    = "ActionMissing"
+	OK               = "OK"
 
 	// User input messages
 	InvalidEmail             = "InvalidEmail"

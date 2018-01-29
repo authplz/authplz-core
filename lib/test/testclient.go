@@ -11,15 +11,15 @@ import (
 	"github.com/authplz/authplz-core/lib/api"
 )
 
-// TestClient instance
+// Client instance
 // Handles cookies as well as API base addresses and provides convenience wrappers to simplify testing
-type TestClient struct {
+type Client struct {
 	*http.Client
 	basePath string
 }
 
-// NewTestClient Create a new TestClient instance
-func NewTestClient(path string) TestClient {
+// NewClient Create a new Client instance
+func NewClient(path string) Client {
 	jar, _ := cookiejar.New(nil)
 	httpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -27,22 +27,22 @@ func NewTestClient(path string) TestClient {
 		},
 		Jar: jar,
 	}
-	return TestClient{httpClient, path}
+	return Client{Client: httpClient, basePath: path}
 }
 
-// NewTestClientFromHttp Create a new TestClient instance using the provided http.Client
+// NewClientFromHttp Create a new Client instance using the provided http.Client
 // Useful for OAuth clients
-func NewTestClientFromHttp(path string, client *http.Client) TestClient {
+func NewClientFromHttp(path string, client *http.Client) Client {
 	jar, _ := cookiejar.New(nil)
 	client.Jar = jar
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	return TestClient{client, path}
+	return Client{Client: client, basePath: path}
 }
 
 // Get wraps client.Get with status code checks
-func (tc *TestClient) Get(path string, statusCode int) (*http.Response, error) {
+func (tc *Client) Get(path string, statusCode int) (*http.Response, error) {
 	queryPath := tc.basePath + path
 
 	req, _ := http.NewRequest("GET", queryPath, nil)
@@ -60,7 +60,7 @@ func (tc *TestClient) Get(path string, statusCode int) (*http.Response, error) {
 }
 
 //GetWithParamsGet wraps client.Get with query parameters and status code checks
-func (tc *TestClient) GetWithParams(path string, statusCode int, v url.Values) (*http.Response, error) {
+func (tc *Client) GetWithParams(path string, statusCode int, v url.Values) (*http.Response, error) {
 	queryPath := tc.basePath + path
 
 	req, _ := http.NewRequest("GET", queryPath, nil)
@@ -97,7 +97,7 @@ func ParseJson(resp *http.Response, inst interface{}) error {
 	return nil
 }
 
-func (tc *TestClient) GetJSON(path string, statusCode int, inst interface{}) error {
+func (tc *Client) GetJSON(path string, statusCode int, inst interface{}) error {
 	resp, err := tc.Get(path, statusCode)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (tc *TestClient) GetJSON(path string, statusCode int, inst interface{}) err
 	return ParseJson(resp, inst)
 }
 
-func (tc *TestClient) GetJSONWithParams(path string, statusCode int, v url.Values, inst interface{}) error {
+func (tc *Client) GetJSONWithParams(path string, statusCode int, v url.Values, inst interface{}) error {
 	resp, err := tc.GetWithParams(path, statusCode, v)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func ParseAndCheckAPIResponse(resp *http.Response, code string) error {
 	return CheckApiResponse(ar, code)
 }
 
-func (tc *TestClient) GetAPIResponse(path string, statusCode int, code string) error {
+func (tc *Client) GetAPIResponse(path string, statusCode int, code string) error {
 	resp, err := tc.Get(path, statusCode)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func (tc *TestClient) GetAPIResponse(path string, statusCode int, code string) e
 }
 
 // Post JSON to an api endpoint
-func (tc *TestClient) PostJSON(path string, statusCode int, requestInst interface{}) (*http.Response, error) {
+func (tc *Client) PostJSON(path string, statusCode int, requestInst interface{}) (*http.Response, error) {
 	queryPath := tc.basePath + path
 
 	js, err := json.Marshal(requestInst)
@@ -166,7 +166,7 @@ func (tc *TestClient) PostJSON(path string, statusCode int, requestInst interfac
 }
 
 // PostForm Post a form to an api endpoint
-func (tc *TestClient) PostForm(path string, statusCode int, v url.Values) (*http.Response, error) {
+func (tc *Client) PostForm(path string, statusCode int, v url.Values) (*http.Response, error) {
 	queryPath := tc.basePath + path
 
 	resp, err := tc.Client.PostForm(queryPath, v)

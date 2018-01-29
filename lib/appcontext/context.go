@@ -5,12 +5,12 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/authplz/authplz-core/lib/api"
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
+
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 func init() {
@@ -40,46 +40,21 @@ type AuthPlzCtx struct {
 	locale       string
 }
 
+// User is the user instance interface used in the app context
 type User interface {
 	GetExtID() string
 	IsAdmin() string
 }
 
-// Convenience type to describe middleware functions
+// MiddlewareFunc Convenience type to describe middleware functions
 type MiddlewareFunc func(c *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
-// Helper to bind the global context object into the router context
+// BindContext Helper to bind the global context object into the router context
 // This is a closure to run over an instance of the global context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.Global = globalCtx
 		next(rw, req)
-	}
-}
-
-//NewOptionsHandler creates an options handler to implement CORS
-func NewOptionsHandler(allowedOrigins []string) func(ctx *AuthPlzCtx, rw web.ResponseWriter, r *web.Request, methods []string) {
-	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, methods []string) {
-		rw.Header().Add("Access-Control-Allow-Methods", strings.Join(methods, ", "))
-
-		// Cross Origin Resource Sharing (CORS)
-		origin := req.Header.Get("origin")
-
-		// Append allowed header if a match is found
-		for _, allowed := range allowedOrigins {
-			if allowed == origin {
-				rw.Header().Add("Access-Control-Allow-Origin", allowed)
-				return
-			}
-		}
-
-		// Append default allowedOrigin if no matches are found
-		if len(allowedOrigins) > 0 {
-			rw.Header().Add("Access-Control-Allow-Origin", allowedOrigins[0])
-			return
-		}
-		// Allow everything if no allowedOrigins are specified
-		rw.Header().Add("Access-Control-Allow-Origin", "*")
 	}
 }
 
@@ -187,7 +162,7 @@ func (c *AuthPlzCtx) BindRedirect(url string, rw web.ResponseWriter, req *web.Re
 }
 
 // GetRedirect fetches a redirect from a user session to allow for
-// post-login (or reauth) user redirection
+// post-login (or re-auth) user redirection
 func (c *AuthPlzCtx) GetRedirect(rw web.ResponseWriter, req *web.Request) string {
 	url, err := c.GetInst(rw, req, redirectSessionKey, redirectURLKey)
 	if err != nil {

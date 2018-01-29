@@ -44,6 +44,7 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
 	coreRouter.Post("/recovery", (*coreCtx).RecoverPost)
 	coreRouter.Get("/2fa-status", (*coreCtx).SecondFactorStatus)
+	coreRouter.Get("/test", (*coreCtx).TestGet)
 }
 
 // Handle an action token (both get and post calls)
@@ -60,7 +61,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	log.Printf("core.Action Received activation token")
+	log.Printf("CoreAPI.Action Received action token")
 
 	// If the user isn't logged in
 	if c.GetUserID() == "" {
@@ -74,6 +75,8 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		session.Save(req.Request, rw)
 
 		//TODO: session flash here?
+
+		log.Printf("CoreAPI.Action saved token to session store")
 
 		c.DoRedirect("/#login", rw, req)
 
@@ -140,6 +143,8 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Load flashes and apply actions if they exist
 	flashes := c.GetSession().Flashes()
 	if len(flashes) > 0 {
+		log.Printf("Core.Login: found session flash")
+
 		// Fetch token from session flash
 		tokenString := flashes[0].(string)
 
@@ -167,12 +172,12 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Call PreLogin handlers
 	preLoginOk, err := c.cm.PreLogin(u)
 	if err != nil {
-		log.Printf("Core.Login: PreLogin error (%s)\n", err)
+		log.Printf("Core.Login: PreLogin handler error (%s)\n", err)
 		c.WriteInternalError(rw)
 		return
 	}
 	if !preLoginOk {
-		log.Printf("Core.Login: PreLogin blocked login\n")
+		log.Printf("Core.Login: PreLogin handler blocked login\n")
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.AccountLocked)
 		return
 	}
@@ -319,4 +324,9 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Return OK
 	rw.WriteHeader(http.StatusOK)
+}
+
+// TestGet test endpoint
+func (c *coreCtx) TestGet(rw web.ResponseWriter, req *web.Request) {
+	c.WriteAPIResult(rw, api.OK)
 }
