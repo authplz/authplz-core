@@ -58,7 +58,7 @@ func TestUserApi(t *testing.T) {
 	}()
 
 	// Setup test helpers
-	client := test.NewTestClient("http://" + address + "/api")
+	client := test.NewClient("http://" + address + "/api")
 
 	// Run tests
 	t.Run("Login status", func(t *testing.T) {

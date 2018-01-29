@@ -41,6 +41,7 @@ func TestMain(t *testing.T) {
 	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
 	c.TemplateDir = "../../templates"
 	c.Mailer.Driver = "logger"
+	c.Mailer.Options = map[string]string{"mode": "silent"}
 
 	server := NewServer(*c)
 
@@ -54,7 +55,7 @@ func TestMain(t *testing.T) {
 	// Setup test helpers
 	apiPath := "http://" + c.Address + ":" + c.Port + "/api"
 
-	client := test.NewTestClient(apiPath)
+	client := test.NewClient(apiPath)
 
 	vt, _ := u2f.NewVirtualKey()
 
@@ -69,10 +70,11 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Check default CORS header", func(t *testing.T) {
-		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		req, err := http.NewRequest("GET", apiPath+"/test", http.NoBody)
 		assert.Nil(t, err)
+		req.Header.Add("origin", c.AllowedOrigins[0])
 
-		resp, err := client.Do(req)
+		resp, err := http.DefaultClient.Do(req)
 		assert.Nil(t, err)
 
 		assert.EqualValues(t, "http://"+c.Address+":"+c.Port, c.AllowedOrigins[0])
@@ -82,11 +84,11 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Check additional CORS header", func(t *testing.T) {
-		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		req, err := http.NewRequest("GET", apiPath+"/test", http.NoBody)
 		assert.Nil(t, err)
-		req.Header.Set("origin", c.AllowedOrigins[1])
+		req.Header.Add("origin", c.AllowedOrigins[1])
 
-		resp, err := client.Do(req)
+		resp, err := http.DefaultClient.Do(req)
 		assert.Nil(t, err)
 
 		assert.NotNil(t, resp)
@@ -94,15 +96,15 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Check CORS header mismatch", func(t *testing.T) {
-		req, err := http.NewRequest("OPTIONS", apiPath+"/status", http.NoBody)
+		req, err := http.NewRequest("GET", apiPath+"/test", http.NoBody)
 		assert.Nil(t, err)
 		req.Header.Set("origin", "https://yolo-swag.com")
 
-		resp, err := client.Do(req)
+		resp, err := http.DefaultClient.Do(req)
 		assert.Nil(t, err)
 
 		assert.NotNil(t, resp)
-		assert.EqualValues(t, c.AllowedOrigins[0], resp.Header.Get("access-control-allow-origin"))
+		assert.EqualValues(t, "", resp.Header.Get("access-control-allow-origin"))
 	})
 
 	t.Run("Create User", func(t *testing.T) {
@@ -116,6 +118,9 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		u, _ := server.ds.GetUserByEmail(fakeEmail)
+		if u == nil {
+			t.FailNow()
+		}
 
 		user := u.(*datastore.User)
 		userID = user.GetExtID()
@@ -145,7 +150,7 @@ func TestMain(t *testing.T) {
 		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionActivate, d)
 
 		// Use a separate test client instance
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
@@ -176,7 +181,7 @@ func TestMain(t *testing.T) {
 		at, _ := server.tokenControl.BuildToken(userID, api.TokenActionActivate, d)
 
 		// Use a separate test client instance
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Post activation token
 		v := url.Values{}
@@ -220,7 +225,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Accounts are locked after N attempts", func(t *testing.T) {
 
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
 		v.Set("email", fakeEmail)
@@ -252,7 +257,7 @@ func TestMain(t *testing.T) {
 	t.Run("Account unlock requires valid unlock token", func(t *testing.T) {
 
 		// Use a separate test client instance
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Create activation token
 		d, _ := time.ParseDuration("-10m")
@@ -283,7 +288,7 @@ func TestMain(t *testing.T) {
 	t.Run("Locked accounts can be unlocked", func(t *testing.T) {
 
 		// Use a separate test client instance
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Create activation token
 		d, _ := time.ParseDuration("10m")
@@ -355,7 +360,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Users can request password resets", func(t *testing.T) {
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
@@ -385,8 +390,8 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Password reset requests rejected across clients", func(t *testing.T) {
-		client2 := test.NewTestClient(apiPath)
-		client3 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
+		client3 := test.NewClient(apiPath)
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
@@ -406,8 +411,8 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Password reset submissions rejected across clients", func(t *testing.T) {
-		client2 := test.NewTestClient(apiPath)
-		client3 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
+		client3 := test.NewClient(apiPath)
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
@@ -541,7 +546,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Second factor required for login", func(t *testing.T) {
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
 		v.Set("email", fakeEmail)
@@ -561,7 +566,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Second factor allows login (u2f)", func(t *testing.T) {
 
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Start login
 		v := url.Values{}
@@ -597,7 +602,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Second factor allows login (totp)", func(t *testing.T) {
 
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Start login
 		v := url.Values{}
@@ -630,7 +635,7 @@ func TestMain(t *testing.T) {
 
 	t.Run("Second factor allows login (backup code)", func(t *testing.T) {
 
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// Start login
 		v := url.Values{}
@@ -655,7 +660,7 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Users can request password resets with 2fa", func(t *testing.T) {
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
@@ -713,7 +718,7 @@ func TestMain(t *testing.T) {
 		_, err := client.Get("/backupcode/clear", http.StatusOK)
 		assert.Nil(t, err)
 
-		client2 := test.NewTestClient(apiPath)
+		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
 		v.Set("email", fakeEmail)

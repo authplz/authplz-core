@@ -65,7 +65,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
-	sessionStore.Options.Secure = true
+	//sessionStore.Options.Secure = true
 	sessionStore.Options.HttpOnly = true
 
 	// Create token controller
@@ -124,9 +124,10 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	// Create router
 	router := web.New(appcontext.AuthPlzCtx{}).
 		Middleware(appcontext.BindContext(&server.ctx)).
-		//Middleware(web.LoggerMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
+
+	// router = router.Middleware(web.LoggerMiddleware)
 
 	log.Printf("Allowed-Origins: %+v", config.AllowedOrigins)
 	//router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
@@ -163,8 +164,14 @@ func (server *AuthPlzServer) Start() {
 	address := server.config.Address + ":" + server.config.Port
 
 	// Create handlers
-	corsHandler := handlers.CORS(handlers.AllowedOrigins(server.config.AllowedOrigins))
-	contextHandler := corsHandler(context.ClearHandler(server.router))
+	CORSHandler := handlers.CORS(
+		handlers.AllowedOrigins(server.config.AllowedOrigins),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type"}),
+		handlers.AllowCredentials(),
+	)
+
+	contextHandler := CORSHandler(context.ClearHandler(server.router))
 
 	// Start async services
 	server.serviceManager.Run()

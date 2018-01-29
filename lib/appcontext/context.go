@@ -5,12 +5,12 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/authplz/authplz-core/lib/api"
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
+
+	"github.com/authplz/authplz-core/lib/api"
 )
 
 func init() {
@@ -40,15 +40,16 @@ type AuthPlzCtx struct {
 	locale       string
 }
 
+// User is the user instance interface used in the app context
 type User interface {
 	GetExtID() string
 	IsAdmin() string
 }
 
-// Convenience type to describe middleware functions
+// MiddlewareFunc Convenience type to describe middleware functions
 type MiddlewareFunc func(c *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc)
 
-// Helper to bind the global context object into the router context
+// BindContext Helper to bind the global context object into the router context
 // This is a closure to run over an instance of the global context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -161,7 +162,7 @@ func (c *AuthPlzCtx) BindRedirect(url string, rw web.ResponseWriter, req *web.Re
 }
 
 // GetRedirect fetches a redirect from a user session to allow for
-// post-login (or reauth) user redirection
+// post-login (or re-auth) user redirection
 func (c *AuthPlzCtx) GetRedirect(rw web.ResponseWriter, req *web.Request) string {
 	url, err := c.GetInst(rw, req, redirectSessionKey, redirectURLKey)
 	if err != nil {

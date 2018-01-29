@@ -32,7 +32,7 @@ func TestCore(t *testing.T) {
 	v.Set("password", test.FakePass)
 	v.Set("username", test.FakeName)
 
-	client := test.NewTestClient("http://" + test.Address + "/api")
+	client := test.NewClient("http://" + test.Address + "/api")
 
 	if _, err := client.PostForm("/create", http.StatusOK, v); err != nil {
 		t.Error(err)
@@ -52,7 +52,7 @@ func TestCore(t *testing.T) {
 		v.Set("email", test.FakeEmail)
 		v.Set("password", test.FakePass)
 
-		client := test.NewTestClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + test.Address + "/api")
 
 		// Attempt login
 		if _, err := client.PostForm("/login", http.StatusOK, v); err != nil {
@@ -72,7 +72,7 @@ func TestCore(t *testing.T) {
 		v.Set("email", "wrong@email.com")
 		v.Set("password", test.FakePass)
 
-		client := test.NewTestClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + test.Address + "/api")
 
 		// Attempt login
 		if _, err := client.PostForm("/login", http.StatusUnauthorized, v); err != nil {
@@ -86,7 +86,7 @@ func TestCore(t *testing.T) {
 		v.Set("email", test.FakeEmail)
 		v.Set("password", "Wrong password")
 
-		client := test.NewTestClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + test.Address + "/api")
 
 		// Attempt login
 		if _, err := client.PostForm("/login", http.StatusUnauthorized, v); err != nil {
