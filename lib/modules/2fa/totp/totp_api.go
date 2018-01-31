@@ -133,7 +133,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	valid, err := c.totpModule.ValidateRegistration(c.GetUserID(), keyName, token.Secret(), code)
 	if err != nil {
 		log.Printf("TOTPEnrolPost: error validating token registration (%s)", err)
-		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 

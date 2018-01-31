@@ -57,7 +57,7 @@ func (backupCodeModule *Controller) BindAPI(router *web.Router) {
 func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Req
 	supported := c.backupCodeModule.IsSupported(c.GetUserID())
 	if supported && overwrite == "" {
 		// No overwrite flag, return an API error
-		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.BackupTokenOverwriteRequired)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.BackupTokenOverwriteRequired)
 		return
 	} else if supported && overwrite == "true" {
 		// Overwrite flag, clear pending tokens and continue
@@ -110,7 +110,7 @@ func (c *backupCodeAPICtx) BackupCodeAuthenticatePost(rw web.ResponseWriter, req
 	ok, err := c.backupCodeModule.ValidateCode(userid, code)
 	if err != nil {
 		log.Printf("backupCodeAuthenticatePost: error validating backup code (%s)", err)
-		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
@@ -130,7 +130,7 @@ func (c *backupCodeAPICtx) BackupCodeAuthenticatePost(rw web.ResponseWriter, req
 func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -138,7 +138,7 @@ func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.
 	codes, err := c.backupCodeModule.ListCodes(c.GetUserID())
 	if err != nil {
 		log.Printf("Error fetching backupCode tokens %s", err)
-		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
+		c.WriteInternalError(rw)
 		return
 	}
 
