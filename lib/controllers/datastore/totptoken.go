@@ -1,12 +1,16 @@
 package datastore
 
-import "time"
+import (
+	"time"
 
-import "github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
+)
 
 // TotpToken Time based One Time Password Token object
 type TotpToken struct {
 	gorm.Model
+	ExtID      string
 	UserID     uint
 	Name       string
 	Secret     string
@@ -18,6 +22,9 @@ type TotpToken struct {
 
 // GetName fetches the fido token Name
 func (token *TotpToken) GetName() string { return token.Name }
+
+// GetExtID fetches the external ID for a token
+func (token *TotpToken) GetExtID() string { return token.ExtID }
 
 // GetSecret fetches the fido token Secret
 func (token *TotpToken) GetSecret() string { return token.Secret }
@@ -45,6 +52,7 @@ func (ds *DataStore) AddTotpToken(userid, name, secret string, counter uint) (in
 	user := u.(*User)
 	totpToken := TotpToken{
 		UserID:     user.ID,
+		ExtID:      uuid.NewV4().String(),
 		Name:       name,
 		Secret:     secret,
 		UsageCount: counter,
@@ -80,11 +88,14 @@ func (ds *DataStore) GetTotpTokens(userid string) ([]interface{}, error) {
 
 // UpdateTotpToken updates a TOTP token instance in the database
 func (ds *DataStore) UpdateTotpToken(token interface{}) (interface{}, error) {
-
 	err := ds.db.Save(token).Error
 	if err != nil {
 		return nil, err
 	}
-
 	return token, nil
+}
+
+// RemoveTotpToken deletes a totp token
+func (ds *DataStore) RemoveTotpToken(token interface{}) error {
+	return ds.db.Delete(token).Error
 }

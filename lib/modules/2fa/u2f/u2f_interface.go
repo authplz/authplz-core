@@ -15,6 +15,7 @@ import (
 // TokenInterface Token instance interface
 // This must be implemented by the token storage implementation
 type TokenInterface interface {
+	GetExtID() string
 	GetName() string
 	GetKeyHandle() string
 	GetPublicKey() string
@@ -36,6 +37,8 @@ type Storer interface {
 	GetFidoTokens(userid string) ([]interface{}, error)
 	// Update a provided fido token
 	UpdateFidoToken(token interface{}) (interface{}, error)
+	// Remove the provided fido token
+	RemoveFidoToken(token interface{}) error
 }
 
 // CompletedHandler Callback for 2fa signature completion

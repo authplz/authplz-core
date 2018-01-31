@@ -167,17 +167,6 @@ func (u2fModule *Controller) AddToken(userid, name, keyHandle, publicKey, certif
 	return nil
 }
 
-// UpdateToken Updates a token instance
-// TODO: not sure if/why this is required atm
-func (u2fModule *Controller) UpdateToken() {
-
-}
-
-// RemoveToken Removes a token instance
-func (u2fModule *Controller) RemoveToken() {
-
-}
-
 // ListTokens lists tokens for a given user
 func (u2fModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	// Fetch tokens from database
@@ -188,4 +177,28 @@ func (u2fModule *Controller) ListTokens(userid string) ([]interface{}, error) {
 	}
 
 	return tokens, nil
+}
+
+// RemoveToken removes a token by matching user and token external IDs
+func (u2fModule *Controller) RemoveToken(userid, tokenID string) (bool, error) {
+	tokens, err := u2fModule.u2fStore.GetFidoTokens(userid)
+	if err != nil {
+		log.Printf("U2FModule.RemoveToken: error fetching FIDO tokens (%s)", err)
+		return false, err
+	}
+
+	for _, t := range tokens {
+		token := t.(TokenInterface)
+		if token.GetExtID() == tokenID {
+			err := u2fModule.u2fStore.RemoveFidoToken(token)
+			if err != nil {
+				log.Printf("U2FModule.RemoveToken: error deleting FIDO tokens (%s)", err)
+				return false, err
+			} else {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
