@@ -175,6 +175,7 @@ func (c *totpAPICtx) TOTPEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
+// TOTPAuthenticatePost completes a totp authentication
 func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch challenge user ID
@@ -209,6 +210,7 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
+// TOTPListTokens lists sanatised totp tokens for a given account
 func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
@@ -228,6 +230,32 @@ func (c *totpAPICtx) TOTPListTokens(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJSON(rw, tokens)
 }
 
+// TOTPRemoveToken removes a provided token
 func (c *totpAPICtx) TOTPRemoveToken(rw web.ResponseWriter, req *web.Request) {
-	c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
+	// Check if user is logged in
+	if c.GetUserID() == "" {
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		return
+	}
+
+	// Fetch token ID
+	tokenID := req.FormValue("id")
+	if tokenID == "" {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.IncorrectArguments)
+		return
+	}
+
+	// Attempt removal
+	ok, err := c.totpModule.RemoveToken(c.GetUserID(), tokenID)
+	if err != nil {
+		c.WriteInternalError(rw)
+		return
+	}
+
+	// Write response
+	if !ok {
+		c.WriteAPIResultWithCode(rw, http.StatusNotFound, api.IncorrectArguments)
+		return
+	}
+	c.WriteAPIResult(rw, api.TOTPTokenRemoved)
 }

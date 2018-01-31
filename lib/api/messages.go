@@ -13,12 +13,13 @@ type Response struct {
 // API Response Messages for frontend / internationalisation parsing
 const (
 	// General messages
-	NotImplemented   = "NotImplemented"
-	InternalError    = "InternalError"
-	FormParsingError = "FormParsingError"
-	DecodingFailed   = "DecodingFailed"
-	ActionMissing    = "ActionMissing"
-	OK               = "OK"
+	NotImplemented     = "NotImplemented"
+	InternalError      = "InternalError"
+	FormParsingError   = "FormParsingError"
+	DecodingFailed     = "DecodingFailed"
+	ActionMissing      = "ActionMissing"
+	IncorrectArguments = "IncorrectArguments"
+	OK                 = "OK"
 
 	// User input messages
 	InvalidEmail             = "InvalidEmail"
@@ -52,7 +53,10 @@ const (
 	U2FRegistrationComplete  = "U2FRegistrationComplete"
 	NoU2FPending             = "NoU2FPending"
 	NoU2FTokenFound          = "NoU2FTokenFound"
+	U2FTokenRemoved          = "U2FTokenRemoved"
 	RecoveryNoRequestPending = "RecoveryNoRequestPending"
+
+	TOTPTokenRemoved = "TOTPTokenRemoved"
 
 	BackupTokenOverwriteRequired = "CreateBackupTokenOverwriteRequired"
 	BackupTokensRemoved          = "BackupTokensRemoved"

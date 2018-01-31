@@ -33,8 +33,8 @@ const (
 	u2fSignActionKey        string = "u2f-sign-action"
 )
 
-// apiCtx context storage for router instance
-type apiCtx struct {
+// u2fApiCtx context storage for router instance
+type u2fApiCtx struct {
 	// Base context for shared components
 	*appcontext.AuthPlzCtx
 
@@ -48,8 +48,8 @@ func init() {
 }
 
 // BindU2FContext Helper middleware to bind module to API context
-func BindU2FContext(u2fModule *Controller) func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	return func(ctx *apiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+func BindU2FContext(u2fModule *Controller) func(ctx *u2fApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	return func(ctx *u2fApiCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 		ctx.um = u2fModule
 		next(rw, req)
 	}
@@ -58,22 +58,22 @@ func BindU2FContext(u2fModule *Controller) func(ctx *apiCtx, rw web.ResponseWrit
 // BindAPI Binds the API for the u2f module to the provided router
 func (u2fModule *Controller) BindAPI(router *web.Router) {
 	// Create router for user modules
-	u2frouter := router.Subrouter(apiCtx{}, "/api/u2f")
+	u2frouter := router.Subrouter(u2fApiCtx{}, "/api/u2f")
 
 	// Attach module context
 	u2frouter.Middleware(BindU2FContext(u2fModule))
 
 	// Bind endpoints
-	u2frouter.Get("/enrol", (*apiCtx).U2FEnrolGet)
-	u2frouter.Post("/enrol", (*apiCtx).U2FEnrolPost)
-	u2frouter.Get("/authenticate", (*apiCtx).U2FAuthenticateGet)
-	u2frouter.Post("/authenticate", (*apiCtx).U2FAuthenticatePost)
-	u2frouter.Get("/tokens", (*apiCtx).U2FTokensGet)
+	u2frouter.Get("/enrol", (*u2fApiCtx).EnrolGet)
+	u2frouter.Post("/enrol", (*u2fApiCtx).EnrolPost)
+	u2frouter.Get("/authenticate", (*u2fApiCtx).AuthenticateGet)
+	u2frouter.Post("/authenticate", (*u2fApiCtx).AuthenticatePost)
+	u2frouter.Get("/tokens", (*u2fApiCtx).TokensGet)
 }
 
-// U2FEnrolGet First stage token enrolment (get) handler
+// EnrolGet First stage token enrolment (get) handler
 // This creates and caches a challenge for a device to be registered
-func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
+func (c *u2fApiCtx) EnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteUnauthorized(rw)
@@ -99,15 +99,15 @@ func (c *apiCtx) U2FEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	c.GetSession().Values[u2fRegisterNameKey] = tokenName
 	c.GetSession().Save(req.Request, rw)
 
-	log.Println("U2FEnrolGet: Fetched enrolment challenge")
+	log.Println("EnrolGet: Fetched enrolment challenge")
 
 	// Return challenge to user
 	c.WriteJSON(rw, *u2fReq)
 }
 
-// U2FEnrolPost Second stage token enrolment (post) handler
+// EnrolPost Second stage token enrolment (post) handler
 // This checks the cached challenge and completes device enrolment
-func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
+func (c *u2fApiCtx) EnrolPost(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
@@ -152,29 +152,29 @@ func (c *apiCtx) U2FEnrolPost(rw web.ResponseWriter, req *web.Request) {
 	return
 }
 
-// U2FAuthenticateGet Fetches an authentication challenge
+// AuthenticateGet Fetches an authentication challenge
 // This grabs a pending 2fa userid from the global context
 // Not sure how to:
 // a) do this better / without global context
 // b) allow this to be used for authentication and for "sudo" like behaviour.
-func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
+func (c *u2fApiCtx) AuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
 
 	if userid == "" {
-		log.Printf("u2f.U2FAuthenticateGet No pending 2fa requests found")
+		log.Printf("u2f.AuthenticateGet No pending 2fa requests found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
 	}
 
-	log.Printf("u2f.U2FAuthenticateGet Authentication request for user %s (action %s)", userid, action)
+	log.Printf("u2f.AuthenticateGet Authentication request for user %s (action %s)", userid, action)
 
 	// Generate challenge
 	challenge, err := c.um.GetChallenge(userid)
 	if err != nil {
-		log.Printf("u2f.U2FAuthenticateGet error building u2f challenge %s", err)
+		log.Printf("u2f.AuthenticateGet error building u2f challenge %s", err)
 		c.WriteInternalError(rw)
 		return
 	}
@@ -190,8 +190,8 @@ func (c *apiCtx) U2FAuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJSON(rw, *u2fSignReq)
 }
 
-// U2FAuthenticatePost Post authentication response to complete authentication
-func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+// AuthenticatePost Post authentication response to complete authentication
+func (c *u2fApiCtx) AuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
 
@@ -217,13 +217,13 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	// Clear session vars
 	u2fSession.Save(req.Request, rw)
 
-	log.Printf("u2f.U2FAuthenticatePost for user %s (action %s)", userid, action)
+	log.Printf("u2f.AuthenticatePost for user %s (action %s)", userid, action)
 
 	// Parse JSON response body
 	var u2fSignResp u2f.SignResponse
 	err := json.NewDecoder(req.Body).Decode(&u2fSignResp)
 	if err != nil {
-		log.Printf("U2FAuthenticatePost: error decoding sign response (%s)", err)
+		log.Printf("AuthenticatePost: error decoding sign response (%s)", err)
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorBadResponse)
 		return
 	}
@@ -235,18 +235,18 @@ func (c *apiCtx) U2FAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 	if !ok {
-		log.Printf("U2FAuthenticatePost: authentication failed for user %s\n", userid)
+		log.Printf("AuthenticatePost: authentication failed for user %s\n", userid)
 		c.WriteAPIResult(rw, api.SecondFactorFailed)
 		return
 	}
 
-	log.Printf("U2FAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
+	log.Printf("AuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
 	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
-// U2FTokensGet Lists u2f tokens for the logged in user user
-func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
+// TokensGet Lists u2f tokens for the logged in user user
+func (c *u2fApiCtx) TokensGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check if user is logged in
 	if c.GetUserID() == "" {
@@ -257,11 +257,41 @@ func (c *apiCtx) U2FTokensGet(rw web.ResponseWriter, req *web.Request) {
 	// Fetch tokens
 	tokens, err := c.um.ListTokens(c.GetUserID())
 	if err != nil {
-		log.Printf("u2f.U2FTokensGet error fetching U2F tokens %s", err)
+		log.Printf("u2f.TokensGet error fetching U2F tokens %s", err)
 		c.WriteInternalError(rw)
 		return
 	}
 
 	// Write tokens out
 	c.WriteJSON(rw, tokens)
+}
+
+// RemoveToken removes a provided token
+func (c *u2fApiCtx) RemoveToken(rw web.ResponseWriter, req *web.Request) {
+	// Check if user is logged in
+	if c.GetUserID() == "" {
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		return
+	}
+
+	// Fetch token ID
+	tokenID := req.FormValue("id")
+	if tokenID == "" {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.IncorrectArguments)
+		return
+	}
+
+	// Attempt removal
+	ok, err := c.um.RemoveToken(c.GetUserID(), tokenID)
+	if err != nil {
+		c.WriteInternalError(rw)
+		return
+	}
+
+	// Write response
+	if !ok {
+		c.WriteAPIResultWithCode(rw, http.StatusNotFound, api.IncorrectArguments)
+		return
+	}
+	c.WriteAPIResult(rw, api.TOTPTokenRemoved)
 }

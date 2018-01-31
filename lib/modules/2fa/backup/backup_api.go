@@ -47,14 +47,14 @@ func (backupCodeModule *Controller) BindAPI(router *web.Router) {
 	backupCodeRouter.Middleware(bindBackupCodeContext(backupCodeModule))
 
 	// Bind endpoints
-	backupCodeRouter.Get("/create", (*backupCodeAPICtx).BackupCodesCreate)
-	backupCodeRouter.Post("/authenticate", (*backupCodeAPICtx).BackupCodeAuthenticatePost)
-	backupCodeRouter.Get("/codes", (*backupCodeAPICtx).BackupCodeListTokens)
-	backupCodeRouter.Get("/clear", (*backupCodeAPICtx).BackupCodeRemoveTokens)
+	backupCodeRouter.Get("/create", (*backupCodeAPICtx).CreateTokens)
+	backupCodeRouter.Post("/authenticate", (*backupCodeAPICtx).AuthenticatePost)
+	backupCodeRouter.Get("/codes", (*backupCodeAPICtx).ListTokens)
+	backupCodeRouter.Get("/clear", (*backupCodeAPICtx).RemoveTokens)
 }
 
-// BackupCodesCreate creates a set of backup codes and returns them to the user
-func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Request) {
+// CreateTokens creates a set of backup codes and returns them to the user
+func (c *backupCodeAPICtx) CreateTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
@@ -73,7 +73,7 @@ func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Req
 		// Overwrite flag, clear pending tokens and continue
 		err := c.backupCodeModule.ClearPendingTokens(c.GetUserID())
 		if err != nil {
-			log.Printf("backupCodeAuthenticatePost: error clearing pending backup codes (%s)", err)
+			log.Printf("BackupCodeApiCtx.CreateTokens: error clearing pending backup codes (%s)", err)
 			c.WriteInternalError(rw)
 			return
 		}
@@ -82,7 +82,7 @@ func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Req
 	// Create new codes
 	codes, err := c.backupCodeModule.CreateCodes(c.GetUserID())
 	if err != nil {
-		log.Printf("backupCodeAuthenticatePost: error creating backup codes (%s)", err)
+		log.Printf("BackupCodeApiCtx.CreateTokens: error creating backup codes (%s)", err)
 		c.WriteInternalError(rw)
 		return
 	}
@@ -91,43 +91,42 @@ func (c *backupCodeAPICtx) BackupCodesCreate(rw web.ResponseWriter, req *web.Req
 	c.WriteJSON(rw, codes)
 }
 
-// BackupCodeAuthenticatePost authenticates a backup code
-func (c *backupCodeAPICtx) BackupCodeAuthenticatePost(rw web.ResponseWriter, req *web.Request) {
+// AuthenticatePost authenticates a backup code
+func (c *backupCodeAPICtx) AuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
 	if userid == "" {
-		log.Printf("backupCode.backupCodeAuthenticatePost No pending 2fa requests found")
+		log.Printf("BackupCodeAPICtx.AuthenticatePost No pending 2fa requests found")
 		c.WriteAPIResult(rw, api.SecondFactorNoRequestSession)
 		return
 	}
 
-	log.Printf("backupCode.backupCodeAuthenticatePost Authentication request for user %s", userid)
+	log.Printf("BackupCodeAPICtx.AuthenticatePost Authentication request for user %s", userid)
 
 	// Fetch challenge code
 	code := req.FormValue("code")
 
 	ok, err := c.backupCodeModule.ValidateCode(userid, code)
 	if err != nil {
-		log.Printf("backupCodeAuthenticatePost: error validating backup code (%s)", err)
+		log.Printf("BackupCodeAPICtx.AuthenticatePost: error validating backup code (%s)", err)
 		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
 
 	if !ok {
-		log.Printf("backupCodeAuthenticatePost: authentication failed for user %s\n", userid)
+		log.Printf("BackupCodeAPICtx.AuthenticatePost: authentication failed for user %s\n", userid)
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.SecondFactorFailed)
 		return
 	}
 
-	log.Printf("backupCodeAuthenticatePost: Valid authentication for account %s (action %s)\n", userid, action)
 	c.UserAction(userid, action, rw, req)
 
 	c.WriteAPIResult(rw, api.SecondFactorSuccess)
 }
 
 // List backup tokens
-func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.Request) {
+func (c *backupCodeAPICtx) ListTokens(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
 		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
@@ -137,7 +136,7 @@ func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.
 	// Fetch codes
 	codes, err := c.backupCodeModule.ListCodes(c.GetUserID())
 	if err != nil {
-		log.Printf("Error fetching backupCode tokens %s", err)
+		log.Printf("BackupCodeAPICtx.ListTokens Error fetching backupCode tokens %s", err)
 		c.WriteAPIResultWithCode(rw, http.StatusInternalServerError, api.InternalError)
 		return
 	}
@@ -146,10 +145,10 @@ func (c *backupCodeAPICtx) BackupCodeListTokens(rw web.ResponseWriter, req *web.
 	c.WriteJSON(rw, codes)
 }
 
-func (c *backupCodeAPICtx) BackupCodeRemoveTokens(rw web.ResponseWriter, req *web.Request) {
+func (c *backupCodeAPICtx) RemoveTokens(rw web.ResponseWriter, req *web.Request) {
 	err := c.backupCodeModule.ClearPendingTokens(c.GetUserID())
 	if err != nil {
-		log.Printf("backupCodeAuthenticatePost: error clearing pending backup codes (%s)", err)
+		log.Printf("BackupCodeAPICtx.RemoveTokens: error clearing pending backup codes (%s)", err)
 		c.WriteInternalError(rw)
 		return
 	}
