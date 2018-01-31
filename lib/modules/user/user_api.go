@@ -60,6 +60,8 @@ var usernameExp = regexp.MustCompile(`([a-z0-9\.]+)`)
 
 func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
+	log.Printf("Req: %+v", req)
+
 	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
 		log.Printf("Create: missing or invalid email (%s)", email)

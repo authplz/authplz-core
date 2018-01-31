@@ -37,7 +37,7 @@ type OauthError struct {
 	ErrorDescription string
 }
 
-func GrantOauth(client *test.TestClient, responseType, clientID, redirect string, requestedScopes, grantedScopes []string) (*url.Values, error) {
+func GrantOauth(client *test.Client, responseType, clientID, redirect string, requestedScopes, grantedScopes []string) (*url.Values, error) {
 	// Build request object
 	v := url.Values{}
 	v.Set("response_type", responseType)
@@ -119,7 +119,7 @@ func TestOauthAPI(t *testing.T) {
 
 	var oauthClient ClientResp
 
-	client := test.NewTestClient("http://" + test.Address + "/api")
+	client := test.NewClient("http://" + test.Address + "/api")
 
 	v := url.Values{}
 	v.Set("email", test.FakeEmail)
@@ -419,7 +419,7 @@ func TestOauthAPI(t *testing.T) {
 
 		httpClient := config.Client(oauth2.NoContext)
 
-		tc := test.NewTestClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
+		tc := test.NewClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
 
 		if _, err := tc.Get("/info", http.StatusOK); err != nil {
 			t.Error(err)

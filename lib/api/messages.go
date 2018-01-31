@@ -19,6 +19,7 @@ const (
 	DecodingFailed     = "DecodingFailed"
 	ActionMissing      = "ActionMissing"
 	IncorrectArguments = "IncorrectArguments"
+	OK                 = "OK"
 
 	// User input messages
 	InvalidEmail             = "InvalidEmail"
