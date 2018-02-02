@@ -208,8 +208,12 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 		hash = user.GetPassword()
 	}
 
+	log.Printf("Email: %s Pass: %s Hash: %+v", email, pass, hash)
+
 	// Generate password hash
 	hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
+	log.Printf("Hash error: %s", hashErr)
+
 	if hashErr != nil {
 		if u != nil {
 			user := u.(User)
