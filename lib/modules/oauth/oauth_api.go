@@ -347,7 +347,7 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	tokenString := fosite.AccessTokenFromRequest(req.Request)
 	if tokenString == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthMissingAccessToken)
 		return
 	}
 

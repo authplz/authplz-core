@@ -9,8 +9,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
-
-	"github.com/authplz/authplz-core/lib/api"
+	//"github.com/authplz/authplz-core/lib/api"
 )
 
 func init() {

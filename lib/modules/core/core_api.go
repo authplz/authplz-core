@@ -208,7 +208,6 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 		// Create session
 		c.LoginUser(user.GetExtID(), rw, req)
 
-		rw.WriteHeader(http.StatusOK)
 		c.WriteAPIResult(rw, api.LoginSuccessful)
 		return
 	}
@@ -220,7 +219,7 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 func (c *coreCtx) SecondFactorStatus(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -233,7 +232,7 @@ func (c *coreCtx) SecondFactorStatus(rw web.ResponseWriter, req *web.Request) {
 // Logout Endpoint ends a user session
 func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -323,7 +322,7 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 	log.Printf("Core.RecoverGet bound recovery session for user %s", user.GetExtID())
 
 	// Return OK
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.OK)
 }
 
 // TestGet test endpoint

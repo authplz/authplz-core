@@ -88,7 +88,7 @@ func (c *totpAPICtx) TOTPEnrolGet(rw web.ResponseWriter, req *web.Request) {
 	// Fetch a name for the token
 	tokenName := req.URL.Query().Get("name")
 	if tokenName == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.TokenNameRequired)
 		return
 	}
 

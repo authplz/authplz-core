@@ -2,7 +2,6 @@ package audit
 
 import (
 	"log"
-	"net/http"
 )
 
 import (
@@ -42,14 +41,14 @@ func (ac *Controller) BindAPI(router *web.Router) {
 func (c *APICtx) GetEvents(rw web.ResponseWriter, req *web.Request) {
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		rw.WriteHeader(http.StatusUnauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
 	events, err := c.ac.ListEvents(c.GetUserID())
 	if err != nil {
 		log.Printf("AuditApiCtx.GetEvents: error listing events (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 

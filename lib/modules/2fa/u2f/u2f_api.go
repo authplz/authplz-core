@@ -143,7 +143,7 @@ func (c *u2fApiCtx) EnrolPost(rw web.ResponseWriter, req *web.Request) {
 	}
 	if !ok {
 		log.Printf("U2F enrolment failed for user %s\n", c.GetUserID())
-		c.WriteAPIResult(rw, api.SecondFactorFailed)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorFailed)
 		return
 	}
 
@@ -236,7 +236,7 @@ func (c *u2fApiCtx) AuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 	}
 	if !ok {
 		log.Printf("AuthenticatePost: authentication failed for user %s\n", userid)
-		c.WriteAPIResult(rw, api.SecondFactorFailed)
+		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.SecondFactorFailed)
 		return
 	}
 
@@ -270,7 +270,7 @@ func (c *u2fApiCtx) TokensGet(rw web.ResponseWriter, req *web.Request) {
 func (c *u2fApiCtx) RemoveToken(rw web.ResponseWriter, req *web.Request) {
 	// Check if user is logged in
 	if c.GetUserID() == "" {
-		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		c.WriteUnauthorized(rw)
 		return
 	}
 
@@ -290,7 +290,7 @@ func (c *u2fApiCtx) RemoveToken(rw web.ResponseWriter, req *web.Request) {
 
 	// Write response
 	if !ok {
-		c.WriteAPIResultWithCode(rw, http.StatusNotFound, api.IncorrectArguments)
+		c.WriteAPIResultWithCode(rw, http.StatusNotFound, api.SecondFactorNotFound)
 		return
 	}
 	c.WriteAPIResult(rw, api.TOTPTokenRemoved)

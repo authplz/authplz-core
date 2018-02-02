@@ -65,19 +65,19 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
 		log.Printf("Create: missing or invalid email (%s)", email)
-		c.WriteAPIResult(rw, api.InvalidEmail)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidEmail)
 		return
 	}
 	username := strings.ToLower(req.FormValue("username"))
 	if !usernameExp.MatchString(username) {
 		log.Printf("Create: missing or invalid username (%s)", username)
-		c.WriteAPIResult(rw, api.InvalidUsername)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidUsername)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
 		log.Printf("Create: password parameter required")
-		c.WriteAPIResult(rw, api.MissingPassword)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 
@@ -86,10 +86,10 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		log.Printf("Create: user creation failed with %s", e)
 
 		if e == ErrorDuplicateAccount {
-			c.WriteAPIResult(rw, api.DuplicateUserAccount)
+			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.DuplicateUserAccount)
 			return
 		} else if e == ErrorPasswordTooShort {
-			c.WriteAPIResult(rw, api.PasswordComplexityTooLow)
+			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.PasswordComplexityTooLow)
 			return
 		}
 
@@ -136,12 +136,12 @@ func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 	// Fetch password arguments
 	oldPass := req.FormValue("old_password")
 	if oldPass == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 	newPass := req.FormValue("new_password")
 	if newPass == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (c *apiCtx) AccountPost(rw web.ResponseWriter, req *web.Request) {
 func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	if c.GetUserID() != "" {
 		log.Printf("UserModule.ResetPost user already logged in")
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.AlreadyAuthenticated)
 		return
 	}
 
@@ -168,7 +168,7 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	userid := c.GetRecoveryRequest(rw, req)
 	if userid == "" {
 		log.Printf("UserModule.ResetPost no recovery request found")
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.NoRecoveryPending)
 		return
 	}
 
@@ -176,7 +176,7 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	password := req.FormValue("password")
 	if password == "" {
 		log.Printf("UserModule.ResetPost missing password")
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	_, err := c.um.SetPassword(userid, password)
 	if err != nil {
 		log.Printf("UserAPI.ResetPost error setting password (%s)", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 
