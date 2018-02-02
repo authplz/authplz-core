@@ -46,20 +46,20 @@ Configuration is now via a yaml [configuration file](authplz.yml) which supports
 
 - Golang (for building)
 - Docker (for building/running docker images and the dev environment)
-- Postgres (for user information storage)
+- Postgres (for backing data storage)
 
 ### Development
 
 If you have contributor access to the repository, changes should be created in branches and pull requests opened to merge (as is enforced by the repository settings and Travis-CI). If you don't have access, please follow the normal fork/pull-request flow (though be aware that forking GO projects can be a little interesting due GOPATH).
 
-All features must be implemented with tests to demonstrate the correct and incorrect behaviours of the feature.
+All features must be implemented with tests to demonstrate the correct (and incorrect) behaviours of the feature.
 
 1. `go get github.com/authplz/authplz-core.git` to fetch the core repo into your GOPATH
 2. `cd $GOPATH/src/github.com/authplz/authplz-core` to switch to the repo
 3. (For out of tree development) `git remote add upstream github.com/authplz/authplz-core.git` to add the root as an upstream
 4. (For out of tree development) `git remote set-url github.com/YOURNAME/authplz-core.git` to set the master to your fork
-5. Run `./gencert.sh` to generate self signed TLS certificates
-6. Run `make build-env` and `make start-env` to build and run dependent services (eg. the database)
+5. `./gencert.sh` to generate self signed TLS certificates
+6. `make build-env` and `make start-env` to build and run dependent services (eg. the database)
 7. `git checkout -b "feature/my-new-feature"` to create a new branch
 8. Do some work...
 9. `make test` to run repository tests
@@ -71,10 +71,10 @@ This is automatic when calling `npm start` from the authplz-ui project.
 
 ### Running
 
-1. Run `make install` to install dependencies
-2. Run `./gencert.sh` to generate self signed TLS certificates
-3. Run `make build-env` and `make start-env` to build and run dependencies
-4. Run `./authplz` to launch the app
+1. `make install` to install dependencies
+2. `./gencert.sh` to generate self signed TLS certificates
+3. `make build-env` and `make start-env` to build and run dependencies
+4. `./authplz` to launch the app
 
 `./authplz --help` will list available configuration options.
 
@@ -90,20 +90,20 @@ This is automatic when calling `npm start` from the authplz-ui project.
 - [X] User logout
 - [X] User password update
 - [X] User Password reset
-- [ ] Email notifications
+- [X] Email notifications
 - [X] Audit / Event logging
 - [X] 2FA token enrolment
   - [X] TOTP
   - [X] FIDO
-  - [ ] BACKUP
+  - [X] BACKUP
 - [X] 2FA token validation
   - [X] TOTP
   - [X] FIDO
   - [X] BACKUP
-- [ ] 2FA token management
-  - [ ] TOTP
-  - [ ] FIDO
-  - [ ] BACKUP
+- [X] 2FA token management
+  - [X] TOTP
+  - [X] FIDO
+  - [X] BACKUP
 - [-] OAuth2
   - [X] Authorization Code grant type
   - [X] Implicit grant type
@@ -117,7 +117,7 @@ This is automatic when calling `npm start` from the authplz-ui project.
   - [ ] Distributed Synchronisation
 - [ ] Test Server
   - [X] Deployment to https://authplz.herokuapp.com
-  - [ ] Deployment of frontend assets (not sure how to do)
+  - [ ] Deployment of frontend assets
 
 ## Project Layout
 

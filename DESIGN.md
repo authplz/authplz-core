@@ -14,7 +14,7 @@ Design notes and questions for AuthPlz.
 
 Modules consist of a set of interfaces, defining the dependencies of the module, a controller that uses these interfaces to implement the functionality of the module, and an api that wraps the controller in HTTP endpoints.
 
-All data structures returned from controllers should be safe for API use (ie. no internal structures may be returned, wrap / translate everything).
+All data structures returned from controllers should be safe for API use (ie. no internal structures may be returned, explicitly wrap / translate everything).
 
 
 ## Flows
@@ -105,6 +105,7 @@ This requires that all stages be undertaken from the same session. Backup codes 
 ### OAuth Clients
 
 A variety of clients can be enrolled based on user account priviledges. Admins can enrol all OAuth client types, users can enrol Client Credential (for end devices) and Implicit (no secret storage) client types.
+Allowed authorizations for each account type can be set in the configuration file.
 
 #### Authorisation Code (Explicit) Grant
 For trusted services, created by administrators, available to all users.
@@ -126,7 +127,6 @@ Allows tokens to be refreshed / reissued. Available with both Authorization Code
 
 ## Questions
 
-- How do we manage password resets with/without 2fa?
 - How can you enrol / remove tokens, what is required?
 - How do plugins require further login validation (ie. "this doesn't look right, click token in email to validate")?
 - How do we run multiple OAuth schemes for different clients?
