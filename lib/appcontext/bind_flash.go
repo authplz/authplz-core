@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Application context flash message handlers
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package appcontext
 
 import (

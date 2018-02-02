@@ -1,3 +1,8 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Mailgun mailer tests
+ *
+ * Copyright 2018 Ryan Kurte
+ */
 package drivers
 
 import (

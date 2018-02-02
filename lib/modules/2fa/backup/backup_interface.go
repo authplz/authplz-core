@@ -1,5 +1,5 @@
 /*
- * (2fa) Backup Code Module API
+ * (2fa) Backup Code Interfaces
  * This defines the interfaces required by the 2fa Backup Code module
  *
  * AuthPlz Project (https://github.com/authplz/authplz-core)

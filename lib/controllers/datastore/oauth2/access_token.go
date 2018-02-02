@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * OAuth data store - access tokens
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package oauthstore
 
 import (

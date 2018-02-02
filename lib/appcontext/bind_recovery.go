@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Application context handlers for recovery sessions
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package appcontext
 
 import (

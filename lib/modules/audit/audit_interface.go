@@ -1,3 +1,11 @@
+/*
+ * Audit module interfaces
+ * This defines the interfaces required by the audit module
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package audit
 
 import (

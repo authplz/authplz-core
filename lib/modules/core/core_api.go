@@ -1,3 +1,11 @@
+/*
+ * Core API
+ * This defines API for the core module including base login/logout/reset/action endpoints.
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package core
 
 import (
@@ -87,6 +95,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Login to a user account
+// This is probably the most interesting endpoint IMO
 func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch parameters

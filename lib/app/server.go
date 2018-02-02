@@ -1,3 +1,10 @@
+/*
+ * AuthPlz Authentication and Authorization Microservice
+ * Core application server
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package app
 
 import (

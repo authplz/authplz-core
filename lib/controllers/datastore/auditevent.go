@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Datastore - Audit event logging
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package datastore
 
 import (

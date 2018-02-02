@@ -1,3 +1,11 @@
+/*
+ * totp Module tests
+ * This defines u2f module tests
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package totp
 
 import (
@@ -12,7 +20,7 @@ import (
 	totp "github.com/pquerna/otp/totp"
 )
 
-func TestU2FModule(t *testing.T) {
+func TestTOTPModule(t *testing.T) {
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123@"
 	var fakeName = "user.sdfsfdF"

@@ -1,3 +1,11 @@
+/*
+ * Audit module API
+ * This defines the API endpoints exposed by the audit module
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package audit
 
 import (

@@ -1,3 +1,10 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Core application context
+ * This base context is available on all endpoints
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package appcontext
 
 import (

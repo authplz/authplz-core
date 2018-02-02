@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Datastore - 2fa backup tokens
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package datastore
 
 import (

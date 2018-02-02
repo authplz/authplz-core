@@ -1,3 +1,10 @@
+/*
+ * Core module controller handler management
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package core
 
 import (

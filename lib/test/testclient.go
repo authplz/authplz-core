@@ -1,3 +1,10 @@
+/*
+ * Test client for API and integration tests
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package test
 
 import (

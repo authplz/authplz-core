@@ -1,3 +1,11 @@
+/*
+ * U2F Tests
+ * This defines the interfaces required to use the TOTP module
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package u2f
 
 import (

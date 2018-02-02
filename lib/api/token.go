@@ -1,4 +1,8 @@
-// Defines messages and types for token handler implementations
+/* AuthPlz Authentication and Authorization Microservice
+ * Messages and types for token handler implementations
+ *
+ * Copyright 2018 Ryan Kurte
+ */
 
 package api
 
