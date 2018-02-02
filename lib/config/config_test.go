@@ -1,3 +1,8 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Configuration tests
+ *
+ * Copyright 2018 Ryan Kurte
+ */
 package config
 
 import (

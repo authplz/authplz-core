@@ -1,3 +1,11 @@
+/*
+ * Core module interfaces
+ * Interfaces used by the core module controller
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package core
 
 import (

@@ -2,7 +2,6 @@
  * Mailer module controller
  * This manages email sending based on system events
  *
- * AuthPlz Project (https://github.com/authplz/authplz-core)
  * Copyright 2017 Ryan Kurte
  */
 

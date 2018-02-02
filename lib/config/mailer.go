@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Mailer configuration
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package config
 
 // MailerConfig Mailer configuration options

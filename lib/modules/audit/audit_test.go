@@ -1,3 +1,11 @@
+/*
+ * Audit module tests
+ * This defines tests for the audit module and API
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package audit
 
 import (

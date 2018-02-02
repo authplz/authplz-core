@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Logging mailer driver
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package drivers
 
 import (

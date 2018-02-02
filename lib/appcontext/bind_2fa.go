@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Context helpers for second factor authentication
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package appcontext
 
 import (

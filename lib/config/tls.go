@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * TLS Configuration
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package config
 
 // TLSConfig TLS configuration options

@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Integration tests
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package app
 
 import (

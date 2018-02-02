@@ -1,3 +1,10 @@
+/*
+ * Mock event emitter for test use
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package test
 
 import (

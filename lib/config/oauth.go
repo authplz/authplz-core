@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * OAuth configuration
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package config
 
 type configSplit struct {

@@ -1,3 +1,10 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Server entry point
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2018 Ryan Kurte
+ */
+
 package main
 
 import (

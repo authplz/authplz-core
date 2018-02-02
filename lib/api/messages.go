@@ -1,4 +1,8 @@
-// Defines API messages
+/* AuthPlz Authentication and Authorization Microservice
+ * API messages and response types
+ *
+ * Copyright 2018 Ryan Kurte
+ */
 
 package api
 

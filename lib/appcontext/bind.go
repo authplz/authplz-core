@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Application context session storage and binding
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package appcontext
 
 import (

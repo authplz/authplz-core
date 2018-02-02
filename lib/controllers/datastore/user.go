@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Datastore - User objects
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package datastore
 
 import (

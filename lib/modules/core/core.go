@@ -1,3 +1,11 @@
+/*
+ * Core module controller
+ * The core module exposes the base login/logout/reset/action APIs and calls bound handlers to execute each action.
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package core
 
 import (

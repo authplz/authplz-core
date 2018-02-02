@@ -1,3 +1,11 @@
+/*
+ * Audit module controller
+ * This defines the controller for the audit module
+ *
+ * AuthPlz Project (https://github.com/authplz/authplz-core)
+ * Copyright 2017 Ryan Kurte
+ */
+
 package audit
 
 import (
@@ -16,14 +24,14 @@ func NewController(store Storer) *Controller {
 }
 
 // AddEvent adds an event to the audit log
-func (ac *Controller) AddEvent(userExtId, eventType string, eventTime time.Time, data map[string]string) error {
-	_, err := ac.store.AddAuditEvent(userExtId, eventType, eventTime, data)
+func (ac *Controller) AddEvent(userExtID, eventType string, eventTime time.Time, data map[string]string) error {
+	_, err := ac.store.AddAuditEvent(userExtID, eventType, eventTime, data)
 	if err != nil {
 		log.Printf("AuditController.AddEvent: error adding audit event (%s)", err)
 		return err
 	}
 
-	log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, userExtId)
+	log.Printf("AuditController.AddEvent: added event %s for user %s", eventType, userExtID)
 
 	return nil
 }

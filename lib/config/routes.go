@@ -1,3 +1,9 @@
+/* AuthPlz Authentication and Authorization Microservice
+ * Route configuration
+ *
+ * Copyright 2018 Ryan Kurte
+ */
+
 package config
 
 type UserRoutes struct {
