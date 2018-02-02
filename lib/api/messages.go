@@ -39,6 +39,7 @@ const (
 	AlreadyAuthenticated = "AlreadyAuthenticated"
 	Unauthorized         = "Unauthorized"
 	InvalidToken         = "InvalidToken"
+	NoRecoveryPending    = "NoRecoveryPending"
 
 	// Second factor messages
 	SecondFactorRequired         = "SecondFactorRequired"
@@ -48,6 +49,7 @@ const (
 	SecondFactorSuccess          = "SecondFactorSuccess"
 	SecondFactorFailed           = "SecondFactorFailed"
 	TokenNameRequired            = "TokenNameRequired"
+	SecondFactorNotFound         = "SecondFactorNotFound"
 
 	U2FRegistrationFailed    = "U2FRegistrationFailed"
 	U2FRegistrationComplete  = "U2FRegistrationComplete"
@@ -67,4 +69,5 @@ const (
 	OAuthNoAuthorizePending = "OAuthNoAuthorizePending"
 	OAuthNoTokenFound       = "OAuthNoTokenFound"
 	OAuthNoGrantedScopes    = "OAuthNoGrantedScopes"
+	OAuthMissingAccessToken = "OAuthMissingAccessToken"
 )

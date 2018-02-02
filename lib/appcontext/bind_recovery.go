@@ -2,6 +2,7 @@ package appcontext
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/gocraft/web"
@@ -18,7 +19,7 @@ func (c *AuthPlzCtx) BindRecoveryRequest(userid string, rw web.ResponseWriter, r
 	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.BindRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteAPIResult(rw, api.RecoveryNoRequestPending)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
 		return
 	}
 
@@ -32,7 +33,7 @@ func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request)
 	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.GetRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
-		c.WriteAPIResult(rw, api.RecoveryNoRequestPending)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
 		return ""
 	}
 

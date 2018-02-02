@@ -9,8 +9,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/gorilla/sessions"
-
-	"github.com/authplz/authplz-core/lib/api"
+	//"github.com/authplz/authplz-core/lib/api"
 )
 
 func init() {
@@ -89,7 +88,7 @@ func (c *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, ne
 // RequireAccountMiddleware to ensure only logged in access to an endpoint
 func (c *AuthPlzCtx) RequireAccountMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	if c.userid == "" {
-		c.WriteAPIResultWithCode(rw, http.StatusUnauthorized, api.Unauthorized)
+		c.WriteUnauthorized(rw)
 	} else {
 		next(rw, req)
 	}

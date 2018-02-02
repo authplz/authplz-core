@@ -2,7 +2,6 @@ package appcontext
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/gocraft/web"
 )
@@ -13,7 +12,7 @@ func (c *AuthPlzCtx) BindInst(rw web.ResponseWriter, req *web.Request, sessionKe
 	session, err := c.Global.SessionStore.Get(req.Request, sessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.Bind error fetching session-key:%s (%s)", sessionKey, err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return err
 	}
 
@@ -28,13 +27,13 @@ func (c *AuthPlzCtx) GetInst(rw web.ResponseWriter, req *web.Request, sessionKey
 	session, err := c.Global.SessionStore.Get(req.Request, sessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.GetInst error fetching session-key:%s (%s)", sessionKey, err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return nil, err
 	}
 
 	if session.Values[dataKey] == nil {
 		log.Printf("AuthPlzCtx.GetInst error no dataKey: %s found in session: %s", dataKey, sessionKey)
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return nil, err
 	}
 

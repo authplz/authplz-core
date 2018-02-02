@@ -209,11 +209,12 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
 }
 
+// AuthorizationRequest is a pending authorization request to be accepted by the user
 type AuthorizationRequest struct {
 	State       string   `json:"state"`
 	Name        string   `json:"name"`
 	RedirectURI string   `json:"redirect_uri"`
-	Scopes      []string `json:"scopes"`
+	Scopes      []string `json:"requested_scopes"`
 }
 
 // AuthorizePendingGet Fetch pending authorizations for a user
@@ -246,7 +247,7 @@ func (c *APICtx) AuthorizePendingGet(rw web.ResponseWriter, req *web.Request) {
 	c.WriteJSON(rw, &resp)
 }
 
-// AuthorizeConfirm authorization confirmation object
+// AuthorizeConfirm is the confirmation for a given authorization request
 type AuthorizeConfirm struct {
 	Accept        bool     `json:"accept"`
 	State         string   `json:"state"`
@@ -346,7 +347,7 @@ func (c *APICtx) AccessTokenInfoGet(rw web.ResponseWriter, req *web.Request) {
 
 	tokenString := fosite.AccessTokenFromRequest(req.Request)
 	if tokenString == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthMissingAccessToken)
 		return
 	}
 
