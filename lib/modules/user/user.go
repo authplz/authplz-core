@@ -357,6 +357,12 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 		return ErrorPasswordHashTooShort
 	}
 
+	// Check complexity
+	score := zxcvbn.PasswordStrength(password, []string{user.GetEmail(), user.GetUsername(), "auth", "authplz"})
+	if score.Score < userModule.zxcvbnScore {
+		return ErrorPasswordEntropyTooLow
+	}
+
 	// Update user object
 	user.SetPassword(string(hash))
 	_, err = userModule.userStore.UpdateUser(user)
