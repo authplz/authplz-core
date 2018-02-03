@@ -19,23 +19,18 @@ If you would like to be involved with this project, please first read (and agree
 - Admins should be able to manage user accounts and create integrations
 - Users should be able to make informed security decisions about their account
 
+Check out [design.md](design.md) for more.
 
 ## Status
 
-Early WIP. Backend components fairly functional (but by no means feature complete), frontend components in desparate need of work. Please don't use this unless you know what you're getting into...
+WIP. Most components working.
 
 [![GitHub tag](https://img.shields.io/github/tag/authplz/authplz-core.svg)](https://github.com/authplz/authplz-core)
 [![Build Status](https://travis-ci.org/authplz/authplz-core.svg)](https://travis-ci.org/authplz/authplz-core/branches)
 [![Documentation](https://img.shields.io/badge/docs-godoc-blue.svg)](https://godoc.org/github.com/authplz/authplz-core)
 [![Chat](https://img.shields.io/gitter/room/gitterHQ/gitter.svg)](https://gitter.im/authplz/Lobby)
 
-### Tasks
-
-- [X] Refactor to Modules
-- [X] Refactor modules to split API + Controller components (API should only use methods on controller, controllers should only return safe to display structs)
-- [X] Refactor common test setup (datastore, fakeuser etc.) into common test module
-
-Check out [design.md](design.md) for more.
+Check out the current build at [https://authplz.github.io](https://authplz.github.io).
 
 ## Usage
 
@@ -115,9 +110,9 @@ This is automatic when calling `npm start` from the authplz-ui project.
   - [ ] IP based rate limiting
   - [ ] Webhooks
   - [ ] Distributed Synchronisation
-- [ ] Test Server
+- [X] Test Server
   - [X] Deployment to https://authplz.herokuapp.com
-  - [ ] Deployment of frontend assets
+  - [X] Deployment of frontend assets
 
 ## Project Layout
 
