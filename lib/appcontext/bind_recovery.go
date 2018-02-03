@@ -16,36 +16,44 @@ import (
 
 const (
 	recoveryRequestSessionKey = "recovery-request-session"
-	recoveryRequestUserIDKey  = "recovery-request-userid"
+	recoveryRequestUserIDKey  = "recovery-request-userID"
+	recoveryRequestExpiry     = 60 * 10
 )
 
 // BindRecoveryRequest binds an authenticated recovery request to the session
 // This should only be called after all [possible] authentication has been executed
-func (c *AuthPlzCtx) BindRecoveryRequest(userid string, rw web.ResponseWriter, req *web.Request) {
-	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
+func (c *AuthPlzCtx) BindRecoveryRequest(userID string, rw web.ResponseWriter, req *web.Request) {
+	log.Printf("AuthPlzCtx.BindRecoveryRequest adding recovery request session for user %s\n", userID)
+
+	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
 	if err != nil {
-		log.Printf("AuthPlzCtx.BindRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
 		return
 	}
 
-	session.Values[recoveryRequestUserIDKey] = userid
+	session.Values[recoveryRequestUserIDKey] = userID
+	session.Options.MaxAge = recoveryRequestExpiry
 	session.Save(req.Request, rw)
 }
 
 // GetRecoveryRequest fetches an authenticated recovery request from the session
 // This allows a module to accept new password settings for the provided user id
 func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request) string {
-	session, err := c.Global.SessionStore.Get(req.Request, recoveryRequestSessionKey)
+	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
 	if err != nil {
-		log.Printf("AuthPlzCtx.GetRecoveryRequest Error fetching %s %s", recoveryRequestSessionKey, err)
+		log.Printf("AuthPlzCtx.GetRecoveryRequest No recovery request session found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
 		return ""
 	}
 
-	if session.Values[recoveryRequestUserIDKey] == nil {
+	userID := session.Values[recoveryRequestUserIDKey]
+	if userID == nil {
+		log.Printf("AuthPlzCtx.GetRecoveryRequest No recovery request session found")
 		return ""
 	}
 
-	return session.Values[recoveryRequestUserIDKey].(string)
+	session.Options.MaxAge = -1
+	session.Save(req.Request, rw)
+
+	return userID.(string)
 }

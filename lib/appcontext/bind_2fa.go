@@ -33,10 +33,10 @@ const (
 func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, userID string, action string) {
 	log.Printf("AuthPlzCtx.Bind2faRequest adding 2fa request session for user %s\n", userID)
 
-	session, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
 	if err != nil {
-		log.Printf("AuthPlzCtx.GetInst error fetching session-key:%s (%s)", secondFactorRequestSessionKey, err)
 		c.WriteInternalError(rw)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
 	}
 
@@ -49,10 +49,10 @@ func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, use
 
 // Get2FARequest Fetch a 2fa request and action for a user
 func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
-	session, err := c.Global.SessionStore.Get(req.Request, secondFactorRequestSessionKey)
+	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
 	if err != nil {
-		log.Printf("AuthPlzCtx.GetInst error fetching session-key:%s (%s)", secondFactorRequestSessionKey, err)
-		c.WriteInternalError(rw)
+		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return "", ""
 	}
 
@@ -60,8 +60,8 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (str
 	action, ok2 := session.Values[secondFactorActionKey]
 
 	if !ok1 || !ok2 {
-		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found in session flash")
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return "", ""
 	}
 
