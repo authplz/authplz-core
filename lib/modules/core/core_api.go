@@ -85,7 +85,7 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 
 		log.Printf("CoreAPI.Action saved token to session store")
 
-		c.DoRedirect("/#login", rw, req)
+		c.WriteAPIResult(rw, api.OK)
 
 	} else {
 		//Handle any active-user tokens here (when implemented)
@@ -266,8 +266,9 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Save recovery status to session
-	c.GetSession().Values[recoveryEmailKey] = email
-	c.GetSession().Save(req.Request, rw)
+	session := c.GetSession()
+	session.Values[recoveryEmailKey] = email
+	session.Save(req.Request, rw)
 
 	// Start password reset process (creates event and prompts email sending)
 	err := c.cm.PasswordResetStart(email, c.GetMeta())
@@ -290,11 +291,16 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Fetch recovery session key
 	// This requires recovery tokens to be requested and applied on the same device
-	if c.GetSession().Values[recoveryEmailKey] == nil {
+	session := c.GetSession()
+	e := session.Values[recoveryEmailKey]
+	session.Options.MaxAge = -1
+	session.Save(req.Request, rw)
+
+	if e == nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.NoRecoveryPending)
 		return
 	}
-	email := c.GetSession().Values[recoveryEmailKey].(string)
+	email := e.(string)
 
 	// Validate recovery token
 	ok, u, err := c.cm.HandleRecoveryToken(email, tokenString)

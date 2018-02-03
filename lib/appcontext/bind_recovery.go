@@ -25,7 +25,7 @@ const (
 func (c *AuthPlzCtx) BindRecoveryRequest(userID string, rw web.ResponseWriter, req *web.Request) {
 	log.Printf("AuthPlzCtx.BindRecoveryRequest adding recovery request session for user %s\n", userID)
 
-	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
+	session, err := c.GetNamedSession(rw, req, recoveryRequestSessionKey)
 	if err != nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
 		return
@@ -39,7 +39,7 @@ func (c *AuthPlzCtx) BindRecoveryRequest(userID string, rw web.ResponseWriter, r
 // GetRecoveryRequest fetches an authenticated recovery request from the session
 // This allows a module to accept new password settings for the provided user id
 func (c *AuthPlzCtx) GetRecoveryRequest(rw web.ResponseWriter, req *web.Request) string {
-	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
+	session, err := c.GetNamedSession(rw, req, recoveryRequestSessionKey)
 	if err != nil {
 		log.Printf("AuthPlzCtx.GetRecoveryRequest No recovery request session found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.RecoveryNoRequestPending)
