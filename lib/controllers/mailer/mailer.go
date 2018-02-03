@@ -139,6 +139,10 @@ func mergeMaps(a, b map[string]string) map[string]string {
 	return c
 }
 
+func (mc *MailController) actionURL(action, token string) string {
+	return fmt.Sprintf("%s/%s?token=%s", mc.domain, action, token)
+}
+
 // HandleEvent processes events sent to the mailer process.
 func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
@@ -171,7 +175,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("activate", token)
 		err = mc.SendActivation(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.PasswordResetReq:
@@ -182,7 +186,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/recovery?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("recover", token)
 		err = mc.SendPasswordReset(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.AccountLocked, events.AccountNotUnlocked:
@@ -193,7 +197,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("unlock", token)
 		err = mc.SendUnlock(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.PasswordUpdate:
