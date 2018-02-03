@@ -273,7 +273,7 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	c.GetSession().Save(req.Request, rw)
 
 	// TODO: Generate and send recovery email
-	err := c.cm.PasswordResetStart(email)
+	err := c.cm.PasswordResetStart(email, c.GetMeta())
 	if err != nil {
 		log.Printf("Core.RecoverPost error starting recovery for user %s (%s)", email, err)
 	}

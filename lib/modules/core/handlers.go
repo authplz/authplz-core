@@ -8,6 +8,8 @@
 package core
 
 import (
+	"fmt"
+	"github.com/authplz/authplz-core/lib/events"
 	"log"
 
 	"github.com/authplz/authplz-core/lib/api"
@@ -130,7 +132,17 @@ func (coreModule *Controller) PostLoginFailure(u interface{}) error {
 }
 
 // PasswordResetStart Starts a password reset session
-func (coreModule *Controller) PasswordResetStart(email string) error {
+func (coreModule *Controller) PasswordResetStart(email string, meta map[string]string) error {
+	u, err := coreModule.userControl.GetUserByEmail(email)
+	if err != nil {
+		return err
+	}
+	if u == nil {
+		log.Printf("CoreModule.PasswordResetStart: no matching user found ('%s')", email)
+		return fmt.Errorf("No matching user found")
+	}
+	user := u.(UserInterface)
+	coreModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.PasswordResetReq, meta))
 
 	return nil
 }

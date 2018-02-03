@@ -44,6 +44,7 @@ type AuthPlzCtx struct {
 	remoteAddr   string
 	forwardedFor string
 	locale       string
+	meta         map[string]string
 }
 
 // User is the user instance interface used in the app context
@@ -59,6 +60,9 @@ type MiddlewareFunc func(c *AuthPlzCtx, rw web.ResponseWriter, req *web.Request,
 // This is a closure to run over an instance of the global context
 func BindContext(globalCtx *AuthPlzGlobalCtx) MiddlewareFunc {
 	return func(ctx *AuthPlzCtx, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		if ctx.meta == nil {
+			ctx.meta = make(map[string]string)
+		}
 		ctx.Global = globalCtx
 		next(rw, req)
 	}
@@ -86,8 +90,8 @@ func (c *AuthPlzCtx) SessionMiddleware(rw web.ResponseWriter, req *web.Request, 
 
 // GetIPMiddleware Middleware to grab IP & forwarding headers and store in session
 func (c *AuthPlzCtx) GetIPMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	c.remoteAddr, _, _ = net.SplitHostPort(req.RemoteAddr)
-	c.forwardedFor = req.Header.Get("x-forwarded-for")
+	c.meta["remote-address"], _, _ = net.SplitHostPort(req.RemoteAddr)
+	c.meta["forwarded-for"] = req.Header.Get("x-forwarded-for")
 
 	next(rw, req)
 }
@@ -120,6 +124,10 @@ func (c *AuthPlzCtx) LogoutUser(rw web.ResponseWriter, req *web.Request) {
 	c.session.Options.MaxAge = -1
 	c.session.Save(req.Request, rw)
 	c.userid = ""
+}
+
+func (c *AuthPlzCtx) GetMeta() map[string]string {
+	return c.meta
 }
 
 // GetUserID Fetch user id from a session
