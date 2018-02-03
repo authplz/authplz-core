@@ -47,14 +47,8 @@ type AuthPlzConfig struct {
 	TLS    TLSConfig    `yaml:"tls"`
 	OAuth  OAuthConfig  `yaml:"oauth"`
 	Mailer MailerConfig `yaml:"mailer"`
-	Routes RouteConfig  `yaml:"routes"`
 
 	MinimumPasswordLength int `yaml:"password-len"`
-}
-
-// GetRoutes fetches routes from the configuration object
-func (apc *AuthPlzConfig) GetRoutes() *RouteConfig {
-	return &apc.Routes
 }
 
 // GenerateSecret Helper to generate a default secret to use
@@ -74,6 +68,7 @@ func GenerateSecret(len int) (string, error) {
 // DefaultConfig Generate default configuration
 func DefaultConfig() (*AuthPlzConfig, error) {
 	var c AuthPlzConfig
+	var err error
 
 	c.Name = "AuthPlz"
 	c.Address = "localhost"
@@ -95,10 +90,6 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 
 	c.OAuth = DefaultOAuthConfig()
 
-	c.Routes = DefaultRoutes()
-
-	var err error
-
 	c.CookieSecret, err = GenerateSecret(64)
 	if err != nil {
 		return nil, err
@@ -108,7 +99,7 @@ func DefaultConfig() (*AuthPlzConfig, error) {
 		return nil, err
 	}
 
-	return &c, nil
+	return &c, err
 }
 
 // LoadConfig loads configuration from the specified file, using the provided prefix for environmental vars
