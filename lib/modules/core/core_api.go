@@ -280,7 +280,7 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 
 	log.Printf("Core.RecoverPost started recovery for user %s", email)
 
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.OK)
 }
 
 // RecoverGet handles an account recovery token
