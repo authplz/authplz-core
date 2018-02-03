@@ -8,13 +8,15 @@
 package app
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"time"
 
 	"github.com/gocraft/web"
-	"github.com/gorilla/context"
+	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/sessions"
 
@@ -48,6 +50,7 @@ type AuthPlzServer struct {
 	router         *web.Router
 	tokenControl   *token.TokenController
 	serviceManager *async.ServiceManager
+	server         *http.Server
 }
 
 const bufferSize uint = 64
@@ -183,8 +186,10 @@ func (server *AuthPlzServer) Start() {
 		handlers.AllowedHeaders([]string{"Content-Type"}),
 		handlers.AllowCredentials(),
 	)
+	contextHandler := CORSHandler(gcontext.ClearHandler(server.router))
 
-	contextHandler := CORSHandler(context.ClearHandler(server.router))
+	h := http.Server{Addr: address, Handler: contextHandler}
+	server.server = &h
 
 	// Start async services
 	server.serviceManager.Run()
@@ -197,10 +202,11 @@ func (server *AuthPlzServer) Start() {
 		log.Println("*******************************************************************************")
 		log.Println()
 		log.Printf("Listening at: http://%s", address)
+		h.ListenAndServe()
 		err = http.ListenAndServe(address, contextHandler)
 	} else {
 		log.Printf("Listening at: https://%s", address)
-		err = http.ListenAndServeTLS(address, server.config.TLS.Cert, server.config.TLS.Key, contextHandler)
+		h.ListenAndServeTLS(server.config.TLS.Cert, server.config.TLS.Key)
 	}
 
 	// Stop async services
@@ -214,7 +220,10 @@ func (server *AuthPlzServer) Start() {
 
 // Close an instance of the AuthPlzServer
 func (server *AuthPlzServer) Close() {
-	// TODO: stop HTTP server
+	// Stop HTTP server
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	server.server.Shutdown(ctx)
+	cancel()
 
 	// Stop workers
 	server.serviceManager.Exit()
