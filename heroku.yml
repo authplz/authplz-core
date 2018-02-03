@@ -1,0 +1,61 @@
+# AuthPlz Example Configuration
+# $VARIABLES are loaded from the environment with the prefix specified on the command line
+
+# User friendly application name
+name: authplz.github.io
+
+# Server binding configuration
+bind-address: 0.0.0.0
+bind-port: $PORT
+
+# External application address (required for reverse proxying)
+external-address: https://authplz.github.io
+
+# Database connection string
+database: $DATABASE_URL
+
+disable-web-security: true
+
+# Allowed origins for API requests
+# This is automatically set to bind-address:bind-port (or external-address if set) but can be overridden here if required
+allowed-origins:
+  - https://localhost:3000
+  - https://authplz.github.io
+
+# Secrets
+cookie-secret: $COOKIE_SECRET
+token-secret: $TOKEN_SECRET
+
+# TLS configuration
+tls:
+#  cert: server.pem 
+#  key: server.key
+  disabled: true
+
+# Template and static file directories
+template-dir: ./templates
+  
+# OAuth (Client) Configuration
+# Scopes define what resources an admin or users client can grant access to.
+# These are heirachicle and are split by '.' (eg. public includes public.read)
+# Grants correspond to OAuth grant types that clients can utilise
+# Allowed responses defines what responses are allowed for OAuth clients
+oauth:
+  secret: $OAUTH_SECRET
+  admin:
+    scopes: ["public.read", "public.write", "private.read", "private.write", "introspect", "offline"]
+    grants: ["authorization_code", "implicit", "refresh_token", "client_credentials"]
+  user:
+    scopes: ["public.read", "public.write", "private.read", "private.write", "offline"]
+    grants: ["authorization_code", "implicit", "refresh_token"]
+  allowed-responses: ["code", "token", "id_token"]
+
+# Mailer configuration
+mailer:
+  driver: mailgun 
+  options:
+    domain:  $MG_DOMAIN 
+    address: $MG_ADDRESS 
+    key:     $MG_APIKEY 
+    secret:  $MG_PRIKEY
+

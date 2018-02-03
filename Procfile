@@ -1,1 +1,1 @@
-web: authplz -c ./authplz.yml -p ""
+web: authplz -c ./heroku.yml -p ""
