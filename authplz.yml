@@ -62,33 +62,3 @@ mailer:
     key:     $MG_APIKEY 
     secret:  $MG_PRIKEY
 
-# Route configuration
-# This allows frontend implementations to set routes for static page redirects
-routes:
-  user:
-    login:    "/#/login"
-    logout:   "/#/logout"
-    create:   "/#/create"
-
-  account:
-    manage:   "/#/account"
-
-  u2f:
-    manage:    "/#/2fa-u2f-manage"
-    register:  "/#/2fa-u2f-register"
-    authorize: "/#/2fa-u2f-authorize"
-
-  totp:
-    manage:    "/#/2fa-totp-manage"
-    register:  "/#/2fa-totp-register"
-    authorize: "/#/2fa-totp-authorize"
-
-  backup:
-    manage:    "/#/2fa-backup-manage"
-    register:  "/#/2fa-backup-register"
-    authorize: "/#/2fa-backup-authorize"
-
-  oauth:
-    manage:     "/#/oauth-manage"
-    create:     "/#/oauth-create"
-    authorize:  "/#/oauth-authorize"

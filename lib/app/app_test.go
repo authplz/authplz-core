@@ -144,7 +144,7 @@ func TestMain(t *testing.T) {
 		v := url.Values{}
 		v.Set("token", at)
 
-		_, err := client2.PostForm("/action", http.StatusFound, v)
+		_, err := client2.PostForm("/action", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
@@ -175,7 +175,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		_, err := client2.PostForm("/action", http.StatusFound, v)
+		_, err := client2.PostForm("/action", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
@@ -255,7 +255,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		_, err := client2.PostForm("/action", http.StatusFound, v)
+		_, err := client2.PostForm("/action", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Attempt login with activation cookie
@@ -286,7 +286,7 @@ func TestMain(t *testing.T) {
 		// Post activation token
 		v := url.Values{}
 		v.Set("token", at)
-		_, err := client2.PostForm("/action", http.StatusFound, v)
+		_, err := client2.PostForm("/action", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Attempt login with activation cookie

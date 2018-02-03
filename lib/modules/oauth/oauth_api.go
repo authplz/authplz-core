@@ -197,15 +197,13 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		// Bind redirect back and redirect to login page if not
-		c.BindRedirect(c.oc.config.AuthorizeRedirect, rw, req)
-		c.DoRedirect("/login", rw, req)
+		// Signal that authorization is required if not logged in
+		c.WriteUnauthorized(rw)
 		return
 	}
 
-	// Redirect to pending auth page if logged in
-	c.DoRedirect(c.oc.config.AuthorizeRedirect, rw, req)
-
+	// Write ok status
+	c.WriteAPIResult(rw, api.OK)
 }
 
 // AuthorizationRequest is a pending authorization request to be accepted by the user
@@ -264,10 +262,12 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch authorization request from session
-	if c.GetSession().Values["oauth"] == nil {
+	ar := c.GetSession().Values["oauth"]
+	if ar == nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoAuthorizePending)
 		return
 	}
+	authorizeRequest := ar.(fosite.AuthorizeRequest)
 
 	authorizeConfirm := AuthorizeConfirm{}
 	defer req.Body.Close()
@@ -281,8 +281,6 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoGrantedScopes)
 		return
 	}
-
-	authorizeRequest := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
 
 	if !authorizeConfirm.Accept {
 		session := c.GetSession()
@@ -377,6 +375,9 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
+
+	s := ar.GetSession()
+	log.Printf("Session: %+v", s)
 
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)

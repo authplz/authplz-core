@@ -10,9 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-)
 
-import (
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
@@ -189,7 +187,6 @@ func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 
 // GetUserByUsername Fetches a user account by username
 func (dataStore *DataStore) GetUserByUsername(username string) (interface{}, error) {
-
 	if username == "" {
 		return nil, ErrInvalidQuery
 	}
