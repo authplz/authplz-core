@@ -59,6 +59,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.config = config
 
 	log.Printf("Initialising AuthPlz")
+	log.Printf("External address: '%s' Bind address: '%s:%s'", config.ExternalAddress, config.Address, config.Port)
 
 	// Attempt database connection
 	if config.Database == "" {
