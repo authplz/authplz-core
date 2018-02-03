@@ -1,5 +1,7 @@
 # Helpers for AuthPlz development
 
+VER=$(shell git describe --dirty)
+ARGS= -ldflags "-X main.version=$(VER)"
 
 # Core Functions
 
@@ -22,7 +24,7 @@ install:
 
 # Build backend and frontend components
 build:
-	go build ./cmd/authplz
+	go build $(ARGS) ./cmd/authplz
 
 # Run application
 run: build
@@ -41,10 +43,10 @@ mocks:
 	mockgen -source lib/modules/oauth/oauth_interface.go       -destination lib/modules/oauth/oauth_mocks.go       -package oauth
 
 cross: dir
-	GOOS=linux   GOARCH=amd64 go build  -o build/authplz-linux-amd64 ./cmd/authplz
-	GOOS=linux   GOARCH=arm   go build  -o build/authplz-linux-armhf ./cmd/authplz
-	GOOS=darwin  GOARCH=amd64 go build  -o build/authplz-linux-armhf ./cmd/authplz
-	GOOS=windows GOARCH=amd64 go build  -o build/authplz-windows-amd64 ./cmd/authplz
+	GOOS=linux   GOARCH=amd64 go build $(ARGS) -o build/authplz-linux-amd64 ./cmd/authplz
+	GOOS=linux   GOARCH=arm   go build $(ARGS) -o build/authplz-linux-armhf ./cmd/authplz
+	GOOS=darwin  GOARCH=amd64 go build $(ARGS) -o build/authplz-linux-armhf ./cmd/authplz
+	GOOS=windows GOARCH=amd64 go build $(ARGS) -o build/authplz-windows-amd64 ./cmd/authplz
 
 # Frontend components now in authplz-ui package
 

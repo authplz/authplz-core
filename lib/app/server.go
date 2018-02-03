@@ -61,7 +61,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	server.config = config
 
-	log.Printf("Initialising AuthPlz")
+	log.Printf("Initialising...")
 	log.Printf("External address: '%s' Bind address: '%s:%s'", config.ExternalAddress, config.Address, config.Port)
 
 	// Attempt database connection
@@ -77,6 +77,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
 	if config.DisableWebSecurity {
+		log.Println()
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: WEB SECURITY IS DISABLED. EVERYTHING IS UNSAFE. TESTING USE ONLY.     ")
 		log.Println("*******************************************************************************")
@@ -197,6 +198,7 @@ func (server *AuthPlzServer) Start() {
 	// Start with/without TLS
 	var err error
 	if server.config.TLS.Disabled == true {
+		log.Println()
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")

@@ -14,7 +14,11 @@ import (
 	"github.com/authplz/authplz-core/lib/config"
 )
 
+var version string
+
 func main() {
+
+	log.Printf("AuthPlz (version: %s)", version)
 
 	// Load configuration
 	c, err := config.GetConfig()
