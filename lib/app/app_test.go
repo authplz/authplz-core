@@ -310,7 +310,8 @@ func TestMain(t *testing.T) {
 	t.Run("Logged in users can get account info", func(t *testing.T) {
 		var u datastore.User
 
-		resp, err := client.Get("/account", http.StatusOK)assert.Nil(t, err)
+		resp, err := client.Get("/account", http.StatusOK)
+		assert.Nil(t, err)
 
 		err = test.ParseJson(resp, &u)
 		if err != nil {
@@ -330,15 +331,32 @@ func TestMain(t *testing.T) {
 		v.Set("old_password", fakePass)
 		v.Set("new_password", newPass)
 
-		resp, err := client.PostForm("/account", http.StatusOK, v)assert.Nil(t, err)
+		resp, err := client.PostForm("/account", http.StatusOK, v)
+		assert.Nil(t, err)
 
-		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)assert.Nil(t, err)
+		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)
+		assert.Nil(t, err)
 
 		fakePass = newPass
 	})
 
 	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
-		//TODO
+		client2 := test.NewClient(apiPath)
+
+		v := url.Values{}
+		newPass := "New fake password 88@#"
+
+		v.Set("email", fakeEmail)
+		v.Set("old_password", fakePass)
+		v.Set("new_password", newPass)
+
+		resp, err := client2.PostForm("/account", http.StatusUnauthorized, v)
+		assert.Nil(t, err)
+
+		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
+		assert.Nil(t, err)
+
+		fakePass = newPass
 	})
 
 	t.Run("Users can request password resets", func(t *testing.T) {
@@ -422,8 +440,6 @@ func TestMain(t *testing.T) {
 		// Update fakePass for further calls
 		fakePass = newPass
 	})
-
-	
 
 	t.Run("Logged in users can enrol fido tokens", func(t *testing.T) {
 		v := url.Values{}
@@ -589,7 +605,8 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Generate challenge response
-		code, err := _totp.GenerateCode(totpSecret, time.Now())assert.Nil(t, err)
+		code, err := _totp.GenerateCode(totpSecret, time.Now())
+		assert.Nil(t, err)
 
 		// Post response and check login status
 		v = url.Values{}
@@ -652,7 +669,8 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Generate 2fa response
-		code, err := _totp.GenerateCode(totpSecret, time.Now())assert.Nil(t, err)
+		code, err := _totp.GenerateCode(totpSecret, time.Now())
+		assert.Nil(t, err)
 
 		// Post 2fa response
 		v = url.Values{}
