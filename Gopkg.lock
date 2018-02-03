@@ -186,8 +186,8 @@
 [[projects]]
   name = "github.com/ryankurte/go-structparse"
   packages = ["."]
-  revision = "887e1c5bfc048e8df5985b79ebf49e8d3c8746ba"
-  version = "v1.1.0"
+  revision = "61ece333ecdfe067ab265fd3a15e632acd0363d8"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/ryankurte/go-u2f"
@@ -277,6 +277,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7f6e55e32510a99462bad816a6a16f9aa802b5606a35fa29131aa7c77c548c81"
+  inputs-digest = "b43585f8d070d4d7d384788e08f3d84bb710236d4fade6eb52a13923faee14bf"
   solver-name = "gps-cdcl"
   solver-version = 1
