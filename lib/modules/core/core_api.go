@@ -264,7 +264,7 @@ const (
 func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingEmail)
 		return
 	}
 
@@ -287,14 +287,14 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 	tokenString := req.URL.Query().Get("token")
 	if tokenString == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingToken)
 		return
 	}
 
 	// Fetch recovery session key
 	// This requires recovery tokens to be requested and applied on the same device
 	if c.GetSession().Values[recoveryEmailKey] == nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.NoRecoveryPending)
 		return
 	}
 	email := c.GetSession().Values[recoveryEmailKey].(string)
@@ -302,11 +302,11 @@ func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 	// Validate recovery token
 	ok, u, err := c.cm.HandleRecoveryToken(email, tokenString)
 	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 	if !ok {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidToken)
 		return
 	}
 
