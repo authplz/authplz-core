@@ -33,7 +33,7 @@ type MailController struct {
 }
 
 // Standard mailing templates (required for MailController creation)
-var templateNames = [...]string{"activation", "passwordreset", "passwordchange", "loginnotice", "unlock"}
+var templateNames = [...]string{"activation", "passwordreset", "passwordchanged", "loginnotice", "unlock"}
 
 // Config Generic Mail Controller Configuration
 type Config struct {
