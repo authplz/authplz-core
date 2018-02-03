@@ -33,6 +33,7 @@ type User interface {
 
 	GetLastLogin() time.Time
 	SetLastLogin(t time.Time)
+	GetCreatedAt() time.Time
 
 	IsLocked() bool
 	SetLocked(locked bool)

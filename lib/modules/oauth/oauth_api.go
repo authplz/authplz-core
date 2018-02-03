@@ -71,7 +71,6 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
 	router.Post("/token", (*APICtx).TokenPost)
 	router.Get("/introspect", (*APICtx).IntrospectPost)
-	router.Get("/test", (*APICtx).TestGet)
 
 	router.Get("/info", (*APICtx).AccessTokenInfoGet)
 
@@ -198,15 +197,13 @@ func (c *APICtx) AuthorizeRequestGet(rw web.ResponseWriter, req *web.Request) {
 
 	// Check user is logged in
 	if c.GetUserID() == "" {
-		// Bind redirect back and redirect to login page if not
-		c.BindRedirect(c.oc.config.AuthorizeRedirect, rw, req)
-		c.DoRedirect("/login", rw, req)
+		// Signal that authorization is required if not logged in
+		c.WriteUnauthorized(rw)
 		return
 	}
 
-	// Redirect to pending auth page if logged in
-	c.DoRedirect(c.oc.config.AuthorizeRedirect, rw, req)
-
+	// Write ok status
+	c.WriteAPIResult(rw, api.OK)
 }
 
 // AuthorizationRequest is a pending authorization request to be accepted by the user
@@ -265,10 +262,12 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch authorization request from session
-	if c.GetSession().Values["oauth"] == nil {
+	ar := c.GetSession().Values["oauth"]
+	if ar == nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.OAuthNoAuthorizePending)
 		return
 	}
+	authorizeRequest := ar.(fosite.AuthorizeRequest)
 
 	authorizeConfirm := AuthorizeConfirm{}
 	defer req.Body.Close()
@@ -283,8 +282,6 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	authorizeRequest := c.GetSession().Values["oauth"].(fosite.AuthorizeRequest)
-
 	if !authorizeConfirm.Accept {
 		session := c.GetSession()
 		session.Values["oauth"] = nil
@@ -292,14 +289,8 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	oauthSession := Session{
-		UserID: c.GetUserID(),
-	}
-
-	oauthSession.AccessExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.IDExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.AuthorizeExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.RefreshExpiry = time.Now().Add(time.Hour * 24)
+	// Create OAuth Session
+	oauthSession := c.oc.newOauthSession(c.GetUserID(), "")
 
 	log.Printf("AuthConfirm: %+v", authorizeConfirm)
 
@@ -372,12 +363,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
 
 	// Create session
-	session := Session{
-		AccessExpiry:    time.Now().Add(time.Hour * 1),
-		IDExpiry:        time.Now().Add(time.Hour * 2),
-		RefreshExpiry:   time.Now().Add(time.Hour * 3),
-		AuthorizeExpiry: time.Now().Add(time.Hour * 4),
-	}
+	session := c.oc.newOauthSession("", "")
 
 	// TODO: How on earth do I pull a user ID out of this?
 	// Should be associated with an oauth request type, but I don't have access to it here.
@@ -389,6 +375,9 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 		c.oc.OAuth2.WriteAccessError(rw, ar, err)
 		return
 	}
+
+	s := ar.GetSession()
+	log.Printf("Session: %+v", s)
 
 	// Fetch client from request
 	client := ar.(fosite.Requester).GetClient().(*ClientWrapper)
@@ -434,9 +423,4 @@ func (c *APICtx) SessionsInfoGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	c.WriteJSON(rw, sessions)
-}
-
-// TestGet test endpoint
-func (c *APICtx) TestGet(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusOK)
 }

@@ -25,6 +25,7 @@ type Storer interface {
 
 // User objects returned by storer
 type User interface {
+	GetExtID() string
 	GetUsername() string
 	GetEmail() string
 }

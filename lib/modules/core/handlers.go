@@ -8,6 +8,8 @@
 package core
 
 import (
+	"fmt"
+	"github.com/authplz/authplz-core/lib/events"
 	"log"
 
 	"github.com/authplz/authplz-core/lib/api"
@@ -47,14 +49,14 @@ func (coreModule *Controller) HandleToken(userid string, user interface{}, token
 	// Locate token handler
 	tokenHandler, ok := coreModule.tokenHandlers[*action]
 	if !ok {
-		log.Printf("CoreModule.HandleToken: no token handler found for action %s\n", action)
+		log.Printf("CoreModule.HandleToken: no token handler found for action %s\n", *action)
 		return false, err
 	}
 
 	// Execute token action
 	err = tokenHandler.HandleToken(userid, *action)
 	if err != nil {
-		log.Printf("CoreModule.HandleToken: token action %s handler error %s\n", action, err)
+		log.Printf("CoreModule.HandleToken: token action %s handler error %s\n", *action, err)
 		return false, err
 	}
 
@@ -129,8 +131,18 @@ func (coreModule *Controller) PostLoginFailure(u interface{}) error {
 	return nil
 }
 
-// PasswordResetStart Runs bound post login failure handlers
-func (coreModule *Controller) PasswordResetStart(email string) error {
+// PasswordResetStart Starts a password reset session
+func (coreModule *Controller) PasswordResetStart(email string, meta map[string]string) error {
+	u, err := coreModule.userControl.GetUserByEmail(email)
+	if err != nil {
+		return err
+	}
+	if u == nil {
+		log.Printf("CoreModule.PasswordResetStart: no matching user found ('%s')", email)
+		return fmt.Errorf("No matching user found")
+	}
+	user := u.(UserInterface)
+	coreModule.emitter.SendEvent(events.NewEvent(user.GetExtID(), events.PasswordResetReq, meta))
 
 	return nil
 }

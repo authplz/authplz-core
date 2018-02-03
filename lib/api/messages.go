@@ -26,6 +26,7 @@ const (
 	OK                 = "OK"
 
 	// User input messages
+	MissingEmail             = "MissingEmail"
 	InvalidEmail             = "InvalidEmail"
 	InvalidUsername          = "InvalidUsername"
 	MissingPassword          = "MissingPassword"
@@ -43,7 +44,9 @@ const (
 	AlreadyAuthenticated = "AlreadyAuthenticated"
 	Unauthorized         = "Unauthorized"
 	InvalidToken         = "InvalidToken"
+	MissingToken         = "MissingToken"
 	NoRecoveryPending    = "NoRecoveryPending"
+	LoginRequired        = "LoginRequired"
 
 	// Second factor messages
 	SecondFactorRequired         = "SecondFactorRequired"

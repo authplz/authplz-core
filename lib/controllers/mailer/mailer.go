@@ -33,7 +33,7 @@ type MailController struct {
 }
 
 // Standard mailing templates (required for MailController creation)
-var templateNames = [...]string{"activation", "passwordreset", "passwordchange", "loginnotice", "unlock"}
+var templateNames = [...]string{"activation", "passwordreset", "passwordchanged", "loginnotice", "unlock"}
 
 // Config Generic Mail Controller Configuration
 type Config struct {
@@ -139,12 +139,15 @@ func mergeMaps(a, b map[string]string) map[string]string {
 	return c
 }
 
+func (mc *MailController) actionURL(action, token string) string {
+	return fmt.Sprintf("%s/%s?token=%s", mc.domain, action, token)
+}
+
 // HandleEvent processes events sent to the mailer process.
 func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
 
 	// Fetch the user object for further use
-	// TODO: I wonder if we should just be passing this around to save DB accesses?
 	userID := event.GetUserExtID()
 	u, err := mc.storer.GetUserByExtID(userID)
 	if err != nil {
@@ -171,7 +174,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("activate", token)
 		err = mc.SendActivation(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.PasswordResetReq:
@@ -182,7 +185,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/recovery?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("recover", token)
 		err = mc.SendPasswordReset(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.AccountLocked, events.AccountNotUnlocked:
@@ -193,7 +196,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 			return err
 		}
 		data["Token"] = token
-		data["ActionURL"] = fmt.Sprintf("%s/api/action?token=%s", mc.domain, token)
+		data["ActionURL"] = mc.actionURL("unlock", token)
 		err = mc.SendUnlock(user.GetEmail(), mergeMaps(data, event.GetData()))
 
 	case events.PasswordUpdate:
@@ -202,6 +205,8 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 
 	default:
 	}
+
+	log.Printf("Mailer send for user: %s event: %s error %s", user.GetExtID(), event.GetType(), err)
 
 	return err
 }

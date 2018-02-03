@@ -47,6 +47,7 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	// Bind endpoints
 	coreRouter.Post("/login", (*coreCtx).Login)
 	coreRouter.Get("/logout", (*coreCtx).Logout)
+	coreRouter.Post("/logout", (*coreCtx).Logout)
 	coreRouter.Get("/action", (*coreCtx).Action)
 	coreRouter.Post("/action", (*coreCtx).Action)
 	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
@@ -82,14 +83,12 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		session.AddFlash(tokenString)
 		session.Save(req.Request, rw)
 
-		//TODO: session flash here?
-
 		log.Printf("CoreAPI.Action saved token to session store")
 
-		c.DoRedirect("/#login", rw, req)
+		c.WriteAPIResult(rw, api.OK)
 
 	} else {
-		//TODO: handle any active-user tokens here
+		//Handle any active-user tokens here (when implemented)
 		c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 	}
 }
@@ -101,11 +100,13 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
+		log.Printf("Core.Login invalid request (missing email)")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidEmail)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
+		log.Printf("Core.Login invalid request (missing password)")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
@@ -141,7 +142,6 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// No user account found
-	// TODO: this cannot fail anymore
 	user, castOk := u.(UserInterface)
 	if !loginOk || !castOk {
 		log.Println("Core.Login Failure: user account not found")
@@ -240,14 +240,14 @@ func (c *coreCtx) SecondFactorStatus(rw web.ResponseWriter, req *web.Request) {
 
 // Logout Endpoint ends a user session
 func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+	c.LogoutUser(rw, req)
+
 	if c.GetUserID() == "" {
-		c.WriteUnauthorized(rw)
+		c.WriteAPIResult(rw, api.LoginRequired)
 		return
 	}
 
-	c.LogoutUser(rw, req)
-
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.LogoutSuccessful)
 }
 
 // Recover endpoints provide mechanisms for user account recovery
@@ -261,49 +261,55 @@ const (
 func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingEmail)
 		return
 	}
 
 	// Save recovery status to session
-	c.GetSession().Values[recoveryEmailKey] = email
-	c.GetSession().Save(req.Request, rw)
+	session := c.GetSession()
+	session.Values[recoveryEmailKey] = email
+	session.Save(req.Request, rw)
 
-	// TODO: Generate and send recovery email
-	err := c.cm.PasswordResetStart(email)
+	// Start password reset process (creates event and prompts email sending)
+	err := c.cm.PasswordResetStart(email, c.GetMeta())
 	if err != nil {
 		log.Printf("Core.RecoverPost error starting recovery for user %s (%s)", email, err)
 	}
 
 	log.Printf("Core.RecoverPost started recovery for user %s", email)
 
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.OK)
 }
 
 // RecoverGet handles an account recovery token
 func (c *coreCtx) RecoverGet(rw web.ResponseWriter, req *web.Request) {
 	tokenString := req.URL.Query().Get("token")
 	if tokenString == "" {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingToken)
 		return
 	}
 
 	// Fetch recovery session key
 	// This requires recovery tokens to be requested and applied on the same device
-	if c.GetSession().Values[recoveryEmailKey] == nil {
-		rw.WriteHeader(http.StatusBadRequest)
+	session := c.GetSession()
+	e := session.Values[recoveryEmailKey]
+	session.Options.MaxAge = -1
+	session.Save(req.Request, rw)
+
+	if e == nil {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.NoRecoveryPending)
 		return
 	}
-	email := c.GetSession().Values[recoveryEmailKey].(string)
+	email := e.(string)
 
 	// Validate recovery token
 	ok, u, err := c.cm.HandleRecoveryToken(email, tokenString)
 	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
+		c.WriteInternalError(rw)
 		return
 	}
 	if !ok {
-		rw.WriteHeader(http.StatusBadRequest)
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidToken)
 		return
 	}
 

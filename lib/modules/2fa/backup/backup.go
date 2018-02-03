@@ -116,7 +116,6 @@ type CreateResponse struct {
 }
 
 // CreateCodes creates a set of backup codes for a user
-// TODO: should this erase existing codes?
 func (bc *Controller) CreateCodes(userid string) (*CreateResponse, error) {
 	keys := make([]BackupKey, NumRecoveryKeys)
 

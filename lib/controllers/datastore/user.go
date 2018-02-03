@@ -10,9 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-)
 
-import (
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
@@ -108,6 +106,9 @@ func (u *User) ClearLoginRetries() { u.LoginRetries = 0 }
 // GetLastLogin fetches a users LastLogin time
 func (u *User) GetLastLogin() time.Time { return u.LastLogin }
 
+// GetCreatedAt fetches a users account creation time
+func (u *User) GetCreatedAt() time.Time { return u.CreatedAt }
+
 // SetLastLogin sets a users LastLogin time
 func (u *User) SetLastLogin(t time.Time) { u.LastLogin = t }
 
@@ -186,7 +187,6 @@ func (dataStore *DataStore) GetUserByExtID(extID string) (interface{}, error) {
 
 // GetUserByUsername Fetches a user account by username
 func (dataStore *DataStore) GetUserByUsername(username string) (interface{}, error) {
-
 	if username == "" {
 		return nil, ErrInvalidQuery
 	}

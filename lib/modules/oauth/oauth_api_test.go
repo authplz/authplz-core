@@ -11,7 +11,6 @@
 package oauth
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -37,7 +36,7 @@ type OauthError struct {
 	ErrorDescription string
 }
 
-func GrantOauth(client *test.Client, responseType, clientID, redirect string, requestedScopes, grantedScopes []string) (*url.Values, error) {
+func GrantOauth(client *test.Client, t *testing.T, responseType, clientID, redirect string, requestedScopes, grantedScopes []string) {
 	// Build request object
 	v := url.Values{}
 	v.Set("response_type", responseType)
@@ -50,46 +49,33 @@ func GrantOauth(client *test.Client, responseType, clientID, redirect string, re
 
 	// Get to start authorization (this is the redirect from the client app)
 	resp, err := client.GetWithParams("/oauth/auth", 302, v)
-	if err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
-	if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
+	assert.Nil(t, err)
+
+	err = test.CheckRedirect("/oauth/pending", resp)
+	assert.Nil(t, err)
 
 	// Fetch pending authorizations
 	resp, err = client.Get("/oauth/pending", http.StatusOK)
-	if err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
+	assert.Nil(t, err)
+
 	authReq := fosite.AuthorizeRequest{}
-	if err = test.ParseJson(resp, &authReq); err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
-	if authReq.State != v.Get("state") {
-		return nil, fmt.Errorf("GrantOauth error: %s", "Invalid state")
-	}
+	err = test.ParseJson(resp, &authReq)
+	assert.Nil(t, err)
+	assert.EqualValues(t, v.Get("state"), authReq.State)
 
 	// Accept authorization (post confirm object)
 	ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
 	resp, err = client.PostJSON("/oauth/auth", 302, &ac)
-	if err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
+	assert.Nil(t, err)
 
 	// Check redirect matches
 	redirectResp := resp.Header.Get("Location")
-	if !strings.HasPrefix(redirectResp, redirect) {
-		return nil, fmt.Errorf("GrantOauth error: Redirect invalid")
-	}
+	assert.True(t, strings.HasPrefix(redirectResp, redirect))
 
 	// Parse token args from response
 	tokenValues, err := url.ParseQuery(redirect)
-	if err != nil {
-		return nil, fmt.Errorf("GrantOauth error: %s", err)
-	}
-
-	return &tokenValues, nil
+	assert.Nil(t, err)
+	log.Printf("TokenValues: %+s", tokenValues)
 }
 
 func TestOauthAPI(t *testing.T) {
@@ -119,17 +105,15 @@ func TestOauthAPI(t *testing.T) {
 
 	var oauthClient ClientResp
 
-	client := test.NewClient("http://" + test.Address + "/api")
+	client := test.NewClient("http://" + ts.Address() + "/api")
 
 	v := url.Values{}
 	v.Set("email", test.FakeEmail)
 	v.Set("password", test.FakePass)
 	v.Set("username", test.FakeName)
 
-	if _, err := client.PostForm("/create", http.StatusOK, v); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	_, err = client.PostForm("/create", http.StatusOK, v)
+	assert.Nil(t, err)
 
 	u, _ := ts.DataStore.GetUserByEmail(test.FakeEmail)
 
@@ -145,23 +129,12 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("password", test.FakePass)
 
 		// Attempt login
-		if _, err := client.PostForm("/login", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client.PostForm("/login", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Check user status
-		if _, err = client.Get("/status", http.StatusOK); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-	})
-
-	// Run tests
-	t.Run("OAuthAPI check API is bound", func(t *testing.T) {
-		if _, err := client.Get("/oauth/test", http.StatusOK); err != nil {
-			t.Error(err)
-		}
+		_, err = client.Get("/status", http.StatusOK)
+		assert.Nil(t, err)
 	})
 
 	scopes := []string{"public.read", "public.write", "private.read", "private.write", "offline", "introspect"}
@@ -179,28 +152,17 @@ func TestOauthAPI(t *testing.T) {
 		}
 
 		resp, err := client.PostJSON("/oauth/clients", 200, &cr)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		if err = test.ParseJson(resp, &oauthClient); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-
-		if len(oauthClient.RedirectURIs) != 1 {
-			t.Errorf("Error creating oauth client")
-			t.FailNow()
-		}
+		assert.Nil(t, err)
+		err = test.ParseJson(resp, &oauthClient)
+		assert.Nil(t, err)
+		assert.Len(t, oauthClient.RedirectURIs, 1)
 
 		log.Printf("Client: %+v", oauthClient)
 	})
 
 	t.Run("OAuthAPI list clients", func(t *testing.T) {
 		c, err := oauthModule.GetClients(user.GetExtID())
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 
 		if len(c) != 1 {
 			t.Errorf("Invalid client count (actual: %d expected: %d)", len(c), 1)
@@ -218,23 +180,16 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("state", "afrjkbhreiulqyaf3q974")
 
 		// Get to start authorization (this is the redirect from the client app)
-		resp, err := client.GetWithParams("/oauth/auth", 302, v)
-		if err != nil {
-			t.Error(err)
-		}
-		if err := test.CheckRedirect(config.AuthorizeRedirect, resp); err != nil {
-			t.Error(err)
-		}
+		resp, err := client.GetWithParams("/oauth/auth", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Fetch pending authorizations
 		resp, err = client.Get("/oauth/pending", http.StatusOK)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
+
 		authReq := fosite.AuthorizeRequest{}
-		if err = test.ParseJson(resp, &authReq); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseJson(resp, &authReq)
+		assert.Nil(t, err)
 		if authReq.State != v.Get("state") {
 			t.Errorf("Invalid state")
 		}
@@ -242,9 +197,7 @@ func TestOauthAPI(t *testing.T) {
 		// Accept authorization (post confirm object)
 		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
 		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 
 		// Check redirect matches
 		redirect := resp.Header.Get("Location")
@@ -254,9 +207,7 @@ func TestOauthAPI(t *testing.T) {
 
 		// Parse token args from response
 		tokenValues, err := url.ParseQuery(redirect)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 
 		if err := tokenValues.Get(oauthClient.RedirectURIs[0] + "?error"); err != "" {
 			t.Errorf("Error from auth endpoint %s", err)
@@ -274,9 +225,8 @@ func TestOauthAPI(t *testing.T) {
 		token := &oauth2.Token{AccessToken: tokenString}
 		httpClient := config.Client(oauth2.NoContext, token)
 
-		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
-			t.Errorf("Unexpected error attempting oauth: %s", err)
-		}
+		_, err = httpClient.Get("http://" + ts.Address() + "/api/oauth/info")
+		assert.Nil(t, err)
 
 		// TODO: validate timeouts / scopes / etc.
 
@@ -290,13 +240,9 @@ func TestOauthAPI(t *testing.T) {
 		v.Set("scope", "public.read offline")
 		v.Set("state", "asf3rjengkrasfdasbtjrb")
 
-		// TODO: solve intermittent database errors
-		//t.Skipf("Intermittent errors :-/")
-
 		// Get to start authorization (this is the redirect from the client app)
-		resp, err := client.GetWithParams("/oauth/auth", 302, v)
+		resp, err := client.GetWithParams("/oauth/auth", http.StatusOK, v)
 		assert.Nil(t, err)
-		assert.Nil(t, test.CheckRedirect(config.AuthorizeRedirect, resp))
 
 		// Fetch pending authorizations
 		resp, err = client.Get("/oauth/pending", http.StatusOK)
@@ -308,10 +254,7 @@ func TestOauthAPI(t *testing.T) {
 		// Accept authorization (post confirm object)
 		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
 		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
 		// Check redirect matches
 		redirect := resp.Header.Get("Location")
@@ -339,8 +282,8 @@ func TestOauthAPI(t *testing.T) {
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  "http://" + test.Address + "/api/oauth/auth",
-				TokenURL: "http://" + test.Address + "/api/oauth/token",
+				AuthURL:  "http://" + ts.Address() + "/api/oauth/auth",
+				TokenURL: "http://" + ts.Address() + "/api/oauth/token",
 			},
 			RedirectURL: oauthClient.RedirectURIs[0],
 			Scopes:      oauthClient.Scopes,
@@ -356,10 +299,8 @@ func TestOauthAPI(t *testing.T) {
 
 		httpClient := config.Client(oauth2.NoContext, accessToken)
 
-		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
-			t.Errorf("Unexpected error attempting oauth: %s", err)
-		}
-
+		_, err = httpClient.Get("http://" + ts.Address() + "/api/oauth/info")
+		assert.Nil(t, err)
 	})
 
 	//
@@ -374,27 +315,31 @@ func TestOauthAPI(t *testing.T) {
 
 		t.Skipf("Not currently supported")
 
+		log.Printf("Start OAuth Client Credential request...")
+
 		// Get to start authorization (this is the redirect from the client app)
-		resp, err := client.GetWithParams("/oauth/auth", 302, v)
+		resp, err := client.GetWithParams("/oauth/auth", http.StatusOK, v)
 		assert.Nil(t, err)
-		if err := test.CheckRedirect("/oauth/pending", resp); err != nil {
-			t.Error(err)
-		}
+
+		log.Printf("Fetch pending...")
 
 		// Fetch pending authorizations
 		resp, err = client.Get("/oauth/pending", http.StatusOK)
 		assert.Nil(t, err)
+
 		authReq := fosite.AuthorizeRequest{}
-		if err = test.ParseJson(resp, &authReq); err != nil {
-			t.Error(err)
-		}
+		err = test.ParseJson(resp, &authReq)
+		assert.Nil(t, err)
+
 		if authReq.State != v.Get("state") {
 			t.Errorf("Invalid state")
 		}
 
+		log.Printf("Authorize Confirm...")
+
 		// Accept authorization (post confirm object)
-		ac := AuthorizeConfirm{true, v.Get("state"), []string{"public.read"}}
-		resp, err = client.PostJSON("/oauth/auth", 302, &ac)
+		ac := AuthorizeConfirm{true, v.Get("state"), []string{"introspect"}}
+		resp, err = client.PostJSON("/oauth/auth", http.StatusFound, &ac)
 		assert.Nil(t, err)
 
 		// Check redirect matches
@@ -402,84 +347,76 @@ func TestOauthAPI(t *testing.T) {
 		if !strings.HasPrefix(redirect, oauthClient.RedirectURIs[0]) {
 			t.Errorf("Redirect invalid")
 		}
+		log.Printf("Token: %+v", redirect[0])
 
 		// Parse token args from response
 		tokenValues, err := url.ParseQuery(redirect)
 		assert.Nil(t, err)
 
+		log.Printf("TokenValues: %+v", tokenValues)
+
 		v = url.Values{}
-		v.Set("localhost:9000/auth#access_token", tokenValues.Get("localhost:9000/auth#access_token"))
+		token := tokenValues.Get("localhost:9000/auth#access_token")
+		v.Set("localhost:9000/auth#access_token", token)
 
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
-			TokenURL:     "http://" + test.Address + "/api/oauth/token",
-			Scopes:       []string{"public.read", "private.read"},
+			TokenURL:     "http://" + ts.Address() + "/api/oauth/token",
+			Scopes:       []string{"introspect"},
 		}
 
 		httpClient := config.Client(oauth2.NoContext)
 
-		tc := test.NewClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
+		tc := test.NewClientFromHttp("http://"+ts.Address()+"/api/oauth", httpClient)
 
-		if _, err := tc.Get("/info", http.StatusOK); err != nil {
-			t.Error(err)
-		}
+		_, err = tc.Get("/info", http.StatusOK)
+		assert.Nil(t, err)
 	})
 
 	t.Run("OAuthAPI lists user sessions", func(t *testing.T) {
 
-		t.SkipNow()
-
 		sessions := UserSessions{}
-		if err := client.GetJSON("/oauth/sessions", http.StatusOK, &sessions); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		err := client.GetJSON("/oauth/sessions", http.StatusOK, &sessions)
+		assert.Nil(t, err)
 
-		if expected := 2; len(sessions.AccessCodes) != expected {
-			t.Errorf("Invalid AccessCodes (explicit, implicit grant) session count (actual: %d expected: %d)", len(sessions.AccessCodes), expected)
+		assert.Len(t, sessions.AccessCodes, 2)
+		assert.Len(t, sessions.AuthorizationCodes, 0)
+		assert.Len(t, sessions.RefreshTokens, 0)
+
+	})
+
+	t.Run("OAuthAPI rejects invalid scopes", func(t *testing.T) {
+		config := &clientcredentials.Config{
+			ClientID:     oauthClient.ClientID,
+			ClientSecret: oauthClient.Secret,
+			Scopes:       []string{"not-a-scope"},
+			TokenURL:     "http://" + ts.Address() + "/api/oauth/token"}
+
+		httpClient := config.Client(oauth2.NoContext)
+
+		if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err == nil {
+			t.Errorf("Expected error attempting oauth")
 		}
-		if expected := 0; len(sessions.AuthorizationCodes) != expected {
-			t.Errorf("Invalid AuthorizationCodes session count (actual: %d expected: %d)", len(sessions.AuthorizationCodes), expected)
-		}
-		if expected := 0; len(sessions.RefreshTokens) != expected {
-			t.Errorf("Invalid RefreshTokens session count (actual: %d expected: %d)", len(sessions.RefreshTokens), expected)
+	})
+
+	t.Run("OAuthAPI can remove non-interactive clients", func(t *testing.T) {
+		err := oauthModule.RemoveClient(oauthClient.ClientID)
+		assert.Nil(t, err)
+	})
+
+	t.Run("Removing non-interactive client causes OAuth to fail", func(t *testing.T) {
+		t.SkipNow()
+		config := &clientcredentials.Config{
+			ClientID:     oauthClient.ClientID,
+			ClientSecret: oauthClient.Secret,
+			TokenURL:     "http://" + ts.Address() + "/api/oauth/token"}
+
+		httpClient := config.Client(oauth2.NoContext)
+
+		if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err == nil {
+			t.Errorf("Expected error attempting oauth")
 		}
 
 	})
-	/*
-		t.Run("OAuthAPI rejects invalid scopes", func(t *testing.T) {
-			config := &clientcredentials.Config{
-				ClientID:     oauthClient.ClientID,
-				ClientSecret: oauthClient.Secret,
-				Scopes:       []string{"not-a-scope"},
-				TokenURL:     "http://" + test.Address + "/api/oauth/token"}
-
-			httpClient := config.Client(oauth2.NoContext)
-
-			if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
-				t.Errorf("Expected error attempting oauth")
-			}
-		})
-
-		t.Run("OAuthAPI can remove non-interactive clients", func(t *testing.T) {
-			if err := oauthModule.RemoveClient(oauthClient.ClientID); err != nil {
-				t.Error(err)
-			}
-		})
-
-		t.Run("Removing non-interactive client causes OAuth to fail", func(t *testing.T) {
-			config := &clientcredentials.Config{
-				ClientID:     oauthClient.ClientID,
-				ClientSecret: oauthClient.Secret,
-				TokenURL:     "http://" + test.Address + "/api/oauth/token"}
-
-			httpClient := config.Client(oauth2.NoContext)
-
-			if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
-				t.Errorf("Expected error attempting oauth")
-			}
-
-		})
-	*/
 }

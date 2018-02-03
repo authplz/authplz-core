@@ -12,25 +12,34 @@ import (
 	"log"
 	"time"
 
+	"github.com/nbutton23/zxcvbn-go"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/events"
-	"golang.org/x/crypto/bcrypt"
 )
 
-//TODO: change this to enforce actual complexity
-const minimumPasswordLength = 12
-const hashRounds = 8
+const (
+	// MinPasswordLength Minimum password length
+	MinPasswordLength = 12
+	// HashRounds BCrypt Hash Rounds
+	HashRounds = 12
+	// MinZxcvbnScore Minimum password zxcvbn score
+	MinZxcvbnScore = 4
+)
 
 // Controller User controller instance storage
 type Controller struct {
-	userStore  Storer
-	emitter    events.Emitter
-	hashRounds int
+	userStore   Storer
+	emitter     events.Emitter
+	passwordLen int
+	hashRounds  int
+	zxcvbnScore int
 }
 
 // NewController Create a new user controller
 func NewController(userStore Storer, emitter events.Emitter) *Controller {
-	return &Controller{userStore, emitter, hashRounds}
+	return &Controller{userStore, emitter, MinPasswordLength, HashRounds, MinZxcvbnScore}
 }
 
 // Create a new user account
@@ -42,8 +51,15 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 		return nil, ErrorPasswordHashTooShort
 	}
 
-	if len(pass) < minimumPasswordLength {
+	// Check length
+	if len(pass) < userModule.passwordLen {
 		return nil, ErrorPasswordTooShort
+	}
+
+	// Check complexity
+	score := zxcvbn.PasswordStrength(pass, []string{email, username, "auth", "authplz"})
+	if score.Score < userModule.zxcvbnScore {
+		return nil, ErrorPasswordEntropyTooLow
 	}
 
 	// Check if user exists
@@ -253,8 +269,9 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
+// UserResp sanitised user object
 type UserResp struct {
-	ExtId     string
+	ExtID     string
 	Email     string
 	Username  string
 	Activated bool
@@ -264,7 +281,7 @@ type UserResp struct {
 	CreatedAt time.Time
 }
 
-func (ur *UserResp) GetExtID() string { return ur.ExtId }
+func (ur *UserResp) GetExtID() string { return ur.ExtID }
 func (ur *UserResp) GetEmail() string { return ur.Email }
 
 // GetUser finds a user by userID
@@ -285,13 +302,14 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 
 	user := u.(User)
 	resp := UserResp{
-		ExtId:     user.GetExtID(),
+		ExtID:     user.GetExtID(),
 		Email:     user.GetEmail(),
 		Username:  user.GetUsername(),
 		Activated: user.IsActivated(),
 		Enabled:   user.IsEnabled(),
 		Locked:    user.IsLocked(),
 		LastLogin: user.GetLastLogin(),
+		CreatedAt: user.GetCreatedAt(),
 	}
 
 	return &resp, nil
@@ -315,13 +333,14 @@ func (userModule *Controller) GetUserByEmail(email string) (interface{}, error) 
 
 	user := u.(User)
 	resp := UserResp{
-		ExtId:     user.GetExtID(),
+		ExtID:     user.GetExtID(),
 		Email:     user.GetEmail(),
 		Username:  user.GetUsername(),
 		Activated: user.IsActivated(),
 		Enabled:   user.IsEnabled(),
 		Locked:    user.IsLocked(),
 		LastLogin: user.GetLastLogin(),
+		CreatedAt: user.GetCreatedAt(),
 	}
 
 	return &resp, nil
@@ -336,6 +355,12 @@ func (userModule *Controller) handleSetPassword(user User, password string) erro
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), userModule.hashRounds)
 	if err != nil {
 		return ErrorPasswordHashTooShort
+	}
+
+	// Check complexity
+	score := zxcvbn.PasswordStrength(password, []string{user.GetEmail(), user.GetUsername(), "auth", "authplz"})
+	if score.Score < userModule.zxcvbnScore {
+		return ErrorPasswordEntropyTooLow
 	}
 
 	// Update user object

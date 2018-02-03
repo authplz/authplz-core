@@ -121,3 +121,7 @@
 [[constraint]]
   name = "github.com/rs/cors"
   version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/nbutton23/zxcvbn-go"
+  version = "0.1.0"

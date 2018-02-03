@@ -10,6 +10,7 @@ import (
 	"log"
 
 	"github.com/gocraft/web"
+	"github.com/gorilla/sessions"
 )
 
 // BindInst Binds an object instance to a session key and writes to the browser session store
@@ -44,4 +45,14 @@ func (c *AuthPlzCtx) GetInst(rw web.ResponseWriter, req *web.Request, sessionKey
 	}
 
 	return session.Values[dataKey], nil
+}
+
+// GetNamedSession fetches a session by name
+func (c *AuthPlzCtx) GetNamedSession(rw web.ResponseWriter, req *web.Request, sessionKey string) (*sessions.Session, error) {
+	session, err := c.Global.SessionStore.Get(req.Request, sessionKey)
+	if err != nil {
+		log.Printf("AuthPlzCtx.GetInst error fetching session-key:%s (%s)", sessionKey, err)
+		return nil, err
+	}
+	return session, nil
 }

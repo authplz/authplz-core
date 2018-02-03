@@ -26,7 +26,7 @@ build:
 
 # Run application
 run: build
-	./authplz
+	./authplz -c authplz.yml
 
 # Test application
 test: mocks

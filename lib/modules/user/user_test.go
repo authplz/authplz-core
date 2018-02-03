@@ -7,23 +7,21 @@
 
 package user
 
-import "testing"
-
 import (
-	"github.com/authplz/authplz-core/lib/config"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
 	"github.com/authplz/authplz-core/lib/events"
 	"github.com/authplz/authplz-core/lib/test"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUserController(t *testing.T) {
 	// Setup user controller for testing
-	var fakeEmail = "test@abc.com"
-	var fakeName = "test.user"
-	var fakePass = "abcDEF123@abcDEF123@"
+	var fakePass = test.FakePass
 
-	c, _ := config.DefaultConfig()
+	c := test.NewConfig()
 
 	// Attempt database connection
 	dataStore, err := datastore.NewDataStore(c.Database)
@@ -39,22 +37,17 @@ func TestUserController(t *testing.T) {
 	uc := NewController(dataStore, &mockEventEmitter)
 
 	t.Run("Create user", func(t *testing.T) {
-		u, err := uc.Create(fakeEmail, fakeName, fakePass)
-		if err != nil {
-			t.Error(err)
-		}
+		u, err := uc.Create(test.FakeEmail, test.FakeName, fakePass)
+		assert.Nil(t, err)
 		if u == nil {
 			t.Error("User creation failed")
 		}
 	})
 
 	t.Run("PreLogin blocks inactivate accounts", func(t *testing.T) {
-		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u1, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 		res, err := uc.PreLogin(u1)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 		if res {
 			t.Error("User login succeeded (and shouldn't have)")
 			t.FailNow()
@@ -63,11 +56,8 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Activate user", func(t *testing.T) {
-		u, err := uc.Activate(fakeEmail)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		u, err := uc.Activate(test.FakeEmail)
+		assert.Nil(t, err)
 		if u == nil {
 			t.Error("No login result")
 		}
@@ -75,21 +65,16 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login user", func(t *testing.T) {
-		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u1, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
-		res, _, err := uc.Login(fakeEmail, fakePass)
-		if err != nil {
-			t.Error(err)
-		}
+		res, _, err := uc.Login(test.FakeEmail, fakePass)
+		assert.Nil(t, err)
 		if !res {
 			t.Error("User login failed")
 		}
 
 		res, err = uc.PreLogin(u1)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 		if !res {
 			t.Error("User login failed (and shouldn't have)")
 			t.FailNow()
@@ -97,22 +82,14 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("PostLoginSuccess hook updates last login time and creates event", func(t *testing.T) {
-		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u1 == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
+		u1, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
+		assert.Nil(t, err)
 
 		err := uc.PostLoginSuccess(u1)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 
-		u2, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u2 == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
+		u2, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
+		assert.Nil(t, err)
 
 		if u1.(User).GetLastLogin() == u2.(User).GetLastLogin() {
 			t.Errorf("Login times match (initial: %v new: %v)", u1.(User).GetLastLogin(), u2.(User).GetLastLogin())
@@ -123,7 +100,7 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login rejects logins with invalid passwords", func(t *testing.T) {
-		res, _, err := uc.Login(fakeEmail, "Wrong password")
+		res, _, err := uc.Login(test.FakeEmail, "Wrong password")
 		if err != nil {
 			t.Error(err)
 		}
@@ -134,29 +111,23 @@ func TestUserController(t *testing.T) {
 
 	t.Run("Login rejects logins with unknown user", func(t *testing.T) {
 		res, _, err := uc.Login("not@email.com", fakePass)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 		if res {
 			t.Error("User login succeeded with unknown email")
 		}
 	})
 
 	t.Run("PreLogin rejects disabled user accounts", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
 		u.(User).SetEnabled(false)
 		uc.userStore.UpdateUser(u)
 
 		res, err := uc.PreLogin(u)
-		if err != nil {
-			t.Error(err)
-		}
-		if res {
-			t.Error("User login succeeded with account disabled")
-		}
+		assert.Nil(t, err)
+		assert.EqualValues(t, false, res, "User account was not disabled")
 
-		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ = uc.userStore.GetUserByEmail(test.FakeEmail)
 		u.(User).SetEnabled(true)
 		uc.userStore.UpdateUser(u)
 
@@ -164,16 +135,16 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Login locks accounts after N failed attempts", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 		if u.(User).IsLocked() {
 			t.Errorf("Account already locked")
 		}
 
 		for i := 0; i < 6; i++ {
-			uc.Login(fakeEmail, "Wrong password")
+			uc.Login(test.FakeEmail, "Wrong password")
 		}
 
-		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ = uc.userStore.GetUserByEmail(test.FakeEmail)
 		if !u.(User).IsLocked() {
 			t.Errorf("Account not locked")
 		}
@@ -181,27 +152,21 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("PreLogin blocks locked accounts", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
 		res, err := uc.PreLogin(u)
-		if err != nil {
-			t.Error(err)
-		}
-		if res {
-			t.Error("User account was not locked", res)
-		}
+		assert.Nil(t, err)
+		assert.EqualValues(t, false, res, "User account was not locked")
 		assert.EqualValues(t, events.AccountNotUnlocked, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("Unlock unlocks accounts", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
-		_, err = uc.Unlock(fakeEmail)
-		if err != nil {
-			t.Error(err)
-		}
+		_, err = uc.Unlock(test.FakeEmail)
+		assert.Nil(t, err)
 
-		u, _ = uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ = uc.userStore.GetUserByEmail(test.FakeEmail)
 		if u.(User).IsLocked() {
 			t.Errorf("Account is still locked")
 		}
@@ -209,42 +174,26 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Get user", func(t *testing.T) {
-
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
+		u, err := uc.userStore.GetUserByEmail(test.FakeEmail)
+		assert.Nil(t, err)
+		assert.NotNil(t, u)
 
 		u1, err := uc.GetUser(u.(User).GetExtID())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		if u1 == nil {
-			t.Error("No user fetched")
-		}
-
+		assert.Nil(t, err)
+		assert.NotNil(t, u1)
 	})
 
 	t.Run("Update user password", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
-		newPass := "Test new password"
+		newPass := test.NewPass
 
 		_, err := uc.UpdatePassword(u.(User).GetExtID(), fakePass, newPass)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
-		res, _, err := uc.Login(fakeEmail, newPass)
-		if err != nil {
-			t.Error(err)
-		}
-		if !res {
-			t.Error("User account login failed", res)
-		}
+		res, _, err := uc.Login(test.FakeEmail, newPass)
+		assert.Nil(t, err)
+		assert.EqualValues(t, true, res, "User account login failed")
 
 		fakePass = newPass
 
@@ -252,25 +201,16 @@ func TestUserController(t *testing.T) {
 	})
 
 	t.Run("Update password updates password changed time", func(t *testing.T) {
-		u1, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u1 == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
+		u1, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
+		assert.Nil(t, err)
 
 		newPass := "Test new password &$#%"
 
 		_, err := uc.UpdatePassword(u1.(User).GetExtID(), fakePass, newPass)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.Nil(t, err)
 
-		u2, _ := uc.userStore.GetUserByEmail(fakeEmail)
-		if u2 == nil {
-			t.Error("No user found")
-			t.FailNow()
-		}
+		u2, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
+		assert.NotNil(t, u2)
 
 		if u1.(User).GetPasswordChanged() == u2.(User).GetPasswordChanged() {
 			t.Errorf("Password changed times match (initial: %v new: %v)", u1.(User).GetPasswordChanged(), u2.(User).GetPasswordChanged())
@@ -280,34 +220,27 @@ func TestUserController(t *testing.T) {
 
 	t.Run("Update password requires correct old password", func(t *testing.T) {
 
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
 		newPass := "Test new password"
 
 		_, err := uc.UpdatePassword(u.(User).GetExtID(), "wrongPass", newPass)
-		if err == nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		assert.NotNil(t, err)
 	})
 
 	t.Run("PostLoginSuccess causes login success event", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
 		err := uc.PostLoginSuccess(u)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 		assert.EqualValues(t, events.LoginSuccess, mockEventEmitter.Event.Type)
 	})
 
 	t.Run("PostLoginFailure causes login failure event", func(t *testing.T) {
-		u, _ := uc.userStore.GetUserByEmail(fakeEmail)
+		u, _ := uc.userStore.GetUserByEmail(test.FakeEmail)
 
 		err := uc.PostLoginFailure(u)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.Nil(t, err)
 		assert.EqualValues(t, events.LoginFailure, mockEventEmitter.Event.Type)
 	})
 

@@ -8,13 +8,15 @@
 package app
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"time"
 
 	"github.com/gocraft/web"
-	"github.com/gorilla/context"
+	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/sessions"
 
@@ -48,6 +50,7 @@ type AuthPlzServer struct {
 	router         *web.Router
 	tokenControl   *token.TokenController
 	serviceManager *async.ServiceManager
+	server         *http.Server
 }
 
 const bufferSize uint = 64
@@ -59,6 +62,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	server.config = config
 
 	log.Printf("Initialising AuthPlz")
+	log.Printf("External address: '%s' Bind address: '%s:%s'", config.ExternalAddress, config.Address, config.Port)
 
 	// Attempt database connection
 	if config.Database == "" {
@@ -72,8 +76,16 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
-	//sessionStore.Options.Secure = true
-	sessionStore.Options.HttpOnly = true
+	if config.DisableWebSecurity {
+		log.Println("*******************************************************************************")
+		log.Println("WARNING: WEB SECURITY IS DISABLED. EVERYTHING IS UNSAFE. TESTING USE ONLY.     ")
+		log.Println("*******************************************************************************")
+		log.Println()
+	} else {
+		sessionStore.Options.Secure = true
+		sessionStore.Options.HttpOnly = true
+		//sessionStore.Options.Domain = config.ExternalAddress
+	}
 
 	// Create token controller
 	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret), dataStore)
@@ -134,10 +146,9 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
 
-	// router = router.Middleware(web.LoggerMiddleware)
+	router = router.Middleware(web.LoggerMiddleware)
 
 	log.Printf("Allowed-Origins: %+v", config.AllowedOrigins)
-	//router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
 
 	// Enable static file hosting
 	_, _ = os.Getwd()
@@ -165,8 +176,6 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 // Start an instance of the AuthPlzServer
 func (server *AuthPlzServer) Start() {
-	// Start listening
-
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
 
@@ -177,8 +186,10 @@ func (server *AuthPlzServer) Start() {
 		handlers.AllowedHeaders([]string{"Content-Type"}),
 		handlers.AllowCredentials(),
 	)
+	contextHandler := CORSHandler(gcontext.ClearHandler(server.router))
 
-	contextHandler := CORSHandler(context.ClearHandler(server.router))
+	h := http.Server{Addr: address, Handler: contextHandler}
+	server.server = &h
 
 	// Start async services
 	server.serviceManager.Run()
@@ -189,11 +200,13 @@ func (server *AuthPlzServer) Start() {
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
+		log.Println()
 		log.Printf("Listening at: http://%s", address)
+		h.ListenAndServe()
 		err = http.ListenAndServe(address, contextHandler)
 	} else {
 		log.Printf("Listening at: https://%s", address)
-		err = http.ListenAndServeTLS(address, server.config.TLS.Cert, server.config.TLS.Key, contextHandler)
+		h.ListenAndServeTLS(server.config.TLS.Cert, server.config.TLS.Key)
 	}
 
 	// Stop async services
@@ -207,7 +220,10 @@ func (server *AuthPlzServer) Start() {
 
 // Close an instance of the AuthPlzServer
 func (server *AuthPlzServer) Close() {
-	// TODO: stop HTTP server
+	// Stop HTTP server
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	server.server.Shutdown(ctx)
+	cancel()
 
 	// Stop workers
 	server.serviceManager.Exit()

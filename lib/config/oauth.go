@@ -6,6 +6,10 @@
 
 package config
 
+import (
+	"time"
+)
+
 type configSplit struct {
 	Admin []string
 	User  []string
@@ -23,6 +27,14 @@ type OAuthConfig struct {
 	AllowedGrants configSplit
 	// AllowedResponses defines response types a client can support
 	AllowedResponses []string
+	// AccessExpiry is Access Token expiry time
+	AccessExpiry time.Duration
+	// IDExpiry is ID Token expiry time
+	IDExpiry time.Duration
+	// AuthorizeExpiry is Authorization token expiry time
+	AuthorizeExpiry time.Duration
+	// RefreshExpiry is Refresh token expiry time
+	RefreshExpiry time.Duration
 }
 
 // DefaultOAuthConfig generates a default configuration for the OAuth module
@@ -40,5 +52,9 @@ func DefaultOAuthConfig() OAuthConfig {
 			User:  []string{"authorization_code", "implicit", "refresh_token"},
 		},
 		AllowedResponses: []string{"code", "token", "id_token"},
+		AccessExpiry:     time.Hour * 24 * 1,
+		IDExpiry:         time.Hour * 24 * 1,
+		AuthorizeExpiry:  time.Hour * 24 * 1,
+		RefreshExpiry:    time.Hour * 24 * 180,
 	}
 }
