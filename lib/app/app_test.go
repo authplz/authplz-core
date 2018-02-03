@@ -310,11 +310,7 @@ func TestMain(t *testing.T) {
 	t.Run("Logged in users can get account info", func(t *testing.T) {
 		var u datastore.User
 
-		resp, err := client.Get("/account", http.StatusOK)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		resp, err := client.Get("/account", http.StatusOK)assert.Nil(t, err)
 
 		err = test.ParseJson(resp, &u)
 		if err != nil {
@@ -327,7 +323,6 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("Logged in users can update passwords", func(t *testing.T) {
-
 		v := url.Values{}
 		newPass := "New fake password 88@#"
 
@@ -335,19 +330,15 @@ func TestMain(t *testing.T) {
 		v.Set("old_password", fakePass)
 		v.Set("new_password", newPass)
 
-		resp, err := client.PostForm("/account", http.StatusOK, v)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		resp, err := client.PostForm("/account", http.StatusOK, v)assert.Nil(t, err)
 
-		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)assert.Nil(t, err)
 
 		fakePass = newPass
+	})
+
+	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
+		//TODO
 	})
 
 	t.Run("Users can request password resets", func(t *testing.T) {
@@ -432,9 +423,7 @@ func TestMain(t *testing.T) {
 		fakePass = newPass
 	})
 
-	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
-		//TODO
-	})
+	
 
 	t.Run("Logged in users can enrol fido tokens", func(t *testing.T) {
 		v := url.Values{}
@@ -469,10 +458,7 @@ func TestMain(t *testing.T) {
 		var regs []u2f.Registration
 		err := client.GetJSON("/u2f/tokens", 200, &regs)
 		assert.Nil(t, err)
-
-		if len(regs) != 1 {
-			t.Errorf("No registrations returned")
-		}
+		assert.Len(t, regs, 1, "No registrations returned")
 	})
 
 	var totpSecret = ""
@@ -603,11 +589,7 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Generate challenge response
-		code, err := _totp.GenerateCode(totpSecret, time.Now())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		code, err := _totp.GenerateCode(totpSecret, time.Now())assert.Nil(t, err)
 
 		// Post response and check login status
 		v = url.Values{}
@@ -670,11 +652,7 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Generate 2fa response
-		code, err := _totp.GenerateCode(totpSecret, time.Now())
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		code, err := _totp.GenerateCode(totpSecret, time.Now())assert.Nil(t, err)
 
 		// Post 2fa response
 		v = url.Values{}
