@@ -7,8 +7,6 @@
 package app
 
 import (
-	"fmt"
-
 	"net/http"
 	"net/url"
 	"testing"
@@ -19,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/authplz/authplz-core/lib/api"
-	"github.com/authplz/authplz-core/lib/config"
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
 	"github.com/authplz/authplz-core/lib/modules/2fa/backup"
 	"github.com/authplz/authplz-core/lib/modules/2fa/totp"
@@ -29,25 +26,13 @@ import (
 func TestMain(t *testing.T) {
 
 	// Fetch default configuration
-	c, err := config.LoadConfig("../../authplz.yml", "AUTHPLZ_")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	c := test.NewConfig()
 
 	// Set test constants
 	var fakeEmail = "test@abc.com"
 	var fakePass = "abcDEF123@abcDEF123"
 	var fakeName = "test.user99"
 	var userID = ""
-
-	// Attempt database connection
-	c.TLS.Disabled = true
-	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
-	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
-	c.TemplateDir = "../../templates"
-	c.Mailer.Driver = "logger"
-	c.Mailer.Options = map[string]string{"mode": "silent"}
 
 	server := NewServer(*c)
 

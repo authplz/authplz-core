@@ -203,5 +203,7 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 	default:
 	}
 
+	log.Printf("Mailer send for user: %s event: %s error %s", user.GetExtID(), event.GetType(), err)
+
 	return err
 }

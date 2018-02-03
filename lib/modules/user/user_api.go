@@ -71,27 +71,26 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 
 	email := strings.ToLower(req.FormValue("email"))
 	if !govalidator.IsEmail(email) {
-		log.Printf("Create: missing or invalid email (%s)", email)
+		log.Printf("User.Create: missing or invalid email (%s)", email)
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidEmail)
 		return
 	}
 	username := strings.ToLower(req.FormValue("username"))
 	if !usernameExp.MatchString(username) {
-		log.Printf("Create: missing or invalid username (%s)", username)
+		log.Printf("User.Create: missing or invalid username (%s)", username)
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidUsername)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
-		log.Printf("Create: password parameter required")
+		log.Printf("User.Create: password parameter required")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
 
 	u, e := c.um.Create(email, username, password)
 	if e != nil {
-		log.Printf("Create: user creation failed with %s", e)
-
+		log.Printf("User.Create: user creation failed with %s", e)
 		if e == ErrorDuplicateAccount {
 			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.DuplicateUserAccount)
 			return

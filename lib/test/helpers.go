@@ -8,7 +8,9 @@
 package test
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"github.com/gocraft/web"
@@ -22,7 +24,6 @@ import (
 )
 
 const (
-	Address   = "localhost:9000"
 	FakeEmail = "test@abc.com"
 	FakePass  = "abcDEF123@9c"
 	FakeName  = "user.sdfsfdF"
@@ -33,10 +34,11 @@ type TestServer struct {
 	DataStore    *datastore.DataStore
 	TokenControl *token.TokenController
 	EventEmitter *MockEventEmitter
+	Config       *config.AuthPlzConfig
 }
 
 func NewTestServer() (*TestServer, error) {
-	c, _ := config.DefaultConfig()
+	c := NewConfig()
 
 	ds, err := datastore.NewDataStore(c.Database)
 	if err != nil {
@@ -58,17 +60,37 @@ func NewTestServer() (*TestServer, error) {
 		Middleware(appcontext.BindContext(&ac)).
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware)
 
-	return &TestServer{router, ds, tokenControl, &mockEventEmitter}, nil
+	return &TestServer{router, ds, tokenControl, &mockEventEmitter, c}, nil
+}
+
+func (ts *TestServer) Address() string {
+	return fmt.Sprintf("%s:%s", ts.Config.Address, ts.Config.Port)
 }
 
 func (ts *TestServer) Run() {
 
 	handler := context.ClearHandler(ts.Router)
 	go func() {
-		err := http.ListenAndServe(Address, handler)
+		err := http.ListenAndServe(ts.Address(), handler)
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
 	}()
+}
 
+// NewConfig generates a test configuration
+func NewConfig() *config.AuthPlzConfig {
+	c, _ := config.DefaultConfig()
+
+	c.Port = fmt.Sprintf("%d", rand.Uint32()%10000+10000)
+
+	c.TLS.Disabled = true
+	c.ExternalAddress = fmt.Sprintf("http://%s:%s", c.Address, c.Port)
+	c.AllowedOrigins = []string{c.ExternalAddress, "https://authplz.herokuapp.com"}
+	c.TemplateDir = "../../templates"
+	c.Mailer.Driver = "logger"
+	c.Mailer.Options = map[string]string{"mode": "silent"}
+	c.DisableWebSecurity = true
+
+	return c
 }

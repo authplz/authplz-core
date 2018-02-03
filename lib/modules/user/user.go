@@ -208,12 +208,8 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 		hash = user.GetPassword()
 	}
 
-	log.Printf("Email: %s Pass: %s Hash: %+v", email, pass, hash)
-
 	// Generate password hash
 	hashErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
-	log.Printf("Hash error: %s", hashErr)
-
 	if hashErr != nil {
 		if u != nil {
 			user := u.(User)
@@ -257,8 +253,9 @@ func (userModule *Controller) Login(email string, pass string) (bool, interface{
 	return false, nil, nil
 }
 
+// UserResp sanitised user object
 type UserResp struct {
-	ExtId     string
+	ExtID     string
 	Email     string
 	Username  string
 	Activated bool
@@ -268,7 +265,7 @@ type UserResp struct {
 	CreatedAt time.Time
 }
 
-func (ur *UserResp) GetExtID() string { return ur.ExtId }
+func (ur *UserResp) GetExtID() string { return ur.ExtID }
 func (ur *UserResp) GetEmail() string { return ur.Email }
 
 // GetUser finds a user by userID
@@ -289,13 +286,14 @@ func (userModule *Controller) GetUser(userid string) (interface{}, error) {
 
 	user := u.(User)
 	resp := UserResp{
-		ExtId:     user.GetExtID(),
+		ExtID:     user.GetExtID(),
 		Email:     user.GetEmail(),
 		Username:  user.GetUsername(),
 		Activated: user.IsActivated(),
 		Enabled:   user.IsEnabled(),
 		Locked:    user.IsLocked(),
 		LastLogin: user.GetLastLogin(),
+		CreatedAt: user.GetCreatedAt(),
 	}
 
 	return &resp, nil
@@ -319,13 +317,14 @@ func (userModule *Controller) GetUserByEmail(email string) (interface{}, error) 
 
 	user := u.(User)
 	resp := UserResp{
-		ExtId:     user.GetExtID(),
+		ExtID:     user.GetExtID(),
 		Email:     user.GetEmail(),
 		Username:  user.GetUsername(),
 		Activated: user.IsActivated(),
 		Enabled:   user.IsEnabled(),
 		Locked:    user.IsLocked(),
 		LastLogin: user.GetLastLogin(),
+		CreatedAt: user.GetCreatedAt(),
 	}
 
 	return &resp, nil

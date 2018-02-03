@@ -14,11 +14,15 @@ external-address: $EXTERNAL_ADDRESS
 # Database connection string
 database: $DATABASE_URL
 
+disable-web-security: true
+
 # Allowed origins for API requests
 # This is automatically set to bind-address:bind-port (or external-address if set) but can be overridden here if required
 allowed-origins:
   - https://localhost:3000
+  - http://localhost:3000
   - https://authplz.herokuapp.com
+  - http://192.168.1.28:9000
 
 # Secrets
 cookie-secret: $COOKIE_SECRET

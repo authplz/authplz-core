@@ -30,11 +30,12 @@ type CLIOptions struct {
 
 // AuthPlzConfig configuration structure
 type AuthPlzConfig struct {
-	Name            string   `yaml:"name"`
-	Address         string   `yaml:"bind-address"`
-	Port            string   `yaml:"bind-port"`
-	ExternalAddress string   `yaml:"external-address"`
-	AllowedOrigins  []string `yaml:"allowed-origins"`
+	Name               string   `yaml:"name"`
+	Address            string   `yaml:"bind-address"`
+	Port               string   `yaml:"bind-port"`
+	ExternalAddress    string   `yaml:"external-address"`
+	AllowedOrigins     []string `yaml:"allowed-origins"`
+	DisableWebSecurity bool     `yaml:"disable-web-security"`
 
 	Database     string `yaml:"database"`
 	CookieSecret string `yaml:"cookie-secret"`

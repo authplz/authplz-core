@@ -47,14 +47,14 @@ func (coreModule *Controller) HandleToken(userid string, user interface{}, token
 	// Locate token handler
 	tokenHandler, ok := coreModule.tokenHandlers[*action]
 	if !ok {
-		log.Printf("CoreModule.HandleToken: no token handler found for action %s\n", action)
+		log.Printf("CoreModule.HandleToken: no token handler found for action %s\n", *action)
 		return false, err
 	}
 
 	// Execute token action
 	err = tokenHandler.HandleToken(userid, *action)
 	if err != nil {
-		log.Printf("CoreModule.HandleToken: token action %s handler error %s\n", action, err)
+		log.Printf("CoreModule.HandleToken: token action %s handler error %s\n", *action, err)
 		return false, err
 	}
 
@@ -129,7 +129,7 @@ func (coreModule *Controller) PostLoginFailure(u interface{}) error {
 	return nil
 }
 
-// PasswordResetStart Runs bound post login failure handlers
+// PasswordResetStart Starts a password reset session
 func (coreModule *Controller) PasswordResetStart(email string) error {
 
 	return nil

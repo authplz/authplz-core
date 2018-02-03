@@ -50,6 +50,7 @@ func (c *AuthPlzCtx) WriteAPIResultWithCode(w http.ResponseWriter, status int, c
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("message", string(code))
 	w.WriteHeader(status)
 
 	w.Write(js)

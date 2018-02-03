@@ -12,18 +12,17 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/authplz/authplz-core/lib/controllers/datastore"
 	"github.com/authplz/authplz-core/lib/modules/user"
 	"github.com/authplz/authplz-core/lib/test"
 )
 
-func TestCore(t *testing.T) {
+func TestCoreAPI(t *testing.T) {
 
 	ts, err := test.NewTestServer()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	assert.Nil(t, err)
 
 	userModule := user.NewController(ts.DataStore, ts.EventEmitter)
 
@@ -39,7 +38,7 @@ func TestCore(t *testing.T) {
 	v.Set("password", test.FakePass)
 	v.Set("username", test.FakeName)
 
-	client := test.NewClient("http://" + test.Address + "/api")
+	client := test.NewClient("http://" + ts.Address() + "/api")
 
 	if _, err := client.PostForm("/create", http.StatusOK, v); err != nil {
 		t.Error(err)
@@ -59,19 +58,15 @@ func TestCore(t *testing.T) {
 		v.Set("email", test.FakeEmail)
 		v.Set("password", test.FakePass)
 
-		client := test.NewClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + ts.Address() + "/api")
 
 		// Attempt login
-		if _, err := client.PostForm("/login", http.StatusOK, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client.PostForm("/login", http.StatusOK, v)
+		assert.Nil(t, err)
 
 		// Check user status
-		if _, err = client.Get("/status", http.StatusOK); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err = client.Get("/status", http.StatusOK)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Invalid account fails", func(t *testing.T) {
@@ -79,13 +74,11 @@ func TestCore(t *testing.T) {
 		v.Set("email", "wrong@email.com")
 		v.Set("password", test.FakePass)
 
-		client := test.NewClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + ts.Address() + "/api")
 
 		// Attempt login
-		if _, err := client.PostForm("/login", http.StatusUnauthorized, v); err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
+		_, err := client.PostForm("/login", http.StatusUnauthorized, v)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Invalid password fails", func(t *testing.T) {
@@ -93,7 +86,7 @@ func TestCore(t *testing.T) {
 		v.Set("email", test.FakeEmail)
 		v.Set("password", "Wrong password")
 
-		client := test.NewClient("http://" + test.Address + "/api")
+		client := test.NewClient("http://" + ts.Address() + "/api")
 
 		// Attempt login
 		if _, err := client.PostForm("/login", http.StatusUnauthorized, v); err != nil {

@@ -72,8 +72,16 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	// Create session store
 	sessionStore := sessions.NewCookieStore([]byte(config.CookieSecret))
-	//sessionStore.Options.Secure = true
-	sessionStore.Options.HttpOnly = true
+	if config.DisableWebSecurity {
+		log.Println("*******************************************************************************")
+		log.Println("WARNING: WEB SECURITY IS DISABLED. EVERYTHING IS UNSAFE. TESTING USE ONLY.     ")
+		log.Println("*******************************************************************************")
+		log.Println()
+	} else {
+		sessionStore.Options.Secure = true
+		sessionStore.Options.HttpOnly = true
+		//sessionStore.Options.Domain = config.ExternalAddress
+	}
 
 	// Create token controller
 	tokenControl := token.NewTokenController(server.config.Address, string(config.TokenSecret), dataStore)
@@ -134,7 +142,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 		Middleware((*appcontext.AuthPlzCtx).SessionMiddleware).
 		Middleware((*appcontext.AuthPlzCtx).GetIPMiddleware)
 
-	// router = router.Middleware(web.LoggerMiddleware)
+	router = router.Middleware(web.LoggerMiddleware)
 
 	log.Printf("Allowed-Origins: %+v", config.AllowedOrigins)
 	//router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
@@ -170,9 +178,11 @@ func (server *AuthPlzServer) Start() {
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
 
+	origins := server.config.AllowedOrigins
+
 	// Create handlers
 	CORSHandler := handlers.CORS(
-		handlers.AllowedOrigins(server.config.AllowedOrigins),
+		handlers.AllowedOrigins(origins),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type"}),
 		handlers.AllowCredentials(),
@@ -189,6 +199,7 @@ func (server *AuthPlzServer) Start() {
 		log.Println("*******************************************************************************")
 		log.Println("WARNING: TLS IS DISABLED. USE FOR TESTING OR WITH EXTERNAL TLS TERMINATION ONLY")
 		log.Println("*******************************************************************************")
+		log.Println()
 		log.Printf("Listening at: http://%s", address)
 		err = http.ListenAndServe(address, contextHandler)
 	} else {

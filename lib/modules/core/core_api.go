@@ -47,6 +47,7 @@ func (coreModule *Controller) BindAPI(router *web.Router) {
 	// Bind endpoints
 	coreRouter.Post("/login", (*coreCtx).Login)
 	coreRouter.Get("/logout", (*coreCtx).Logout)
+	coreRouter.Post("/logout", (*coreCtx).Logout)
 	coreRouter.Get("/action", (*coreCtx).Action)
 	coreRouter.Post("/action", (*coreCtx).Action)
 	coreRouter.Get("/recovery", (*coreCtx).RecoverGet)
@@ -101,11 +102,13 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	// Fetch parameters
 	email := req.FormValue("email")
 	if !govalidator.IsEmail(email) {
+		log.Printf("Core.Login invalid request (missing email)")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.InvalidEmail)
 		return
 	}
 	password := req.FormValue("password")
 	if password == "" {
+		log.Printf("Core.Login invalid request (missing password)")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.MissingPassword)
 		return
 	}
@@ -240,14 +243,14 @@ func (c *coreCtx) SecondFactorStatus(rw web.ResponseWriter, req *web.Request) {
 
 // Logout Endpoint ends a user session
 func (c *coreCtx) Logout(rw web.ResponseWriter, req *web.Request) {
+	c.LogoutUser(rw, req)
+
 	if c.GetUserID() == "" {
-		c.WriteUnauthorized(rw)
+		c.WriteAPIResult(rw, api.LoginRequired)
 		return
 	}
 
-	c.LogoutUser(rw, req)
-
-	rw.WriteHeader(http.StatusOK)
+	c.WriteAPIResult(rw, api.LogoutSuccessful)
 }
 
 // Recover endpoints provide mechanisms for user account recovery

@@ -119,7 +119,7 @@ func TestOauthAPI(t *testing.T) {
 
 	var oauthClient ClientResp
 
-	client := test.NewClient("http://" + test.Address + "/api")
+	client := test.NewClient("http://" + ts.Address() + "/api")
 
 	v := url.Values{}
 	v.Set("email", test.FakeEmail)
@@ -274,7 +274,7 @@ func TestOauthAPI(t *testing.T) {
 		token := &oauth2.Token{AccessToken: tokenString}
 		httpClient := config.Client(oauth2.NoContext, token)
 
-		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
+		if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err != nil {
 			t.Errorf("Unexpected error attempting oauth: %s", err)
 		}
 
@@ -339,8 +339,8 @@ func TestOauthAPI(t *testing.T) {
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  "http://" + test.Address + "/api/oauth/auth",
-				TokenURL: "http://" + test.Address + "/api/oauth/token",
+				AuthURL:  "http://" + ts.Address() + "/api/oauth/auth",
+				TokenURL: "http://" + ts.Address() + "/api/oauth/token",
 			},
 			RedirectURL: oauthClient.RedirectURIs[0],
 			Scopes:      oauthClient.Scopes,
@@ -356,7 +356,7 @@ func TestOauthAPI(t *testing.T) {
 
 		httpClient := config.Client(oauth2.NoContext, accessToken)
 
-		if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err != nil {
+		if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err != nil {
 			t.Errorf("Unexpected error attempting oauth: %s", err)
 		}
 
@@ -413,13 +413,13 @@ func TestOauthAPI(t *testing.T) {
 		config := &clientcredentials.Config{
 			ClientID:     oauthClient.ClientID,
 			ClientSecret: oauthClient.Secret,
-			TokenURL:     "http://" + test.Address + "/api/oauth/token",
+			TokenURL:     "http://" + ts.Address() + "/api/oauth/token",
 			Scopes:       []string{"public.read", "private.read"},
 		}
 
 		httpClient := config.Client(oauth2.NoContext)
 
-		tc := test.NewClientFromHttp("http://"+test.Address+"/api/oauth", httpClient)
+		tc := test.NewClientFromHttp("http://"+ts.Address()+"/api/oauth", httpClient)
 
 		if _, err := tc.Get("/info", http.StatusOK); err != nil {
 			t.Error(err)
@@ -453,11 +453,11 @@ func TestOauthAPI(t *testing.T) {
 				ClientID:     oauthClient.ClientID,
 				ClientSecret: oauthClient.Secret,
 				Scopes:       []string{"not-a-scope"},
-				TokenURL:     "http://" + test.Address + "/api/oauth/token"}
+				TokenURL:     "http://" + ts.Address() + "/api/oauth/token"}
 
 			httpClient := config.Client(oauth2.NoContext)
 
-			if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
+			if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err == nil {
 				t.Errorf("Expected error attempting oauth")
 			}
 		})
@@ -472,11 +472,11 @@ func TestOauthAPI(t *testing.T) {
 			config := &clientcredentials.Config{
 				ClientID:     oauthClient.ClientID,
 				ClientSecret: oauthClient.Secret,
-				TokenURL:     "http://" + test.Address + "/api/oauth/token"}
+				TokenURL:     "http://" + ts.Address() + "/api/oauth/token"}
 
 			httpClient := config.Client(oauth2.NoContext)
 
-			if _, err := httpClient.Get("http://" + test.Address + "/api/oauth/info"); err == nil {
+			if _, err := httpClient.Get("http://" + ts.Address() + "/api/oauth/info"); err == nil {
 				t.Errorf("Expected error attempting oauth")
 			}
 

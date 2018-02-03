@@ -108,6 +108,9 @@ func (u *User) ClearLoginRetries() { u.LoginRetries = 0 }
 // GetLastLogin fetches a users LastLogin time
 func (u *User) GetLastLogin() time.Time { return u.LastLogin }
 
+// GetCreatedAt fetches a users account creation time
+func (u *User) GetCreatedAt() time.Time { return u.CreatedAt }
+
 // SetLastLogin sets a users LastLogin time
 func (u *User) SetLastLogin(t time.Time) { u.LastLogin = t }
 

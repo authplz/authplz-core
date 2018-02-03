@@ -44,6 +44,7 @@ const (
 	Unauthorized         = "Unauthorized"
 	InvalidToken         = "InvalidToken"
 	NoRecoveryPending    = "NoRecoveryPending"
+	LoginRequired        = "LoginRequired"
 
 	// Second factor messages
 	SecondFactorRequired         = "SecondFactorRequired"
