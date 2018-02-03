@@ -93,7 +93,7 @@ func (c *apiCtx) Create(rw web.ResponseWriter, req *web.Request) {
 		if e == ErrorDuplicateAccount {
 			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.DuplicateUserAccount)
 			return
-		} else if e == ErrorPasswordTooShort {
+		} else if e == ErrorPasswordTooShort || e == ErrorPasswordEntropyTooLow {
 			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.PasswordComplexityTooLow)
 			return
 		}
@@ -188,6 +188,11 @@ func (c *apiCtx) ResetPost(rw web.ResponseWriter, req *web.Request) {
 	// Update password
 	_, err := c.um.SetPassword(userid, password)
 	if err != nil {
+		if err == ErrorPasswordTooShort || err == ErrorPasswordEntropyTooLow {
+			c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.PasswordComplexityTooLow)
+			return
+		}
+
 		log.Printf("UserAPI.ResetPost error setting password (%s)", err)
 		c.WriteInternalError(rw)
 		return
