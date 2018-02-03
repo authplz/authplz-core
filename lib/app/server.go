@@ -145,7 +145,6 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	router = router.Middleware(web.LoggerMiddleware)
 
 	log.Printf("Allowed-Origins: %+v", config.AllowedOrigins)
-	//router.OptionsHandler(appcontext.NewOptionsHandler(config.AllowedOrigins))
 
 	// Enable static file hosting
 	_, _ = os.Getwd()
@@ -173,16 +172,12 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 // Start an instance of the AuthPlzServer
 func (server *AuthPlzServer) Start() {
-	// Start listening
-
 	// Set bind address
 	address := server.config.Address + ":" + server.config.Port
 
-	origins := server.config.AllowedOrigins
-
 	// Create handlers
 	CORSHandler := handlers.CORS(
-		handlers.AllowedOrigins(origins),
+		handlers.AllowedOrigins(server.config.AllowedOrigins),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type"}),
 		handlers.AllowCredentials(),
