@@ -71,7 +71,6 @@ func (oc *Controller) BindAPI(base *web.Router) *web.Router {
 
 	router.Post("/token", (*APICtx).TokenPost)
 	router.Get("/introspect", (*APICtx).IntrospectPost)
-	router.Get("/test", (*APICtx).TestGet)
 
 	router.Get("/info", (*APICtx).AccessTokenInfoGet)
 
@@ -292,14 +291,8 @@ func (c *APICtx) AuthorizeConfirmPost(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	oauthSession := Session{
-		UserID: c.GetUserID(),
-	}
-
-	oauthSession.AccessExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.IDExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.AuthorizeExpiry = time.Now().Add(time.Hour * 1)
-	oauthSession.RefreshExpiry = time.Now().Add(time.Hour * 24)
+	// Create OAuth Session
+	oauthSession := c.oc.newOauthSession(c.GetUserID(), "")
 
 	log.Printf("AuthConfirm: %+v", authorizeConfirm)
 
@@ -372,12 +365,7 @@ func (c *APICtx) TokenPost(rw web.ResponseWriter, req *web.Request) {
 	ctx := fosite.NewContext()
 
 	// Create session
-	session := Session{
-		AccessExpiry:    time.Now().Add(time.Hour * 1),
-		IDExpiry:        time.Now().Add(time.Hour * 2),
-		RefreshExpiry:   time.Now().Add(time.Hour * 3),
-		AuthorizeExpiry: time.Now().Add(time.Hour * 4),
-	}
+	session := c.oc.newOauthSession("", "")
 
 	// TODO: How on earth do I pull a user ID out of this?
 	// Should be associated with an oauth request type, but I don't have access to it here.
@@ -434,9 +422,4 @@ func (c *APICtx) SessionsInfoGet(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	c.WriteJSON(rw, sessions)
-}
-
-// TestGet test endpoint
-func (c *APICtx) TestGet(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusOK)
 }

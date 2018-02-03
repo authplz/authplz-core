@@ -157,13 +157,6 @@ func TestOauthAPI(t *testing.T) {
 		}
 	})
 
-	// Run tests
-	t.Run("OAuthAPI check API is bound", func(t *testing.T) {
-		if _, err := client.Get("/oauth/test", http.StatusOK); err != nil {
-			t.Error(err)
-		}
-	})
-
 	scopes := []string{"public.read", "public.write", "private.read", "private.write", "offline", "introspect"}
 	redirects := []string{redirect}
 	grants := []string{"authorization_code", "implicit", "client_credentials", "refresh_token"}

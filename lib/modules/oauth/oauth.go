@@ -6,8 +6,6 @@
  * Copyright 2017 Ryan Kurte
  */
 
-// TODO: move all database operations and things into the controller.
-
 package oauth
 
 import (
@@ -353,4 +351,16 @@ func (oc *Controller) GetUserSessions(userID string) (*UserSessions, error) {
 	}
 
 	return &grants, nil
+}
+
+func (oc *Controller) newOauthSession(userID, subject string) Session {
+	now := time.Now()
+	return Session{
+		UserID:          userID,
+		Subject:         subject,
+		AccessExpiry:    now.Add(oc.config.AccessExpiry),
+		IDExpiry:        now.Add(oc.config.IDExpiry),
+		RefreshExpiry:   now.Add(oc.config.RefreshExpiry),
+		AuthorizeExpiry: now.Add(oc.config.AuthorizeExpiry),
+	}
 }
