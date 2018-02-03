@@ -29,10 +29,8 @@ func TestMain(t *testing.T) {
 	c := test.NewConfig()
 
 	// Set test constants
-	var fakeEmail = "test@abc.com"
-	var fakePass = "abcDEF123@abcDEF123"
-	var fakeName = "test.user99"
-	var userID = ""
+	fakePass := test.FakePass
+	userID := ""
 
 	server := NewServer(*c)
 
@@ -101,14 +99,14 @@ func TestMain(t *testing.T) {
 	t.Run("Create User", func(t *testing.T) {
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
-		v.Set("username", fakeName)
+		v.Set("username", test.FakeName)
 
 		_, err := client.PostForm("/create", http.StatusOK, v)
 		assert.Nil(t, err)
 
-		u, _ := server.ds.GetUserByEmail(fakeEmail)
+		u, _ := server.ds.GetUserByEmail(test.FakeEmail)
 		if u == nil {
 			t.FailNow()
 		}
@@ -127,7 +125,7 @@ func TestMain(t *testing.T) {
 	t.Run("Login fails prior to activation", func(t *testing.T) {
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 
 		_, err := client.PostForm("/login", http.StatusUnauthorized, v)
@@ -151,7 +149,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login with activation cookie
 		v = url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err = client2.PostForm("/action", http.StatusBadRequest, v)
 		assert.Nil(t, err)
@@ -182,7 +180,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login with activation cookie
 		v = url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err = client2.PostForm("/login", http.StatusOK, v)
 		assert.Nil(t, err)
@@ -200,7 +198,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err := client.PostForm("/login", http.StatusOK, v)
 		assert.Nil(t, err)
@@ -219,7 +217,7 @@ func TestMain(t *testing.T) {
 		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", "WrongPass")
 
 		// Attempt login to cause account lock
@@ -237,7 +235,7 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Set to correct password
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 
 		// Check login still fails
@@ -262,7 +260,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login with activation cookie
 		v = url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err = client2.PostForm("/login", http.StatusBadRequest, v)
 		assert.Nil(t, err)
@@ -293,7 +291,7 @@ func TestMain(t *testing.T) {
 
 		// Attempt login with activation cookie
 		v = url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err = client2.PostForm("/login", http.StatusOK, v)
 		assert.Nil(t, err)
@@ -318,18 +316,17 @@ func TestMain(t *testing.T) {
 			t.Error(err)
 		}
 
-		if u.Email != fakeEmail {
+		if u.Email != test.FakeEmail {
 			t.Errorf("Email mismatch")
 		}
 	})
 
 	t.Run("Logged in users can update passwords", func(t *testing.T) {
 		v := url.Values{}
-		newPass := "New fake password 88@#"
 
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("old_password", fakePass)
-		v.Set("new_password", newPass)
+		v.Set("new_password", test.NewPass)
 
 		resp, err := client.PostForm("/account", http.StatusOK, v)
 		assert.Nil(t, err)
@@ -337,18 +334,16 @@ func TestMain(t *testing.T) {
 		err = test.ParseAndCheckAPIResponse(resp, api.PasswordUpdated)
 		assert.Nil(t, err)
 
-		fakePass = newPass
+		fakePass = test.NewPass
 	})
 
 	t.Run("Users must be logged in to update passwords", func(t *testing.T) {
 		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
-		newPass := "New fake password 88@#"
-
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("old_password", fakePass)
-		v.Set("new_password", newPass)
+		v.Set("new_password", test.NewPass)
 
 		resp, err := client2.PostForm("/account", http.StatusUnauthorized, v)
 		assert.Nil(t, err)
@@ -356,7 +351,7 @@ func TestMain(t *testing.T) {
 		err = test.ParseAndCheckAPIResponse(resp, api.Unauthorized)
 		assert.Nil(t, err)
 
-		fakePass = newPass
+		fakePass = test.NewPass
 	})
 
 	t.Run("Users can request password resets", func(t *testing.T) {
@@ -364,7 +359,7 @@ func TestMain(t *testing.T) {
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		_, err := client2.PostForm("/recovery", http.StatusOK, v)
 		assert.Nil(t, err)
 
@@ -379,14 +374,13 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
-		newPass := "Reset Password 78@"
 		v = url.Values{}
-		v.Set("password", newPass)
+		v.Set("password", test.NewPass)
 		_, err = client2.PostForm("/reset", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Update fakePass for further calls
-		fakePass = newPass
+		fakePass = test.NewPass
 	})
 
 	t.Run("Password reset requests rejected across clients", func(t *testing.T) {
@@ -395,7 +389,7 @@ func TestMain(t *testing.T) {
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		_, err := client2.PostForm("/recovery", http.StatusOK, v)
 		assert.Nil(t, err)
 
@@ -416,7 +410,7 @@ func TestMain(t *testing.T) {
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		_, err := client2.PostForm("/recovery", http.StatusOK, v)
 		assert.Nil(t, err)
 
@@ -431,14 +425,13 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
-		newPass := "Reset Password 78@"
 		v = url.Values{}
-		v.Set("password", newPass)
+		v.Set("password", test.NewPass)
 		_, err = client3.PostForm("/reset", http.StatusBadRequest, v)
 		assert.Nil(t, err)
 
 		// Update fakePass for further calls
-		fakePass = newPass
+		fakePass = test.NewPass
 	})
 
 	t.Run("Logged in users can enrol fido tokens", func(t *testing.T) {
@@ -493,8 +486,8 @@ func TestMain(t *testing.T) {
 			t.FailNow()
 		}
 
-		if rc.AccountName != fakeEmail {
-			t.Errorf("TOTP challenge Name mismatch (expected %s received %s)", rc.AccountName, fakeEmail)
+		if rc.AccountName != test.FakeEmail {
+			t.Errorf("TOTP challenge Name mismatch (expected %s received %s)", rc.AccountName, test.FakeEmail)
 			t.FailNow()
 		}
 
@@ -542,7 +535,7 @@ func TestMain(t *testing.T) {
 		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 
 		resp, err := client2.PostForm("/login", http.StatusAccepted, v)
@@ -563,7 +556,7 @@ func TestMain(t *testing.T) {
 
 		// Start login
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err := client2.PostForm("/login", http.StatusAccepted, v)
 		assert.Nil(t, err)
@@ -599,7 +592,7 @@ func TestMain(t *testing.T) {
 
 		// Start login
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err := client2.PostForm("/login", http.StatusAccepted, v)
 		assert.Nil(t, err)
@@ -629,7 +622,7 @@ func TestMain(t *testing.T) {
 
 		// Start login
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 		_, err := client2.PostForm("/login", http.StatusAccepted, v)
 		assert.Nil(t, err)
@@ -654,7 +647,7 @@ func TestMain(t *testing.T) {
 
 		// First, post recovery request to /api/recovery
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		_, err := client2.PostForm("/recovery", http.StatusOK, v)
 		assert.Nil(t, err)
 
@@ -679,14 +672,13 @@ func TestMain(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Post new password to user reset endpoint
-		newPass := "Reset Password 78@ cats"
 		v = url.Values{}
-		v.Set("password", newPass)
+		v.Set("password", test.NewPass)
 		_, err = client2.PostForm("/reset", http.StatusOK, v)
 		assert.Nil(t, err)
 
 		// Update fakePass for further calls
-		fakePass = newPass
+		fakePass = test.NewPass
 	})
 
 	t.Run("Logged in users can list backup tokens", func(t *testing.T) {
@@ -708,7 +700,7 @@ func TestMain(t *testing.T) {
 		client2 := test.NewClient(apiPath)
 
 		v := url.Values{}
-		v.Set("email", fakeEmail)
+		v.Set("email", test.FakeEmail)
 		v.Set("password", fakePass)
 
 		resp, err := client2.PostForm("/login", http.StatusAccepted, v)

@@ -6,8 +6,6 @@
  * Copyright 2017 Ryan Kurte
  */
 
-// TODO: move all database operations and things into the controller.
-
 package u2f
 
 import (
@@ -31,6 +29,9 @@ const (
 	u2fSignChallengeKey     string = "u2f-sign-challenge"
 	u2fSignUserIDKey        string = "u2f-sign-userid"
 	u2fSignActionKey        string = "u2f-sign-action"
+
+	u2fRegisterMaxAge = 60 * 10
+	u2fSignMaxAge     = 60 * 10
 )
 
 // u2fApiCtx context storage for router instance
@@ -95,9 +96,15 @@ func (c *u2fApiCtx) EnrolGet(rw web.ResponseWriter, req *web.Request) {
 	u2fReq := challenge.RegisterRequest()
 
 	// Save to session
-	c.GetSession().Values[u2fRegisterChallengeKey] = challenge
-	c.GetSession().Values[u2fRegisterNameKey] = tokenName
-	c.GetSession().Save(req.Request, rw)
+	session, err := c.GetNamedSession(rw, req, u2fRegisterSessionKey)
+	if err != nil {
+		c.WriteInternalError(rw)
+		return
+	}
+	session.Values[u2fRegisterChallengeKey] = challenge
+	session.Values[u2fRegisterNameKey] = tokenName
+	session.Options.MaxAge = u2fRegisterMaxAge
+	session.Save(req.Request, rw)
 
 	log.Println("EnrolGet: Fetched enrolment challenge")
 
@@ -116,16 +123,21 @@ func (c *u2fApiCtx) EnrolPost(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// Fetch request from session vars
-	// TODO: move this to a separate session flash
-	if c.GetSession().Values[u2fRegisterChallengeKey] == nil {
+	session, err := c.GetNamedSession(rw, req, u2fRegisterSessionKey)
+	if err != nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
 	}
-	challenge := c.GetSession().Values[u2fRegisterChallengeKey].(*u2f.Challenge)
-	c.GetSession().Values[u2fRegisterChallengeKey] = ""
 
-	keyName := c.GetSession().Values[u2fRegisterNameKey].(string)
-	c.GetSession().Values[u2fRegisterNameKey] = ""
+	session.Options.MaxAge = -1
+	session.Save(req.Request, rw)
+
+	challenge, challengeOK := session.Values[u2fRegisterChallengeKey].(*u2f.Challenge)
+	keyName, keyNameOK := session.Values[u2fRegisterNameKey].(string)
+	if !challengeOK || !keyNameOK {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
+		return
+	}
 
 	// Parse JSON response body
 	var registerResp u2f.RegisterResponse
@@ -158,11 +170,14 @@ func (c *u2fApiCtx) EnrolPost(rw web.ResponseWriter, req *web.Request) {
 // a) do this better / without global context
 // b) allow this to be used for authentication and for "sudo" like behaviour.
 func (c *u2fApiCtx) AuthenticateGet(rw web.ResponseWriter, req *web.Request) {
-	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
+	u2fSession, err := c.GetNamedSession(rw, req, u2fSignSessionKey)
+	if err != nil {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
+		return
+	}
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
-
 	if userid == "" {
 		log.Printf("u2f.AuthenticateGet No pending 2fa requests found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
@@ -184,6 +199,7 @@ func (c *u2fApiCtx) AuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 	u2fSession.Values[u2fSignChallengeKey] = challenge
 	u2fSession.Values[u2fSignUserIDKey] = userid
 	u2fSession.Values[u2fSignActionKey] = action
+	u2fSession.Options.MaxAge = u2fSignMaxAge
 	u2fSession.Save(req.Request, rw)
 
 	// Write challenge to user
@@ -192,11 +208,13 @@ func (c *u2fApiCtx) AuthenticateGet(rw web.ResponseWriter, req *web.Request) {
 
 // AuthenticatePost Post authentication response to complete authentication
 func (c *u2fApiCtx) AuthenticatePost(rw web.ResponseWriter, req *web.Request) {
-
-	u2fSession, _ := c.Global.SessionStore.Get(req.Request, u2fSignSessionKey)
+	u2fSession, err := c.GetNamedSession(rw, req, u2fSignSessionKey)
+	if err != nil {
+		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
+		return
+	}
 
 	// Fetch request from session vars
-	// TODO: move this to a separate session flash
 	if u2fSession.Values[u2fSignChallengeKey] == nil {
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
@@ -221,8 +239,8 @@ func (c *u2fApiCtx) AuthenticatePost(rw web.ResponseWriter, req *web.Request) {
 
 	// Parse JSON response body
 	var u2fSignResp u2f.SignResponse
-	err := json.NewDecoder(req.Body).Decode(&u2fSignResp)
-	if err != nil {
+
+	if err := json.NewDecoder(req.Body).Decode(&u2fSignResp); err != nil {
 		log.Printf("AuthenticatePost: error decoding sign response (%s)", err)
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorBadResponse)
 		return

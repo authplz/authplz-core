@@ -83,14 +83,12 @@ func (c *coreCtx) Action(rw web.ResponseWriter, req *web.Request) {
 		session.AddFlash(tokenString)
 		session.Save(req.Request, rw)
 
-		//TODO: session flash here?
-
 		log.Printf("CoreAPI.Action saved token to session store")
 
 		c.DoRedirect("/#login", rw, req)
 
 	} else {
-		//TODO: handle any active-user tokens here
+		//Handle any active-user tokens here (when implemented)
 		c.WriteAPIResultWithCode(rw, http.StatusNotImplemented, api.NotImplemented)
 	}
 }
@@ -144,7 +142,6 @@ func (c *coreCtx) Login(rw web.ResponseWriter, req *web.Request) {
 	}
 
 	// No user account found
-	// TODO: this cannot fail anymore
 	user, castOk := u.(UserInterface)
 	if !loginOk || !castOk {
 		log.Println("Core.Login Failure: user account not found")
@@ -272,7 +269,7 @@ func (c *coreCtx) RecoverPost(rw web.ResponseWriter, req *web.Request) {
 	c.GetSession().Values[recoveryEmailKey] = email
 	c.GetSession().Save(req.Request, rw)
 
-	// TODO: Generate and send recovery email
+	// Start password reset process (creates event and prompts email sending)
 	err := c.cm.PasswordResetStart(email, c.GetMeta())
 	if err != nil {
 		log.Printf("Core.RecoverPost error starting recovery for user %s (%s)", email, err)

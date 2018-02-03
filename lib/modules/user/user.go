@@ -12,25 +12,34 @@ import (
 	"log"
 	"time"
 
+	"github.com/nbutton23/zxcvbn-go"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/authplz/authplz-core/lib/api"
 	"github.com/authplz/authplz-core/lib/events"
-	"golang.org/x/crypto/bcrypt"
 )
 
-//TODO: change this to enforce actual complexity
-const minimumPasswordLength = 12
-const hashRounds = 8
+const (
+	// MinPasswordLength Minimum password length
+	MinPasswordLength = 12
+	// HashRounds BCrypt Hash Rounds
+	HashRounds = 12
+	// MinZxcvbnScore Minimum password zxcvbn score
+	MinZxcvbnScore = 4
+)
 
 // Controller User controller instance storage
 type Controller struct {
-	userStore  Storer
-	emitter    events.Emitter
-	hashRounds int
+	userStore   Storer
+	emitter     events.Emitter
+	passwordLen int
+	hashRounds  int
+	zxcvbnScore int
 }
 
 // NewController Create a new user controller
 func NewController(userStore Storer, emitter events.Emitter) *Controller {
-	return &Controller{userStore, emitter, hashRounds}
+	return &Controller{userStore, emitter, MinPasswordLength, HashRounds, MinZxcvbnScore}
 }
 
 // Create a new user account
@@ -42,8 +51,15 @@ func (userModule *Controller) Create(email, username, pass string) (user User, e
 		return nil, ErrorPasswordHashTooShort
 	}
 
-	if len(pass) < minimumPasswordLength {
+	// Check length
+	if len(pass) < userModule.passwordLen {
 		return nil, ErrorPasswordTooShort
+	}
+
+	// Check complexity
+	score := zxcvbn.PasswordStrength(pass, []string{email, username, "auth", "authplz"})
+	if score.Score < userModule.zxcvbnScore {
+		return nil, ErrorPasswordEntropyTooLow
 	}
 
 	// Check if user exists

@@ -25,7 +25,8 @@ import (
 
 const (
 	FakeEmail = "test@abc.com"
-	FakePass  = "abcDEF123@9c"
+	FakePass  = "V3vRyT!$5qNHt9H1"
+	NewPass   = "*$M^kiD2Nhs8OpkR"
 	FakeName  = "user.sdfsfdF"
 )
 

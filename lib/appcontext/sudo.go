@@ -47,6 +47,7 @@ func (c *AuthPlzCtx) SetSudo(userID string, timeout time.Duration, rw web.Respon
 	}
 
 	session.Values[sudoSessionKey] = sudoSession
+	session.Options.MaxAge = sudoTimeout
 	session.Save(req.Request, rw)
 }
 

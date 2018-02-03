@@ -14,7 +14,6 @@ import (
 // BindActionHandler Binds a token action handler instance to the core module
 // Token actions are validated and executed following successful login
 func (coreModule *Controller) BindActionHandler(action api.TokenAction, thi TokenHandler) {
-	// TODO: check if exists before attaching and throw an error
 	coreModule.tokenHandlers[action] = thi
 }
 
@@ -24,7 +23,6 @@ func (coreModule *Controller) BindActionHandler(action api.TokenAction, thi Toke
 // and a 2fa-pending session variable set in the global context for a 2fa implementation to
 // pick up
 func (coreModule *Controller) BindSecondFactor(name string, sfi SecondFactorProvider) {
-	// TODO: check if exists before attaching and throw an error
 	coreModule.secondFactorHandlers[name] = sfi
 }
 

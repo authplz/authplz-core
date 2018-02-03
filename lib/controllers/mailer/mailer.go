@@ -148,7 +148,6 @@ func (mc *MailController) HandleEvent(e interface{}) error {
 	event := e.(*events.AuthPlzEvent)
 
 	// Fetch the user object for further use
-	// TODO: I wonder if we should just be passing this around to save DB accesses?
 	userID := event.GetUserExtID()
 	u, err := mc.storer.GetUserByExtID(userID)
 	if err != nil {
