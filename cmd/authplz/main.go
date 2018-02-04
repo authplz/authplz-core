@@ -9,6 +9,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/authplz/authplz-core/lib/app"
 	"github.com/authplz/authplz-core/lib/config"
@@ -23,11 +24,16 @@ func main() {
 	// Load configuration
 	c, err := config.GetConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error loading config: %s", err)
+		os.Exit(-1)
 	}
 
 	// Create server instance
-	server := app.NewServer(*c)
+	server, err := app.NewServer(*c)
+	if err != nil {
+		log.Printf("%s", err)
+		os.Exit(-2)
+	}
 
 	// Launch server
 	server.Start()

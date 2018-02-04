@@ -21,7 +21,6 @@ disable-web-security: true
 allowed-origins:
   - https://localhost:3000
   - http://localhost:3000
-  - https://authplz.herokuapp.com
   - http://192.168.1.28:9000
 
 # Secrets
@@ -35,7 +34,7 @@ tls:
   disabled: true
 
 # Template and static file directories
-static-dir: ~/projects/authplz-ui/static
+static-dir: ./static
 template-dir: ./templates
   
 # OAuth (Client) Configuration

@@ -32,7 +32,8 @@ func TestMain(t *testing.T) {
 	fakePass := test.FakePass
 	userID := ""
 
-	server := NewServer(*c)
+	server, err := NewServer(*c)
+	assert.Nil(t, err)
 
 	// Force database synchronization
 	server.ds.ForceSync()

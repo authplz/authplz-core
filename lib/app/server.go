@@ -9,6 +9,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -56,7 +57,7 @@ type AuthPlzServer struct {
 const bufferSize uint = 64
 
 // NewServer Create an AuthPlz server instance
-func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
+func NewServer(config config.AuthPlzConfig) (*AuthPlzServer, error) {
 	server := AuthPlzServer{}
 
 	server.config = config
@@ -70,7 +71,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	}
 	dataStore, err := datastore.NewDataStore(config.Database)
 	if err != nil {
-		log.Panicf("Error opening databaseError opening database '%s'", config.Database)
+		return nil, err
 	}
 	server.ds = dataStore
 
@@ -127,8 +128,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 	// Mailer module
 	mailController, err := mailer.NewMailController(config.Name, config.ExternalAddress, config.Mailer.Driver, config.Mailer.Options, dataStore, tokenControl, config.TemplateDir)
 	if err != nil {
-		log.Fatalf("Error loading mail controller: %s", err)
-		return nil
+		return nil, fmt.Errorf("Error loading mail controller: %s", err)
 	}
 
 	// Create async mailer service and distribute events to it
@@ -172,7 +172,7 @@ func NewServer(config config.AuthPlzConfig) *AuthPlzServer {
 
 	server.router = router
 
-	return &server
+	return &server, nil
 }
 
 // Start an instance of the AuthPlzServer
