@@ -1,0 +1,4 @@
+/.vscode
+/vendor
+/_vendor*
+setenv.sh
