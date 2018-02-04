@@ -96,7 +96,7 @@ func (c *backupCodeAPICtx) AuthenticatePost(rw web.ResponseWriter, req *web.Requ
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
-	if userid == "" {
+	if userid == "" || action == "" {
 		log.Printf("BackupCodeAPICtx.AuthenticatePost No pending 2fa requests found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return
