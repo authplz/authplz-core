@@ -180,7 +180,7 @@ func (c *totpAPICtx) TOTPAuthenticatePost(rw web.ResponseWriter, req *web.Reques
 
 	// Fetch challenge user ID
 	userid, action := c.Get2FARequest(rw, req)
-	if userid == "" {
+	if userid == "" || action == "" {
 		log.Printf("totp.TOTPAuthenticatePost No pending 2fa requests found")
 		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return

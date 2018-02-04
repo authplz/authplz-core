@@ -51,8 +51,6 @@ func (c *AuthPlzCtx) Bind2FARequest(rw web.ResponseWriter, req *web.Request, use
 func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (string, string) {
 	session, err := c.GetNamedSession(rw, req, secondFactorRequestSessionKey)
 	if err != nil {
-		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found")
-		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return "", ""
 	}
 
@@ -60,8 +58,6 @@ func (c *AuthPlzCtx) Get2FARequest(rw web.ResponseWriter, req *web.Request) (str
 	action, ok2 := session.Values[secondFactorActionKey]
 
 	if !ok1 || !ok2 {
-		log.Printf("AuthPlzCtx.Get2FARequest No 2fa request session found")
-		c.WriteAPIResultWithCode(rw, http.StatusBadRequest, api.SecondFactorNoRequestSession)
 		return "", ""
 	}
 
